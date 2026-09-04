@@ -1,0 +1,331 @@
+/* 28Notes MindMap —— Obsidian 侧样式（导图界面本身的样式在 mindmap-app.css，注入 iframe 内） */
+
+/* ═══ 文件树徽章自定义区（按用途分三段：①文字 ②捷径小箭头 ③图标；2026-08-31 梳理）════════
+   改完必须「禁用再启用 28 Notes 插件」才生效（CSS 只在插件启用时读一次）。
+   徽章文案日常在 i18n.js 的 badge.* 改（界面语言切换自动换中英）。 */
+
+:root {
+  /* ── ① 文字徽章（设置页「徽章样式」选“文本”时，思维导图文件右侧的「28 Notes」字）── */
+  --shin-mindmap-badge-text: "28 Notes";          /* 文字内容（改英文文案走 i18n.js 更规范） */
+  --shin-mindmap-badge-color: #090909;            /* 颜色（想改黑/灰/蓝随便填，如 #626262） */
+  --shin-file-badge-size: 9px;                    /* 字号 */
+  --shin-file-badge-weight: 600;                  /* 粗细：600=半粗、700=粗、bold=粗（semibold 不是合法值，别用） */
+  --shin-file-badge-stroke: 0.3px;                /* 再粗一格：字体字重到头后靠描边加粗；0=不描边，0.3px=更粗，0.6px=很粗 */
+  --shin-file-badge-opacity: 0.3;                   /* 常态透明度：1=不透明，0.5=半透明 */
+  --shin-file-badge-opacity-hover: 0.6;             /* 悬停时透明度：0.6=悬停变淡，1=悬停不变 */
+  --shin-file-badge-color-hover: var(--text-muted); /* 悬停颜色（有透明度旋钮后可不用，放着无妨） */
+
+  /* ── ② 捷径小箭头（mmlink 捷径文件右侧的 ↗，永远文本、不受“徽章样式”设置影响）── */
+  --shin-bookmark-badge-text: "↗";                /* 捷径徽章文案 */
+  --shin-bookmark-badge-opacity: .6;              /* 捷径徽章透明度：1=不透明，0.5=半透明 */
+  --shin-file-badge-color: var(--text-faint);     /* 捷径 ↗ 颜色（改这个才是捷径颜色！①的颜色走 --shin-mindmap-badge-color） */
+
+  /* ── ③ 图标徽章（设置页「徽章样式」选“图标”时，思维导图文件右侧的 Ribbon 小 logo）── */
+  --shin-badge-icon-size: 12px;                   /* 图标大小 */
+  --shin-badge-icon-opacity: .3;                  /* 图标常态透明度：1=不透明，0.3=很淡 */
+  --shin-badge-icon-opacity-hover: 0.6;           /* 图标悬停时透明度（淡图标悬停变清晰） */
+  --shin-badge-icon-offset-x: -14px;              /* 图标水平位置：正→右移，负→左移 */
+  --shin-badge-icon-offset-y: -6px;               /* 图标垂直位置：正→下移，负→上移 */
+
+  /* 以下两对同时影响 ①文字 和 ②捷径（文本系通用），一般不用动 */
+  --shin-file-badge-transform: uppercase;         /* 大小写：none=原样，uppercase=英文转全大写 */
+  --shin-file-badge-spacing: 0.05em;              /* 字距 */
+  --shin-file-badge-background: transparent;      /* 底色 */
+}
+/* ═══ 自定义区结束 ═════════════════════════════════════════════════ */
+
+/* 设置页：控件（按钮 / 下拉）与左侧说明文字上下居中（Obsidian 默认贴顶，说明文字长时按钮看着偏上） */
+.shin-settings .setting-item { align-items: center; }
+.shin-settings .setting-item-control { align-items: center; }
+
+/* 导图视图容器：去掉 Obsidian 默认 padding，iframe 撑满 */
+.workspace-leaf-content[data-type="28notes-mindmap"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+.workspace-leaf-content[data-type="28notes-mindmap"] iframe.shin-mindmap-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* 隐藏 28Notes-Files 附件文件夹（v2 §3.6：不用 . 前缀——Obsidian 忽略点号文件夹会导致不索引、图片渲染不出） */
+.nav-folder:has(> .nav-folder-title[data-path="28Notes-Files"]) {
+  display: none;
+}
+
+/* ═══ 折叠层级条（Obsidian 官方状态栏版，2026-08-30 v2）═══════
+   自定义变量（在 :root，位置/间距可按需调整）：
+     --shin-foldbar-num-y     数字按钮上下位置，负=上移
+     --shin-foldbar-more-y    「+」按钮上下位置，负=上移
+     --shin-foldbar-pop-gap   弹层与状态栏的上下间距
+     --shin-foldbar-pop-gap-y 弹层数字之间上下间距（上下间距偏大）
+     --shin-foldbar-pop-gap-x 弹层内部左右内边距（左右间距偏小，默认 2px）
+     --shin-foldbar-pop-right  弹层整体右偏移（负值往右移，默认0px）
+     --shin-ribbon-size       Ribbon 按钮外框大小（悬浮背景层 / 点击区，与侧栏一致）
+     --shin-ribbon-icon-size  Ribbon 图标本身大小（调小=图标缩小、留白更多；默认比外框小） */
+:root {
+  --shin-foldbar-num-y: 0px;
+  --shin-foldbar-more-y: -1.5px;
+  --shin-foldbar-pop-gap: 4px;
+  --shin-foldbar-pop-gap-y: 8px;
+  --shin-foldbar-pop-gap-x: 4px;
+  --shin-foldbar-pop-right: -3px;
+  --shin-ribbon-size: 28px;  /* 按钮外框（悬浮背景层）大小 */
+  --shin-ribbon-icon-size: 25px;  /* 图标本身大小：想缩小图标改这个，外框不变则自动留白 */
+}
+/* Ribbon 图标按钮统一（不比侧栏其它图标大一圈）。给按钮加了 shin-ribbon-action class 后再生效。 */
+.shin-ribbon-action {
+  padding: 0 !important;
+  width: var(--shin-ribbon-size) !important; height: var(--shin-ribbon-size) !important;
+  display: flex !important; align-items: center; justify-content: center;
+}
+.shin-ribbon-action svg { width: var(--shin-ribbon-icon-size); height: var(--shin-ribbon-icon-size); }
+.status-bar .shin-foldbar { display: inline-flex; align-items: center; gap: 1px; }
+.status-bar .shin-foldbar > .shin-foldbar-btn { transform: translateY(var(--shin-foldbar-num-y)); }
+.status-bar .shin-foldbar-btn {
+  cursor: pointer; padding: 1px 6px; min-width: 18px; text-align: center;
+  font-size: var(--font-ui-smaller); color: var(--text-muted); border-radius: var(--radius-s);
+}
+.status-bar .shin-foldbar-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.status-bar .shin-foldbar-more-wrap { position: relative; display: inline-flex; padding-top: 6px; margin-top: -6px; transform: translateY(var(--shin-foldbar-more-y)); }
+.status-bar .shin-foldbar-pop {
+  position: absolute; bottom: calc(100% + var(--shin-foldbar-pop-gap)); right: var(--shin-foldbar-pop-right);
+  display: none; flex-direction: column; align-items: center; gap: var(--shin-foldbar-pop-gap-y);
+  background: var(--background-primary); border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m); padding: 6px var(--shin-foldbar-pop-gap-x); box-shadow: var(--shadow-s); z-index: 100;
+}
+.status-bar .shin-foldbar-pop.open { display: flex; }
+.status-bar .shin-foldbar-pop .shin-foldbar-btn { padding: 2px 0; transform: none; }
+
+/* ═══ 标签页图标（2026-08-31）：思维导图/捷径视图 tab 前的小图标（JS 替换原生图标槽）══
+   颜色 / 大小旋钮：各自独立，直接改下面 :root 里的值，改完禁用再启用插件生效。 */
+:root {
+  --shin-tab-icon-mindmap-size: 22px;            /* 思维导图 Frame 图标大小 */
+  --shin-tab-icon-mindmap-color: var(--text-muted); /* 思维导图图标颜色 */
+  --shin-tab-icon-mindmap-opacity: 0.8;            /* 思维导图图标透明度：1=不透明，0.5=半透明 */
+  --shin-tab-icon-bookmark-size: 14px;           /* 捷径 ↗ 大小（字号） */
+  --shin-tab-icon-bookmark-color: var(--text-muted); /* 捷径 ↗ 颜色 */
+  --shin-tab-icon-bookmark-opacity: 0.5;           /* 捷径 ↗ 透明度：1=不透明，0.5=半透明 */
+}
+.workspace-tab-header .shin-tab-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  /* 2026-09-01 修：不再固定占位盒 16px——固定宽高会把大图标裁掉/压回 16px（调 size=300 不变、=1 变小的根因）。
+     容器由内容决定，图标实际大小完全交给 --shin-tab-icon-mindmap-size / --shin-tab-icon-bookmark-size 控制。 */
+  margin-right: 4px; flex-shrink: 0;
+  overflow: visible;
+}
+/* 思维导图图标（Frame logo）：颜色/大小 */
+.workspace-tab-header .shin-tab-icon-mindmap {
+  color: var(--shin-tab-icon-mindmap-color);
+  opacity: var(--shin-tab-icon-mindmap-opacity);
+}
+.workspace-tab-header .shin-tab-icon-mindmap svg {
+  width: var(--shin-tab-icon-mindmap-size); height: var(--shin-tab-icon-mindmap-size);
+  display: block;
+}
+/* 捷径图标（↗）：颜色/大小 */
+.workspace-tab-header .shin-tab-icon-bookmark {
+  color: var(--shin-tab-icon-bookmark-color);
+  font-size: var(--shin-tab-icon-bookmark-size);
+  font-weight: 600;
+  opacity: var(--shin-tab-icon-bookmark-opacity);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ║  调参区：两个弹窗的位置 / 颜色 / 字号都走这里的变量，直接改冒号右边的值。
+   ║  改完禁用再启用 28 Notes 插件（或重启 Obsidian），CSS 才会重新读盘。每个元素都能单独调，距离用 px、颜色用 #hex 或 rgba()、字号用 px。
+   ║  逻辑：top 变量调大 → 元素整体往下移；字体变量调大 → 字变大；颜色变量改 → 整体换色。
+   ║  字体约定：-50% 与 ❶❷❸ 用圆体（SF Pro Rounded），其余用 SF Pro；非 macOS 系统自动回退 system-ui，不影响布局。
+   ════════════════════════════════════════════════════════════════════════════ */
+
+
+
+.pm-shell{
+  --pm-win-h: 395px;
+  --pm-mask-h: 179px;
+  --pm-cta-bottom: 32px;
+  --pm-hint-bottom: 9px;
+  --pm-top-pad: 52px;
+  --pm-bottom-pad: 47px;
+  --pm-blue: #0d72ff;
+  --pm-blue-btn: #479aff;
+  --pm-div: #e9e9e9;
+  --pm-text: #000000;
+  --pm-text-dim: #9d9d9d;
+  --pm-cta-border-w: 0px;  --pm-cta-border-c: #000000;   /* 激活按钮边框：宽=0 时无外框；Obsidian 默认 .modal button 边框曾被泄漏，用 !important 锁住 */
+  --pm-logo-show: none;         /* 左上角 logo 显示开关：block=显示，none=隐藏 */
+  --pm-logo-w: 84px;            /* logo 宽度（高度按图片比例自动） */
+  --pm-logo-top: -35px;         /* logo 距滚动内容顶（可负，突破顶部留白） */
+  --pm-logo-left: 34px;         /* logo 距左侧 */
+  --pm-font: "SF Pro","PingFang SC",-apple-system,system-ui,sans-serif;
+  --pm-font-rounded: "SF Pro Rounded","SF Pro Display",-apple-system,system-ui,sans-serif;
+  --pm-off-fs: 55px;
+  --pm-now-fs: 15.5px;
+  --pm-old-fs: 13px;
+  --pm-sec-fs: 18.5px;
+  --pm-p-fs: 13.5px;
+  --pm-cap-fs: 11.5px;
+  --pm-trial-fs: 13.5px;
+  --pm-foot-fs: 12px;
+  --pay-num-fs: 52.683px;
+  --pay-h-fs: 17.5px;
+  --pay-email-fs: 14.5px;
+  --pay-steps-fs: 13.5px;
+  --pay-alt-fs: 12.5px;
+  --pay-path-fs: 12px;
+  --pay-thanks-fs: 12px;
+  --pm-off-top: 0px;
+  --pm-price-top: 79px;
+  --pm-trial-top: 117px;
+  --pm-div1-top: 171px;
+  --pm-sec1h-top: 214px;
+  --pm-sec1market-top: 258px;
+  --pm-sec1dim-top: 289px;
+  --pm-sec1fig-top: 336px;
+  --pm-sec2h-top: 639px;
+  --pm-sec2market-top: 686px;
+  --pm-sec2dim-top: 724px;
+  --pm-sec2fig-top: 769px;
+  --pm-cap1-top: 1020px;
+  --pm-sec2bfig-top: 1061px;
+  --pm-cap2-top: 1312px;
+  --pm-div2-top: 1359px;
+  --pm-foot-top: 1398px;
+  --pay-num1-top: 0px;
+  --pay-h1-top: 71px;
+  --pay-qr-top: 117px;
+  --pay-num2-top: 447px;
+  --pay-email-top: 509px;
+  --pay-steps-top: 545px;
+  --pay-alt1-top: 597px;
+  --pay-shot-top: 629px;
+  --pay-num3-top: 1077px;
+  --pay-h3-top: 1140px;
+  --pay-path-top: 1174px;
+  --pay-alt3-top: 1205px;
+  --pay-thanks-top: 1247px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+.pm-shell .modal{
+  position:relative;
+  width:565px; max-width:92vw; height:var(--pm-win-h);   /* 固定窗口，按设计稿 */
+  background:#fff; border:1px solid var(--pm-blue); border-radius:20px;
+  padding:0; overflow:hidden;
+  box-shadow:0 22px 60px rgba(20,40,80,.30);
+}
+.pm-shell .modal-content{ position:relative; width:100%; height:100%; padding:0; overflow:hidden; }
+
+/* 原生关闭按钮（Obsidian 默认右上角圆形按钮）让位 + 着色，避免遮挡内容 */
+.pm-shell .modal-close-button{ color:#5d5d5d; opacity:1; }
+
+.pm-shell ::-webkit-scrollbar{ width:8px; }
+.pm-shell ::-webkit-scrollbar-thumb{ background:rgba(13,114,255,.35); border-radius:8px; }
+.pm-shell ::-webkit-scrollbar-track{ background:transparent; }
+
+/* —— 滚动正文（=302 / =299 内容，严格按设计稿 top 绝对定位；浮层绝对定位盖其上）—— */
+.pm-scroll, .pay-scroll{
+  position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
+  padding:var(--pm-top-pad) 0 var(--pm-bottom-pad);   /* 顶部/底部留白（= --pm-top-pad / --pm-bottom-pad），避让关闭钮与遮罩 */
+  font-family:var(--pm-font); color:var(--pm-text);
+}
+.pm-inner{ position:relative; height:1507px; }
+.pay-inner{ position:relative; height:1328px; }
+
+/* 公共定位：文字行铺满宽度居中，图片/块水平居中 */
+.pm-line, .pay-line{ position:absolute; left:0; width:100%; text-align:center; margin:0; }
+.pm-logo{
+  position:absolute; top:var(--pm-logo-top); left:var(--pm-logo-left); z-index:2;
+  width:var(--pm-logo-w); display:var(--pm-logo-show);
+  pointer-events:none; user-select:none;
+}
+.pm-logo img{ width:100%; height:auto; display:block; }
+.pm-fig, .pay-qrbox, .pay-shot{
+  position:absolute; left:50%; transform:translateX(-50%);
+  max-width:90%;
+}
+
+/* —— 页面2 / 302 内容（字号/颜色全部走调教区变量）—— */
+.pm-off{ font-family:var(--pm-font-rounded); color:var(--pm-blue); font-size:var(--pm-off-fs); font-weight:800; line-height:1; }
+.pm-price{ font-size:var(--pm-p-fs); }
+.pm-old{ text-decoration:line-through; color:rgba(0,0,0,.33); font-size:var(--pm-old-fs); }
+.pm-now{ color:var(--pm-blue); font-size:var(--pm-now-fs); font-weight:600; }
+.pm-trial{ font-size:var(--pm-trial-fs); color:var(--pm-text-dim); line-height:1.5; }
+.pm-trial b{ color:var(--pm-blue); font-weight:600; }
+
+.pm-div{ height:1px; background:var(--pm-div); }
+.pm-sec-h{ color:var(--pm-blue); font-size:var(--pm-sec-fs); font-weight:600; }
+.pm-market{ font-size:var(--pm-p-fs); color:var(--pm-text); line-height:1.7; }
+.pm-p-dim{ font-size:var(--pm-p-fs); color:var(--pm-text-dim); line-height:1.7; }
+.pm-blue{ color:var(--pm-blue); font-weight:600; }
+.pm-fig{ width:416px; height:236px; border:1px solid var(--pm-blue); border-radius:21px; overflow:hidden; background:#fff; }
+.pm-fig img{ width:100%; height:100%; object-fit:cover; display:block; }
+.pm-cap{ font-size:var(--pm-cap-fs); color:var(--pm-text-dim); line-height:1.4; }
+
+.pm-foot{ font-size:var(--pm-foot-fs); color:var(--pm-text-dim); line-height:1.5; }
+.pm-thanks{ color:rgba(255,0,0,.86); margin:0 0 2px; }
+.pm-note{ color:var(--pm-text-dim); margin:0; }
+
+/* —— 浮层：白色渐变遮罩（上透明下白，贴窗口底，固定不滚，不挡滚动）—— */
+.pm-mask, .pay-mask{
+  position:absolute; left:0; right:0; bottom:0; height:var(--pm-mask-h); z-index:3;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.96) 100%);
+}
+
+/* —— 浮层：激活按钮（钉底居中，固定不滚，显眼的蓝色）—— */
+.pm-cta{
+  position:absolute; left:50%; bottom:var(--pm-cta-bottom); transform:translateX(-50%); z-index:5;
+  padding:10px 24px; border:var(--pm-cta-border-w) solid var(--pm-cta-border-c) !important; border-radius:999px;
+  background:#0070f5 !important; color:#fff !important; font-size:14px; font-weight:600; cursor:pointer;
+  background-image:none !important; outline:none !important;
+  box-shadow:0 2px 10px rgba(0,112,245,.35);
+}
+.pm-cta:hover{ background:#0062d6 !important; }
+
+/* —— 浮层：灰色提示文字（钉底居中，固定不滚）—— */
+.pm-scrollhint, .pay-scrollhint{
+  position:absolute; left:50%; bottom:var(--pm-hint-bottom); transform:translateX(-50%); z-index:5;
+  font-size:11px; color:#a9a9a9; pointer-events:none; white-space:nowrap; font-family:var(--pm-font);
+}
+
+/* —— 支付页（页面4 / 301）：严格还原 299 设计稿（字号/颜色走调教区变量）—— */
+.pay-num{ font-family:var(--pm-font-rounded); color:var(--pm-blue); font-size:var(--pay-num-fs); font-weight:800; line-height:1.1; }
+.pay-h{ color:var(--pm-blue); font-size:var(--pay-h-fs); font-weight:600; }
+.pay-qrbox{ width:254px; height:276px; border:1px solid #4263eb; border-radius:16px; background:#fff; overflow:hidden; }   /* 设计稿 254×276、圆角16 */
+.pay-qrbox img{ position:absolute; left:0; top:-27.17%; width:100%; height:127.17%; display:block; }   /* 放大1.27倍、上移裁切多余白边 */
+.pay-email{ font-size:var(--pay-email-fs); color:var(--pm-blue); font-weight:600; line-height:1.7; }
+.pay-email-addr{ cursor:pointer; user-select:all; }
+.pay-email-addr:hover{ text-decoration:underline; }
+.pay-steps{ font-size:var(--pay-steps-fs); color:var(--pm-text-dim); line-height:1.8; }   /* 步骤说明为灰色 */
+.pay-alt{ font-size:var(--pay-alt-fs); color:var(--pm-text-dim); line-height:1.55; }
+.pay-path{ font-size:var(--pay-path-fs); color:var(--pm-text); }
+.pay-shot{ width:310px; height:407px; border:1px solid #5776ff; border-radius:18px; overflow:hidden; background:#fff; }   /* 设计稿 310×407、圆角18 */
+.pay-shot img{ width:100%; height:100%; object-fit:cover; display:block; }
+.pay-thanks{ font-size:var(--pay-thanks-fs); color:rgba(255,0,0,.86); }
+
+/* —— 暗色主题 —— */
+.theme-dark .pm-shell{ --pm-text:#e8ebf2; --pm-text-dim:#8a93a6; --pm-div:rgba(91,155,255,.18); }
+.theme-dark .pm-shell .modal{ background:#1f2230; border-color:#3a4a6a; }
+.theme-dark .pm-shell .modal-close-button{ color:#cfcfcf; }
+.theme-dark .pm-shell .pm-mask, .theme-dark .pay-mask{ background:linear-gradient(180deg, rgba(31,34,48,0) 0%, rgba(31,34,48,.96) 100%); }
+.theme-dark .pm-blue, .theme-dark .pm-sec-h, .theme-dark .pay-h, .theme-dark .pay-num{ color:#5b9bff; }
+.theme-dark .pm-old{ color:rgba(255,255,255,.35); }
+.theme-dark .pay-note, .theme-dark .pay-alt{ color:#7d8598; }
+.theme-dark .pay-email{ color:#5b9bff; }
+.theme-dark .pm-cap{ color:#8a93a6; }
+.theme-dark .pm-p-dim{ color:#8a93a6; }
+

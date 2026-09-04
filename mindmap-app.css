@@ -1,0 +1,1063 @@
+/* ════════════════════════════════════════════════════════════
+   🎨 视觉调参区（改完重载插件生效）
+   ════════════════════════════════════════════════════════════ */
+:root {
+  /* ---- 间距 ---- */
+  --gap-x: 80px;              /* 父子左右间距（列间距，越大越分开） */
+  --gap-y: 2px;              /* 兄弟上下间距（行间距，越大越分开）【对于二级目录，也就是蓝色的那个是 12。但对于二级之后的的那些是 2，这样改的，目的是因为之后那些不显示边框，所以可以近一点。】 */
+
+  /* ---- 空图使用提示（新建空白思维导图后，主节点下方三行操作提示；建第一个节点后自动消失）---- */
+  --hint-color: #000;         /* 提示文字颜色：默认纯黑（2026-09-01 定）。可改如 #333/#666 */
+  --hint-opacity: .45;        /* 提示文字明暗程度：1=实心不透明；调小→更淡（如 .3 半透明）。默认 .55 */
+  --hint-font-size: 12px;     /* 提示文字大小：调大→字更大。默认 12px */
+  --hint-line-height: 1.6;    /* 提示行间距：调大→三行之间更松；调小→更紧。默认 1.9 */
+  --hint-offset-y: 12px;      /* 提示相对主节点的垂直距离：正值→更靠下；负值→贴得更近（或重叠）。默认 18px */
+  --hint-width: 260px;        /* 提示固定宽度（2026-09-01）：绝对定位宽度不再被主节点卡片宽拖累——卡片很窄时文字不再被压成单字一行。调大→每行能容纳更多字；调小→更紧凑。默认 260px */
+
+  /* ---- 右上角「激活创新 Pro 版」提示按钮（2026-09-04）---- */
+  --pro-cta-top: 16px;        /* 距窗口顶部距离：调大→下移。默认 16px */
+  --pro-cta-right: 16px;      /* 距窗口右侧距离：调大→左移。默认 16px */
+  --pro-cta-bg: #ffffff;     /* 背景色：与弹窗激活按钮同色 */
+  --pro-cta-color:  #0070f5;   /* 文字颜色 */
+  --pro-cta-fs: 13px;         /* 字号：调大→字更大。默认 13px */
+  --pro-cta-px: 14px;         /* 左右内边距：调大→按钮更宽。默认 14px */
+  --pro-cta-py: 7px;          /* 上下内边距：调大→按钮更高。默认 7px */
+  --pro-cta-radius: 8px;      /* 圆角（默认沿用左下角按钮的 8px）。调大→更圆 */
+
+  /* ---- 提示框 tooltip ---- */
+  --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
+
+  /* ---- 定位按钮 ---- */
+  --locate-autobright-ms: 1500;  /* 主按钮点击推进后，暗态自动全亮的延时（毫秒）：1000=约1秒后背景变亮（心理暗示已选中）；调大→暗得更久、调小→更快亮。改完重载插件生效 */
+  --locate-fade-ms: 260ms;      /* 定位暗态↔亮态的渐变时长（纯 CSS）：调大→明暗过渡更慢更柔；调小→更快。重载方式：View → Force Reload */
+  --locate-hover-delay-ms: 320; /* 定位按钮【悬停多久才弹子菜单】（毫秒）：鼠标必须停在按钮上这么久，才弹出子菜单并预览定位；没停够就移开（扫过）= 完全不弹、画布也不动。调大→更不容易误触；调小→更灵敏；0=立刻弹（旧行为）。改完需【禁用再启用插件】生效（CSS 与 JS 都只在插件启用时读盘一次） */
+
+  /* ---- 链接前缀图标（globe / folder-closed / brackets / frame）---- */
+  --link-ico-y: -1px;          /* 链接图标上下微调：正值→图标下移，负值→上移；默认 0（与文字居中）。嫌图标高了/低了就改这个。改完重载插件生效 */
+  /* 节点链接图标（frame，侧边 Ribbon「新建思维导图」同款）专属：可单独调大小与粗细，不影响其它链接图标 */
+  --node-ico-size: 15px;      /* 节点链接图标大小：调大→更大，调小→更小。改完重载插件生效 */
+  --node-ico-stroke: 1;       /* 节点链接图标描边粗细：frame 为填充式图标，此值会给它叠加一圈可变粗细的轮廓（2=原样，>2 更粗，<2 更细）。改完重载插件生效 */
+
+  /* ---- 卡片本体 ---- */
+  --card-pad-top: 4px;        /* 卡片内边距·上（字离上边框距离）✅ 【上下拆开了：字体默认下沉，想让上下视觉均匀可把 --card-pad-bottom 调小 1px】 */
+  --card-pad-bottom: 2px;     /* 卡片内边距·下（字离下边框距离）✅ */
+  --card-pad-x: 12px;         /* 卡片内边距·左右 ✅ */
+  --card-pad-ln-top: 2px;     /* 普通(白底)节点内边距·上：无边框/无背景，可以近一点 ✅ */
+  --card-pad-ln-bottom: 1px;  /* 普通(白底)节点内边距·下 ✅ */
+  --card-radius: 6px;         /* 卡片圆角（越大越圆）✅ */
+  --card-font: 14px;          /* 卡片字号 */
+  --font-weight: 500;         /* 字体粗细（普通节点/标题；只能 100 的倍数：400细 500中 600半粗 700粗；450 无效会落到 500）✅ */
+  --font-weight-root: 600;    /* 根节点字体粗细（比普通再粗一档）✅ */
+  --bold-stroke: 0.2px;       /* **加粗** 的描边粗细：想加得很粗就把这个调大（0.5→1→2）；0=不描边。font-weight 到 1000 没变化是因为字体本身没有更粗的字重，描边是唯一能继续变粗的办法 ✅ */
+  --card-maxw: 480px;         /* 卡片最大宽度（超了自动换行）✅ */
+  --card-border-style: dashed; /* 卡片边框样式：solid 实线 / dashed 虚线 / none 无（2026-08-25 定，可自定义）✅ */
+  --minor-border-style: dashed; /* Minor 节点边框样式（默认 dashed，可改 solid/none）；2026-08-25 ✅ */
+
+  /* ---- 根节点（中央主题）---- */
+  --root-bg: #e8f0ff;         /* 根背景色✅ */
+  --root-color: #090909;      /* 根文字色✅ */
+  --root-font: 16px;          /* 根字号 ✅*/
+  --root-radius: 10px;        /* 根圆角✅ */
+
+  /* ---- 一级节点 ---- */
+  --lv1-bg: #f3f3f3;          /* 一级节点背景色✅ */
+
+  /* ---- 悬停 / 选中外框 ---- */
+  --hover-border: #b5cfff;    /* 悬停外框（一级/普通） */
+  --hover-border-root: #b5cfff; /* 根节点悬停外框 */
+  --sel-root: #0044ff;        /* 根节点选中外框 */
+  --sel-lv1: #0d72ff;         /* 一级节点选中外框 */
+  --sel-ln: #4263eb;          /* 普通节点选中外框 */
+  --sel-radius: 7px;         /* 选中节点圆角（2026-08-28；独立于 --card-radius，选中时视觉更鼓一点）✅ 改完重载插件生效 */
+
+  /* ---- Minor 节点（2026-08-25；常驻透明，hover/selected 才显示边框）---- */
+  --minor-border-style: dashed; /* 边框样式：solid/dashed/none/dotted（虚线密度是浏览器默认；如要自定义需改 border-image）✅ */
+  --minor-border-color: #ffffff; /* 常驻色（不可见，配 transparent 用） */
+  --minor-hover-color: #d4d4d4;  /* 悬停边框色 */
+  --minor-sel-color: #b9b9b9;    /* 选中边框色 */
+  --minor-text-color: #b9b9b9; /* Minor 节点文字色（默认同 --muted 灰）✅ */
+
+  /* ---- Minor 前缀图标（2026-08-26）：在 4 个里挑 1 个写在这里即可，改完重载插件生效 ----
+     可选：move-down（默认，向下箭头）| chevrons-down（双下chevron）| asterisk（星号 *）| squircle-dashed（虚线方块）
+     写 ICONS 里没有的名字会自动回退 move-down。想加新图标去 app.js 的 ICONS 加路径即可。 */
+  --minor-ico: squircle-dashed;
+  --minor-ico-raise: 1px;        /* Minor 前缀图标上移像素：正值=上提（如 3px），0=不挪；改完重载插件生效 */
+  --minor-ico-stroke: 2.9;      /* Minor 前缀图标描边粗细：调大=加粗（如 3 / 3.5），2≈默认；改完重载插件生效 */
+
+  /* ---- Now 前缀图标 + Now 节点视觉（2026-08-27）---- 改完重载插件生效 ----
+     --now-color：前缀图标颜色；--now-text-color：Now 节点整卡字体色；
+     --now-color-dim / --now-locate-border：定位态下「非当前淡紫」/「当前淡紫外框」；
+     --now-ico-size / --now-ico-stroke / --now-ico-raise：图标尺寸 / 描边粗细 / 上移像素 */
+  --now-color: #8B5CF6;        /* Now 主色（前缀图标 / 整卡字体 / 选中外框）*/
+  --now-text-color: #8B5CF6;    /* Now 节点整卡字体色 */
+  --now-color-dim: #C4B5FD;     /* 定位态「非当前」淡紫色（字 / 图标）*/
+  --now-locate-border: #C4B5FD; /* 定位态当前淡紫框 / Now 节点 hover 淡紫框 */
+  --now-ico-size: 12px;
+  --now-ico-stroke: 3;
+  --now-ico-raise: 0px;
+
+  /* ---- 文字 / 备注 / 链接 ---- */
+  --text: #1f2329;            /* 正文文字色 */
+  --muted: #8e959f;           /* 备注 / 完成置灰文字色 */
+  --note-font: 12px;          /* 备注字号 */
+  --note-gap: 6px;            /* 备注灰竖条到文字的距离 = 编辑备注时光标离竖条的位置（调大=光标往右） */
+  --link-color: #0d72ff;      /* 链接颜色 */
+
+  /* ---- 折叠按钮 ---- */
+  --fold-size: 17px;          /* 折叠钮直径 ✅（数字多时自动变长成胶囊，不会超出） */
+  --fold-border: #b5cfff;     /* 折叠圆钮边框色 */
+  --fold-color: #4263eb;      /* 折叠图标/数字色 */
+
+  /* ---- 框选矩形 ---- */
+  --sel-bg: #234ef9;          /* 框选矩形颜色（左键拖空白框选）✅ */
+  --sel-opacity: 0.07;         /* 框选矩形透明度（0=全透明，1=不透明）✅ */
+
+  /* ---- 颜色标记（红/黄）---- */
+  --color-red: #ffe3e3;       /* 红色标记背景 */
+  --color-yellow: #fff3cd;    /* 黄色标记背景 */
+  --color-now: #e6f0ff;       /* Now 标记背景（2026-08-27）*/
+
+  /* ---- 图片缩略图 ---- */
+  --img-maxw: 45px;           /* 缩略图最大宽 */
+  --img-maxh: 32px;           /* 缩略图最大高 */
+
+  /* ---- 贝塞尔曲线 ---- */
+  --edge: #c5cdd9;            /* 曲线颜色（品牌参考：普通颜色 5A82F5；拖拽颜色 ABC0F9）*/
+  --edge-width: 1.5px;        /* 曲线粗细 */
+  --edge-feishu: #5A82F5;     /* 飞书主题连线蓝（2026-08-31）：设置页主题选「飞书」时 --edge 会切到这个色。可自定义 */
+  /* ---- 飞书粉线版（2026-09-01 定）：连线+主节点背景+选中/hover/定位按钮 等蓝色系全部覆盖为粉。改完重载插件生效 ---- */
+  --edge-pink: #F06292;                /* 粉线版连线颜色：默认 #F06292（粉红 400） */
+  --root-bg-pink: #FFE4EC;             /* 粉线版主节点背景：默认 #FFE4EC（粉 50） */
+  --accent-pink: #E91E63;              /* 粉线版强调色（替换 --accent 蓝 #0d72ff）：默认 #E91E63（粉 500）*/
+  --sel-pink: #ffeef4;                 /* 粉线版工具栏 hover 背景色（替换 --sel 蓝 #d0e3ff）：默认 #FFB6D5（粉 200）*/
+  --sel-root-pink: #C2185B;            /* 粉线版根节点选中外框（替换 --sel-root #0044ff）：默认 #C2185B（粉 700）*/
+  --sel-lv1-pink: #E91E63;             /* 粉线版一级节点选中外框（替换 --sel-lv1 #0d72ff）：默认 #E91E63。 */
+  --sel-ln-pink: #E91E63;              /* 粉线版普通节点选中外框（替换 --sel-ln）：默认 #E91E63。 */
+  --hover-border-pink: #F8BBD0;        /* 粉线版 hover 外框（替换 --hover-border #b5cfff）：默认 #F8BBD0（粉 100）。 */
+  --hover-border-root-pink: #F8BBD0;   /* 粉线版根 hover 外框（替换 --hover-border-root #b5cfff）：默认 #F8BBD0。 */
+  --drag-edge-pink: 233, 30, 99;       /* 粉线版拖拽预测曲线颜色 RGB 分量（= #E91E63 粉 500，与 --accent-pink 一致）。配 --drag-edge-alpha-feishuPink 调透明度 */
+  --drag-edge-alpha-feishuPink: 0.35;  /* 粉线版预测曲线透明度（2026-09-01 定稿）。CSS 静态值，不放设置页 */
+  --drag-edge-alpha-feishu: 0.35;      /* 蓝线版预测曲线透明度（2026-09-01 定稿）。CSS 静态值，不放设置页 */
+  --drag-edge-alpha-feishuGray: 1;     /* 灰线版预测曲线透明度（定稿）。CSS 静态值，不放设置页 */
+  --l1-bg-pink: #FCE4EC;              /* 粉线版预测父节点底（替换 --l1-bg 蓝 #e8f0ff）：默认 #FCE4EC（粉 50，与 --root-bg-pink 同色系） */
+  --fold-border-pink: #F8BBD0;        /* 粉线版折叠钮边框（替换 --fold-border 蓝 #b5cfff）：默认 #F8BBD0（粉 100，与 --hover-border-pink 同色系） */
+  --fold-color-pink: #E91E63;         /* 粉线版折叠图标/数字色（替换 --fold-color 蓝 #4263eb）：默认 #E91E63（粉 500，与 --accent-pink 一致） */
+  /* 同级预测节点边框（粉线版）：复用粉线版选中边框色（RGB 分量），分根/一级/普通三级 */
+  --sib-predict-pink: 233, 30, 99;        /* 一级：= 粉线版选中边框 --sel-lv1-pink (#E91E63) */
+  --sib-predict-ln-pink: 233, 30, 99;     /* 普通：= 粉线版选中边框 --sel-ln-pink (#E91E63) */
+  --sib-predict-root-pink: 194, 24, 91;   /* 根：= 粉线版选中边框 --sel-root-pink (#C2185B) */
+
+  /* ---- 空格 + 拖拽平移（2026-08-31）---- */
+  /* #view-map.space-pan / .space-panning 的抓手光标规则在文件末尾「空格平移」一节 */
+
+  /* ---- 其它（一般不用动）---- */
+  --bg: #ffffff;              /* 画布底色（白底） */
+  --line: #c5cdd9;            /* 通用边框 / 分隔线 */
+  --sel: #e8eefe;             /* 菜单/按钮悬停底色 */
+  --note-bg: #f5f6f8;
+  /* 兼容旧名（内部引用，别改） */
+  --accent: #0d72ff;
+  --accent-deep: #0044ff;
+  --accent-l1: #4263eb;
+  --l1-bg: #e8f0ff;
+
+  /* ---- 定位调参（2026-08-25，改完重载插件生效）----
+     水平/垂直位置：0 = 最左/最上, 0.5 = 居中, 1 = 最右/最下 */
+  --locate-y: 0.4;            /* 垂直位置（选中/未选中通用，默认居中） */
+  --locate-selected-x: 0.4;   /* 选中节点·水平位置（默认居中） */
+  --locate-first-x: 0.4;     /* 未选中·第一层级(=最前面那个节点=当前根)水平位置（默认画面左 0.4） */
+  --locate-reset-zoom: 1;     /* 定位/下钻返回是否重置缩放：1=重置100%, 0=保留当前缩放。⚠️ 保留「定位后回到 100%」这个效果，不是 bug；想改就改这个值 */
+  --locate-reset-pan: 1;      /* 定位/下钻返回是否重置平移：1=重置, 0=保留 */
+
+  /* ---- 定位缓动调参（2026-08-30；像视频软件的缓动曲线，调控制点改"先缓后快再缓"的手感）---- */
+  --locate-anim-dur: 350;     /* 持续时间 ms，越大越慢 */
+  --locate-anim-x1: 0.42;     /* 贝塞尔控制点1 x（0~1，0.42=起步偏缓） */
+  --locate-anim-y1: 0;        /* 控制点1 y（0~1，0=起步上得快） */
+  --locate-anim-x2: 0.58;     /* 控制点2 x（0~1，0.58=收尾偏缓） */
+  --locate-anim-y2: 1;        /* 控制点2 y（0~1，1=收尾停得稳） */
+  /* 默认 (0.42,0)(0.58,1) = easeInOut：先缓→中快→后缓（自然手感）
+     想要"先快后缓"= (0,0)(0.58,1)；"先缓后快"= (0.42,0)(1,1)；"弹一下"= (0.68,-0.55)(0.27,1.55) */
+
+  /* ---- 拖拽落点调参（2026-08-27，改完重载插件生效）---- */
+  --auto-scroll-speed: 8;       /* 拖拽到边缘自动滚动速度（每帧像素，默认 8 慢；原 24 太快，嫌慢调大） */
+  --drop-child-range: 0.5;      /* 空白区向右「吸附为子节点」的范围倍数：相对 max(被拖卡宽, 目标卡宽)，
+                                 1=右缘外约一个卡宽内算子节点（默认，my-mind 手感）；调大=更容易变子节点（如 2），调小=更容易变兄弟（如 0.5） */
+  --drop-x-reach: 0.5;        /* 空白区目标选择的横向候选范围倍数：相对 max(目标卡宽, 120px)，
+                                 只影响「哪些卡片参与 Y 最近竞选」。调大=更远处的卡片也能成为目标（稀疏大图好用），调小=只认眼皮底下的（密集区更稳） */
+  --drop-ind-size: 3px;       /* 兄弟插入指示条粗细（2026-08-28；拖拽时目标节点上/下方出现的蓝色粗边线）：调大=更醒目，改完重载插件生效 ✅ */
+  --drag-edge: 13, 114, 255;  /* 拖拽预测曲线颜色 RGB 分量（2026-08-28；拖拽时从未来的父节点连到落点的那根线）。
+                                 改这里调颜色，配合 --drag-edge-alpha 调透明度。普通连线颜色见上面「贝塞尔曲线」区的 --edge */
+  --drag-edge-alpha: 1;       /* 拖拽预测曲线透明度：由各主题 --drag-edge-alpha-* 静态决定（不放设置页，调参直接改上面三个变量）✅ */
+
+  /* 同级预测节点边框（2026-09-01；拖拽预测为同级时，节点本体加一圈=选中边框色的浅/实边框；配 --sib-predict-alpha 调透明度）。
+     颜色复用选中边框色（RGB 分量），分根/一级/普通三级；粉线版见 --sib-predict-pink / -ln-pink / -root-pink */
+  --sib-predict: 13, 114, 255;        /* 一级节点：= 选中边框 --sel-lv1 (#0d72ff) */
+  --sib-predict-ln: 66, 99, 235;      /* 普通节点：= 选中边框 --sel-ln (#4263eb) */
+  --sib-predict-root: 0, 68, 255;     /* 根节点：= 选中边框 --sel-root (#0044ff) */
+  --sib-predict-alpha: 1;             /* 同级预测边框透明度：1=不透明（=选中边框实色），可改 0.3~1。改完重载插件生效 */
+  --sib-predict-on: 0;                /* 同级预测边框总开关：1=显示边框，0=不显示（=普通节点无边框态，因 .card 默认边框本就 transparent）。改完重载插件生效 */
+
+  /* ---- 面包屑调参（2026-08-25，改完重载插件生效）---- */
+  --crumb-color: #677b97;     /* 面包屑字色 + 分隔符 > 颜色（默认灰，和原 --muted 一致） */
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+#error-box { position: sticky; top: 0; z-index: 30; background: #c0392b; color: #fff; padding: 8px 16px; font-size: 13px; white-space: pre-wrap; }
+#error-box.hidden { display: none; }
+#warn-box {
+  position: sticky; top: 0; z-index: 20;
+  background: #fffbe6; color: #856404;
+  border-bottom: 1px solid #ffe58f;
+  padding: 10px 16px; font-size: 13px;
+  white-space: pre-wrap;
+}
+#warn-box.hidden { display: none; }
+
+/* ===== 视图容器 + 自定义滚动条 ===== */
+#view-map { height: 100vh; overflow: auto; padding: 0 0 80px 0; }
+#view-map.hidden, #view-md.hidden { display: none; }
+#view-md { height: 100vh; }
+#md-editor {
+  width: 100%; height: 100vh; border: none; outline: none; resize: none;
+  padding: 16px 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px; line-height: 1.7;
+  background: #fff; color: var(--text);
+}
+#view-map::-webkit-scrollbar { width: 10px; height: 10px; }
+#view-map::-webkit-scrollbar-track { background: transparent; }
+#view-map::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 5px; }
+#view-map::-webkit-scrollbar-thumb:hover { background: #b8bdc6; }
+#view-map { scrollbar-width: thin; scrollbar-color: #d0d4dc transparent; }
+
+/* ===== 垂直树 ===== */
+/* 画布：树永远在画布正中心（flex 居中），四周对称留白由 JS 动态撑开（updateCanvas），平移/滚动自由、不截断 */
+#canvas {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 100%; min-height: 100%;
+  /* 2026-09-01：触控板斜向滚动顿挫（先上再左）的修法——把滚动内容提升为 GPU 合成层，
+     斜向滚动同时动两轴，主线程重绘大画布会掉帧；合成层让滚动走合成器、丝滑 */
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* 四周小留白（内容距树边界；左右为 0：去掉左右白条，2026-08-21 定） */
+#tree { padding: 40px 0 120px 0; transform-origin: 0 0; }
+/* 面包屑（下钻导航）：贴合原生路径栏风格
+   - 白底、无上下线、灰字、分隔符 > 淡灰
+   - 每段可点，hover 单段轻微高亮；字略加粗（500，不夸张） */
+#crumb {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 15;
+  background: #ffffff;
+  padding: 5px 16px 5px 12px; font-size: 13px; color: var(--muted);
+  display: flex; align-items: center; flex-wrap: wrap;
+  padding-right: 48px; /* 给右上角刷新按钮留位（2026-08-21 定） */
+}
+#crumb.hidden { display: none; }
+#crumb a {
+  color: var(--crumb-color); cursor: pointer; text-decoration: none; font-weight: 500;
+  padding: 1px 5px; border-radius: 4px; line-height: 1.7; white-space: nowrap;
+}
+#crumb a:hover { background: rgba(0,0,0,.06); }
+#crumb .sep { color: var(--crumb-color); padding: 0 1px; user-select: none; }
+/* ===== 左工具栏刷新按钮（调试开关开时显示，等价 Cmd+R；2026-08-25 从右上角移入一级菜单） ===== */
+#btn-refresh.hidden { display: none; } /* 调试开关控制显隐（默认 hidden） */
+#btn-refresh .icon { color: #a855f7; } /* 调试开关开后出现的刷新钮图标固定紫色，一眼可辨（2026-08-25 定） */
+/* 父卡片垂直居中于子树（2026-08-21 定：单子节点≈水平直线；多子节点均匀上下散开，同飞书） */
+.node-row { display: flex; align-items: center; }
+
+/* ===== 卡片：三态视觉（Qwen Design 设计稿） =====
+   根(lv0)/一级(lv1)/普通(ln) 差异在背景；默认/悬停/选中差异在外框。
+   border 常驻透明，避免状态切换时布局跳动。 */
+.card {
+  position: relative;
+  flex: 0 0 auto; /* 不被 flex 压缩：否则树变宽时卡片被压到单字宽 → 文字竖排 */
+  width: max-content; max-width: var(--card-maxw); min-height: 32px;
+  padding: var(--card-pad-top) var(--card-pad-x) var(--card-pad-bottom);
+  cursor: pointer;
+  /* column 布局：标题/备注/图片/链接天然各占一行；左对齐（2026-08-21 定：不要居中） */
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  border: 1.5px solid transparent;   /* 常驻透明边框（防跳动）；普通节点原样（2026-08-25 改：仅 Minor 节点用虚线，见 .node-row.done） */
+  border-radius: var(--card-radius);
+  font-size: var(--card-font); line-height: 1.55;
+  color: var(--text);
+  font-weight: var(--font-weight); /* 粗细可调参（调参区 --font-weight） */
+  /* 定位暗态↔亮态 opacity 渐变（时长 --locate-fade-ms）；正常态选中是 border-color 变化，不在此列 → 瞬时无渐变 */
+  transition: opacity var(--locate-fade-ms);
+}
+/* 根节点（中央主题）：蓝底白字 */
+.card.lv0, .card.is-root {
+  background: var(--root-bg); color: var(--root-color);
+  font-size: var(--root-font); font-weight: var(--font-weight-root); /* 根粗细（调参区 --font-weight-root） */
+  border-radius: var(--root-radius);
+  padding: 10px 20px;
+}
+.card.lv0:hover, .card.is-root:hover { border-color: var(--hover-border-root); }
+.node-row.selected > .card.lv0, .node-row.selected > .card.is-root { border-color: var(--sel-root); }
+/* 一级节点：浅蓝底 */
+.card.lv1 { background: var(--lv1-bg); }
+.card.lv1:hover { border-color: var(--hover-border); }
+.node-row.selected > .card.lv1 { border-color: var(--sel-lv1); }
+/* 普通节点：无颜色属性 → 统一白底（2026-08-22 定：没属性就白底，贝塞尔曲线不透过卡片；红/黄/蓝保持原色） */
+.card.ln { background: #fff; padding: var(--card-pad-ln-top) var(--card-pad-x) var(--card-pad-ln-bottom); }
+.card.ln:hover { border-color: var(--hover-border); }
+.node-row.selected > .card.ln { border-color: var(--sel-ln); }
+/* 空图使用提示（2026-09-01 定）：相对主节点卡片绝对定位 → 拖动/缩放画布自动跟随；
+   文字换行用 \n + pre-line；参数全在顶部调参区 --hint-*（颜色/明暗/大小/行间距/垂直距离） */
+.start-hint {
+  position: absolute;
+  top: 100%;              /* 贴卡片下沿 */
+  left: 50%;
+  transform: translateX(-50%); /* 水平居中于主节点 */
+  /* 2026-09-01 定：给提示固定宽度，不再被主节点卡片宽限制（否则卡片窄时文字被压成单字一行）
+     max-width 90vw 防窄屏溢出；想更紧凑/更松调 --hint-width */
+  width: var(--hint-width);
+  max-width: 90vw;
+  margin-top: var(--hint-offset-y);
+  color: var(--hint-color);
+  opacity: var(--hint-opacity);
+  font-size: var(--hint-font-size);
+  line-height: var(--hint-line-height);
+  font-weight: normal;
+  white-space: pre-line; text-align: center;
+  pointer-events: none; user-select: none;
+}
+/* 选中/hover 圆角统一走 --sel-radius（2026-08-28 定：两态曲率要一致；调参区可调，不设回落卡片圆角） */
+.node-row.selected > .card, .card:hover { border-radius: var(--sel-radius, var(--card-radius)); }
+/* 多选视觉统一用 .selected 外框（2026-08-28 定：框选后不要额外的淡蓝 outline 环）；
+   .multi-selected 类仅作逻辑标记保留，不再有独立样式 */
+
+/* 拖拽排序指示（功能保留；上/下高亮 3px→6px 加高，2026-08-22 定：方便看清拖到上还是下） */
+.card.drag-over { background: var(--l1-bg); }
+.card.drag-before { box-shadow: 0 calc(-1 * var(--drop-ind-size, 6px)) 0 0 var(--accent); }
+.card.drag-after { box-shadow: 0 var(--drop-ind-size, 6px) 0 0 var(--accent); }
+/* 同级预测节点（drag-before/drag-after）：复用选中边框色，配 --sib-predict-alpha 调透明度；总开关 --sib-predict-on（0=关，1=开）与上方/下方插入阴影条呼应（2026-09-01） */
+.card.drag-before, .card.drag-after { border-color: rgba(var(--sib-predict), calc(var(--sib-predict-alpha) * var(--sib-predict-on))); }
+.card.drag-before.ln, .card.drag-after.ln { border-color: rgba(var(--sib-predict-ln), calc(var(--sib-predict-alpha) * var(--sib-predict-on))); }
+.card.drag-before.is-root, .card.drag-after.is-root,
+.card.drag-before.lv0, .card.drag-after.lv0 { border-color: rgba(var(--sib-predict-root), calc(var(--sib-predict-alpha) * var(--sib-predict-on))); }
+
+/* ===== Minor 节点（v2：走 minor:1 注释，置灰由 .node-row.done 负责；常驻透明边框，hover/selected 才显示虚线）===== */
+.md-del { text-decoration: line-through; } /* v2：~~x~~ 是真正的删除线 */
+em { font-style: italic; } /* v2：_x_ 是标准斜体 */
+/* v2 音视频嵌入（![[文件名]] 附属行 → 就地播放器） */
+.card .embeds { flex: 0 1 auto; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.card .embed-media { max-width: 260px; max-height: 160px; border-radius: 6px; border: 1px solid var(--line); background: #000; }
+.card audio.embed-media { width: 240px; height: 32px; background: transparent; }
+.card .embed-media.img-missing { min-height: 24px; background: #fafbfc; }
+.node-row.done .card .title,
+.node-row.done .card .note,
+.node-row.done .card .inline-link,
+.node-row.done .card .inline-wiki,
+.node-row.done .card .link { color: var(--minor-text-color, var(--muted)); }
+/* 常驻虚线但 transparent（不选不显示）；hover/selected 改色显示 */
+.node-row.done > .card { border: 1.5px var(--minor-border-style, dashed) var(--minor-border-color, transparent) !important; }
+.node-row.done > .card:hover { border-color: var(--minor-hover-color, var(--minor-border-color, var(--muted))) !important; }
+.node-row.done.selected > .card { border-color: var(--minor-sel-color, var(--minor-border-color, var(--muted))) !important; }
+/* Minor 节点自身标记：标题前加置灰小箭头，区别于"被祖先 Minor 连坐置灰"的子节点（2026-08-26） */
+.card .minor-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; color: var(--minor-text-color); flex: none;
+  position: relative; top: calc(var(--minor-ico-raise, 0px) * -1); /* 上移微调旋钮（正值上提） */
+}
+.card .title .minor-ico { margin-right: 3px; vertical-align: -2px; }
+.card .minor-ico svg { width: 12px; height: 12px; display: block; stroke-width: var(--minor-ico-stroke, 2); }
+/* 节点背景色（行尾注释 color:red/yellow；2026-08-21 定） */
+.card.color-red { background: var(--color-red) !important; color: var(--text) !important; }
+.card.color-yellow { background: var(--color-yellow) !important; color: var(--text) !important; }
+/* Now 标记（2026-08-27）：节点本身不变色，仅标题前加 now-ico 前缀；选中 Now 后整卡字体变紫（区别于 Minor 置灰）；尺寸/描边/上移见 CSS 顶部旋钮 */
+.card .now-ico { display: inline-flex; color: var(--now-color, #8B5CF6); vertical-align: -2px; position: relative; top: calc(var(--now-ico-raise, 0px) * -1); }
+.card .title .now-ico { margin-right: 3px; }
+.card .now-ico svg { width: var(--now-ico-size, 13px); height: var(--now-ico-size, 13px); display: block; stroke-width: var(--now-ico-stroke, 2); }
+/* Now 节点：选中后整卡字体（含链接标题）变紫 */
+.card.now { color: var(--now-text-color, #8B5CF6); }
+.card.now .link-main { color: var(--now-text-color, #8B5CF6); }
+/* Now 节点悬浮：淡紫小框（区别于普通节点蓝框，避免与链接蓝混淆）*/
+.card.now:hover { border-color: var(--now-locate-border, #C4B5FD); }
+/* Now 节点选中：紫色外框（区分普通节点蓝框；2026-08-27 定：保留紫色外框，仅去掉紫色阴影圈）*/
+.node-row.selected > .card.now { border-color: var(--now-color, #8B5CF6) !important; }
+/* 定位态（悬浮定位按钮）：当前定位=紫字 + 淡紫外框（类 hover 感）；非当前=淡紫字 + 淡紫图标 */
+.card.now.now-current { border-radius: 8px; } /* 2026-08-30 定：去掉淡紫底（只保留圆角，无背景色） */
+.card.now.now-unlocated,
+.card.now.now-unlocated .title,
+.card.now.now-unlocated .note,
+.card.now.now-unlocated .link-main { color: var(--now-color-dim, #C4B5FD); }
+.card.now.now-unlocated .now-ico { color: var(--now-color-dim, #C4B5FD); }
+
+/* ===== 节点快捷菜单（点击节点时在视图底部居中显示：加粗/红/黄/备注/完成） ===== */
+.node-menu {
+  position: fixed; z-index: 70; display: flex; gap: 2px;
+  left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: #fff; border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  padding: 4px;
+}
+.node-menu.hidden { display: none; }
+.node-menu button {
+  border: none; background: transparent; color: var(--text);
+  padding: 5px 12px; font-size: 12px; cursor: pointer; border-radius: 5px;
+}
+.node-menu button:hover { background: var(--sel); }
+
+.card .title { font-size: var(--card-font); font-weight: inherit; outline: none; flex: 1 1 auto; word-break: break-word; white-space: pre-line; } /* pre-line：节点内换行 \n 渲染成换行（2026-08-30） */
+/* 编辑态（标题/备注）：去掉背景框/焦点圈，正常编辑（2026-08-21 定） */
+[contenteditable="true"] { background: transparent; outline: none; }
+/* 编辑态整行格式效果（2026-08-22 机制改造：格式是属性，编辑框纯文字 + CSS 显示效果，内容里没有符号） */
+.title.editing-bold { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor; }
+.title.editing-strike { text-decoration: line-through; }
+/* **加粗** 渲染：真粗体 + 描边继续加粗（调参区 --bold-stroke；font-weight 到 700 就是字体极限，描边可无限加粗） */
+strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor; }
+/* 备注：灰竖条 + 灰字（设计稿） */
+.card .note {
+  display: flex; align-items: center; gap: var(--note-gap); /* 竖条↔文字间距 = 光标位置（调参区 --note-gap） */
+  margin-top: 6px;
+  font-size: var(--note-font); color: var(--muted); line-height: 1.4;
+  /* flex: 0 1 auto：按内容宽，不再强制 100% 撑满 card（2026-08-21 修：原 100% 导致备注/图片/链接行右边一大块空白"多出一块"） */
+}
+.card .note::before {
+  /* 灰竖条长度跟随备注高度（2026-08-31 定：备注支持换行后小方块也要跟着长）；
+     align-self: stretch 让伪元素沿 .note 交叉轴撑满，与多行 pre-line 文字区高度一致；去掉写死的 12px。 */
+  content: ""; width: 3px; align-self: stretch;
+  border-radius: 1.5px;
+  background: var(--line); flex: none;
+}
+.card .note > div { flex: 1 1 auto; min-width: 1ch; white-space: pre-line; } /* 备注文字区；min-width 1ch：空备注时光标也稳定在竖线右边（2026-08-22 修"光标跑到竖线左边"）；pre-line：备注内换行（2026-08-30） */
+/* 图片缩略图 + 双链（真实图片，保留功能） */
+.imgs {
+  flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: 4px;
+  margin-top: 6px;
+}
+.card .img {
+  max-width: var(--img-maxw); max-height: var(--img-maxh); object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line); background: #fafbfc;
+  cursor: pointer;
+}
+.card .img.selected { outline: 2px solid var(--accent); }
+.card .img.img-missing {
+  min-height: 24px; text-align: center;
+  color: #c0392b; font-size: 11px; line-height: 24px;
+}
+.card .img.img-missing::before { content: var(--img-missing-text, '[图片缺失]'); }
+
+/* 大图预览（双击图片打开） */
+.img-preview {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-preview.hidden { display: none; }
+.img-preview-box { position: relative; max-width: 90vw; max-height: 90vh; }
+.img-preview-img {
+  max-width: 90vw; max-height: 90vh; object-fit: contain;
+  border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,.4);
+}
+.img-preview-close {
+  position: absolute; top: -40px; right: -4px;
+  width: 30px; height: 30px; line-height: 30px; text-align: center;
+  font-size: 24px; color: #fff; cursor: pointer; user-select: none;
+  background: rgba(0,0,0,.45); border-radius: 50%;
+}
+.img-preview-close:hover { background: rgba(0,0,0,.7); }
+.img-preview-nav {
+  position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px; color: #fff; user-select: none;
+}
+.img-preview-nav .img-preview-prev, .img-preview-nav .img-preview-next {
+  width: 34px; height: 34px; line-height: 32px; text-align: center; font-size: 26px;
+  cursor: pointer; border-radius: 50%; background: rgba(0,0,0,.45);
+}
+.img-preview-nav .img-preview-prev:hover, .img-preview-nav .img-preview-next:hover { background: rgba(0,0,0,.7); }
+.img-preview-nav .img-preview-count { min-width: 46px; text-align: center; font-size: 13px; }
+
+.card .link {
+  font-size: 12px; color: var(--link-color); cursor: pointer;
+  margin-top: 3px; flex: 0 1 auto;
+  text-decoration: underline; text-decoration-color: rgba(13,114,255,.35);
+}
+.card .link:hover { color: var(--sel-lv1); }
+/* 标题/备注里内嵌的链接（本文件节点 [[#pid]] / wikilink [[笔记名]]） */
+.inline-link, .inline-wiki {
+  color: var(--link-color); cursor: pointer;
+  text-decoration: underline; text-decoration-color: rgba(13,114,255,.35);
+}
+.inline-link:hover, .inline-wiki:hover { color: var(--sel-lv1); }
+/* 内联 URL 链接 / 内联文件链接，与节点链接同观感 */
+.inline-url { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(13,114,255,.35); }
+.inline-url:hover { color: var(--sel-lv1); }
+.inline-file { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(13,114,255,.35); }
+.inline-file:hover { color: var(--sel-lv1); }
+/* 纯链接节点（无标题）：链接作为主内容显示；链接前缀图标由 JS 注入 .link-ico（lucide，按类型区分） */
+.card .link-main { font-size: 14px; flex: 1 1 auto; margin-top: 0; text-decoration: none; }
+/* 链接前缀图标（lucide）：节点链接/网页/文件/双链 各不相同，统一由 JS 注入 <span class="link-ico"><svg>…</span> */
+.link-ico { display: inline-flex; align-items: center; vertical-align: middle; position: relative; top: var(--link-ico-y); margin-right: 3px; opacity: .72; flex: none; }
+.link-ico svg { width: 13px; height: 13px; display: block; }
+/* 节点链接图标（frame）专属覆盖：独立大小；frame 为填充式，额外叠一圈可变粗细的 currentColor 轮廓，使 --node-ico-stroke 真正生效（CSS 描边覆盖其 SVG 内 stroke="none" 属性） */
+.link-ico.node-ico svg { width: var(--node-ico-size, 13px); height: var(--node-ico-size, 13px); stroke: currentColor; stroke-width: var(--node-ico-stroke, 2); }
+/* 链接节点加粗（节点级 bold 字段；文本节点加粗走 ** 包裹，此处兼容链接型） */
+.card .link.bold { font-weight: 700; }
+
+/* 框选矩形（设计稿：淡蓝半透明，无边框；透明度可调参 --sel-opacity） */
+#marquee {
+  position: fixed; z-index: 50; display: none;
+  background: var(--sel-bg); opacity: var(--sel-opacity);
+  pointer-events: none;
+}
+
+/* 右键菜单（复制链接） */
+.ctx-menu {
+  position: fixed; z-index: 60;
+  background: #fff; border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  padding: 4px; min-width: 110px;
+}
+.ctx-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; border-radius: 4px; white-space: nowrap; position: relative; }
+.ctx-ic { display: inline-flex; width: 16px; height: 16px; flex: none; opacity: .9; }
+.ctx-ic svg { width: 16px; height: 16px; }
+.ctx-item:hover { background: var(--sel); }
+.ctx-sep { height: 1px; background: var(--line); margin: 3px 0; }
+
+/* ===== 折叠按钮（白圆钮/胶囊，默认隐藏、hover 显示；数字多时自动变长） =====
+   热区方案（2026-08-21 定）：卡片右侧延伸 26px 的透明热区（::after），
+   鼠标在「卡片 + 热区 + 按钮」内按钮都显示 → 从节点滑向按钮不会中途消失，点得到 */
+.fold-tag {
+  position: absolute; top: 50%; left: 100%;
+  transform: translate(4px, -50%);
+  display: none; align-items: center; justify-content: center;
+  min-width: var(--fold-size); height: var(--fold-size); border-radius: 999px;
+  padding: 0 4px; /* 数字多时宽度自动撑开 */
+  background: #fff;
+  border: 1.5px solid var(--fold-border);
+  color: var(--fold-color);
+  font-size: 10px; line-height: 1;
+  cursor: pointer; z-index: 2;
+}
+.card:hover .fold-tag, .fold-tag:hover, .fold-tag.always { display: flex; }
+/* 折叠态（always，显示数字徽章）常驻显示；展开态（‹ 箭头）仅 hover 触发（2026-08-21 定双形态） */
+/* 卡片右侧热区：鼠标在节点右边 26px 内也算 hover（覆盖按钮位置，按钮不消失） */
+.card::after {
+  content: ""; position: absolute; left: 100%; top: -10px;
+  width: 26px; height: calc(100% + 20px);
+}
+.fold-tag:hover { border-color: var(--fold-color); }
+.fold-arrow { font-size: 12px; line-height: 1; }
+.fold-badge { font-size: 10px; line-height: 1; font-weight: 600; }
+
+/* 贝塞尔连线层（2026-08-21 定：替换竖线+横线） */
+#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; transform: translateZ(0); } /* 2026-09-01：连线层提合成层，减少斜向滚动重绘 */
+#edges path { fill: none; stroke: var(--edge); stroke-width: var(--edge-width); }
+/* 拖拽预测曲线（2026-08-28，飞书式）：颜色可调（调参区 --drag-edge），与拔插高亮（--accent）同色系 */
+#drag-edge { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+#drag-edge path { fill: none; stroke: rgba(var(--drag-edge, 13,114,255), var(--drag-edge-alpha, 1)); stroke-width: var(--edge-width); }
+/* 子节点容器：水平间距 = var(--gap-x) */
+.children { margin-left: var(--gap-x); flex: none; }
+/* 同级节点垂直间距 = var(--gap-y)（只在兄弟之间；第一个子不加，保证单子节点时父居中对齐 → 水平直线） */
+.children .node-row + .node-row { margin-top: var(--gap-y); }
+/* 一级节点（蓝底）兄弟间距 12（2026-08-21 定：比深层的 2 更开，因为它有背景边框） */
+.children .node-row.row-lv1 + .node-row.row-lv1 { margin-top: 12px; }
+
+/* ===== 左侧工具栏（飞书文档一致：左下垂直） ===== */
+#left-toolbar {
+  position: fixed; left: 16px; bottom: 16px;
+  z-index: 85; /* 2026-08-30：高于 .toast-below(80)/.node-menu(70)/.ctx-menu(60)，tooltip 不再被白底 toast 盖 */
+  display: flex; flex-direction: column; gap: 4px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.10);
+}
+.tb {
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; background: transparent; color: var(--text);
+  cursor: pointer; padding: 0;
+  position: relative;
+}
+.tb:hover:not(:disabled) { background: var(--sel); }
+/* ===== 右上角「激活创新 Pro 版」提示按钮（2026-09-04）=====
+   只在「未购买」时显示：试用中 trial / 试用结束未激活 / 模块异常 none → 显示；已激活 license → 隐藏。
+   （注意：这里不能用 state.isPro 判断！isPro=功能是否可用，试用期内 isPro=true 但并未购买，
+     本按钮是营销提示，条件是「有没有买 license」，所以看 licenseSource。见 mindmap-app.js init / licenseUpdate）
+   基础样式复用左下角 .tb（圆角/flex居中/cursor/position），这里只覆盖尺寸、配色与定位。 */
+#pro-cta {
+  position: fixed;
+  top: var(--pro-cta-top); right: var(--pro-cta-right);
+  z-index: 86;                 /* 高于 #left-toolbar(85)，不被左下工具栏遮 */
+  width: auto; height: auto;   /* 覆盖 .tb 的 34x34 固定尺寸，改成由 padding 撑开 */
+  padding: var(--pro-cta-py) var(--pro-cta-px);
+  border-radius: var(--pro-cta-radius);
+  background: var(--pro-cta-bg);
+  color: var(--pro-cta-color);
+  font-size: var(--pro-cta-fs);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+  transition: filter .12s ease;
+}
+#pro-cta:hover { filter: brightness(1.08); background: var(--pro-cta-bg); } /* 覆盖 .tb:hover 的选中色，保持自身蓝底 */
+#pro-cta:active { filter: brightness(.94); }
+#pro-cta.hidden { display: none; }
+
+/* 2026-08-30：不用 opacity（会把 hover tooltip 的黑框一起调暗成灰框，所有 tooltip 统一小黑框）
+   → 只把图标颜色调灰（SVG 走 currentColor），禁用态照样看得出，但 tooltip 保持纯黑 */
+.tb:disabled, .tb.disabled { color: #b0b4ba; cursor: default; }
+.tb.disabled:hover, .tb:disabled:hover { background: transparent; }
+.tb.hidden { display: none; }
+.tb .icon { display: block; pointer-events: none; }
+/* 隐藏完成激活态：eye-off 蓝色表示当前为隐藏状态 */
+.tb.active-hide { color: var(--accent); }
+/* 只显示「当前关注 Now」激活态：sideOn 图标已在 JS 内联紫主灰火花；按钮文字色转紫（Now 紫 #8B5CF6，区别于 hide-done 的 accent） */
+.tb.now-on { color: #8B5CF6; }
+/* 默认路径按钮：路径已变 = 蓝色高亮提示；置灰 = 当前已是默认 */
+.tb.dp-changed { color: var(--accent); }
+/* 默认路径按钮：与 .tb 一致，hover 时也显示蓝色背景（即使处于「已是最默认路径」的置灰态） */
+#btn-default-path:hover { background: var(--sel); }
+/* 默认路径按钮容器 + 悬浮子菜单（hover 主按钮区域浮出，鼠标可移过去点） */
+.dp-wrap { position: relative; }
+.dp-menu {
+  position: absolute; left: 100%; top: auto; bottom: -1px; margin-left: 6px;
+  z-index: 41; display: none;
+  /* 与「选中节点小菜单」(.node-menu) 一致的浅色主题样式，避免突兀变黑 */
+  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; /* 2026-08-28：去下方空白感（原 padding 6px 较大）+ 减 padding */
+  flex-direction: column; gap: 2px; min-width: 168px;
+  /* 2026-08-28：保留 box-shadow 与「更多」子菜单一致，便于看出「子子菜单」层级关系 */
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+  max-height: calc(100vh - 12px); overflow-y: auto; /* 防底部截断兜底 */
+}
+/* 2026-08-30：孙菜单（路径链接 hover 浮出）被 portal 到 body 用 fixed 定位，z-index 必须高于 #left-toolbar(85)，
+   否则父菜单「更多」（在 left-toolbar 内、整体 85）会压在孙菜单(41)上 → 层叠关系反了（子盖孙）。
+   取 86：高于左工具栏 85，低于 tooltip 90，不抢提示框。 */
+#default-path-menu { z-index: 86; }
+.dp-menu::before { /* 透明桥接：填补按钮与菜单间空隙，防止鼠标移动时菜单消失 */
+  content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
+}
+.dp-menu.open { display: flex; }
+.dp-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border: none; background: transparent; color: var(--text);
+  font-size: 13px; border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit;
+}
+.dp-item:hover:not(:disabled) { background: var(--sel); }
+.dp-item:disabled { color: #b0b4ba; cursor: default; }
+.dp-item:disabled .dp-ic { opacity: .4; }
+/* 2026-08-28：子子菜单（路径项）图标保持黑色/置灰，不变蓝（蓝色已改到「更多」里的「链接」按钮） */
+/* 2026-08-28：更多菜单里「链接」按钮——当前路径 != 默认路径（可操作）时图标变蓝；置灰时随 .mm:disabled 变灰 */
+.mm[data-act="default-path"]:not(:disabled) svg { stroke: var(--accent); }
+.dp-ic { display: inline-flex; width: 16px; height: 16px; }
+.dp-ic svg { width: 16px; height: 16px; }
+/* hover 子菜单时，隐藏主按钮的 tooltip，避免两者文字重叠（之前「乱码」根因） */
+/* 仅作用于真正带子菜单的容器（dp/more/now-locate）；fold 按钮无 hover 子菜单（2026-09-01 子菜单已删），tooltip 正常显示 */
+#dp-wrap:hover .tb[data-tip]::after,
+#dp-wrap:hover .tb[data-tip]::before,
+#more-wrap:hover .tb[data-tip]::after,
+#more-wrap:hover .tb[data-tip]::before,
+#now-locate-wrap:hover .tb[data-tip]::after,
+#now-locate-wrap:hover .tb[data-tip]::before { display: none; }
+
+/* 定位按钮 hover 预测高亮（2026-08-30 重定）：
+   预测项 → sel 外框（含 Now 紫）+ 正常色；其它所有节点（字+图标）全暗 */
+/* 定位态开关（2026-08-30 修 bug：transition 不能放在仅定位时才匹配的选择器上，否则与属性变化同帧、不触发过渡；
+   故 opacity 过渡放回 .card 基础，此处用 body.locate-hovering 在定位时临时开启 border-color 过渡，还原预测节点高亮渐变） */
+body.locate-hovering .card { transition: opacity var(--locate-fade-ms), border-color var(--locate-fade-ms); }
+body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
+.card.locate-predict { border-color: var(--sel-ln) !important; }
+.card.locate-predict.lv0, .card.locate-predict.is-root { border-color: var(--sel-root) !important; }
+.card.locate-predict.lv1 { border-color: var(--sel-lv1) !important; }
+.card.locate-predict.now { border-color: var(--now-color) !important; }
+
+/* 节点级加粗渲染（2026-08-30 修 bug：点加粗按钮设 node.bold=true 但标题被剥 **，原靠 <strong> 渲染不到 → 补 .bold 类规则） */
+.node-row.bold > .card .title { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor; }
+
+/* ===== 三个点菜单（「更多」hover 浮出，白色设计与 slash 子菜单一致；下方 nodeMenu 共享逻辑） ===== */
+#more-menu {
+  position: absolute; left: 100%; top: auto; bottom: -1px; margin-left: 6px;
+  z-index: 41;
+  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px;
+  display: none; flex-direction: column; gap: 2px;
+  min-width: 180px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+  max-height: calc(100vh - 12px); overflow-y: auto;
+}
+#more-menu.open { display: flex; }
+#more-menu::before { /* 透明桥接：防鼠标从 more 按钮移向菜单时消失 */
+  content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
+}
+/* 2026-08-28：更多菜单里的「链接」按钮 hover 浮出路径子菜单（复用 dp-menu 样式；子菜单已 portal 到 body，不再依赖此处定位）*/
+.mm-link-wrap { position: relative; }
+.mm-link-wrap > .mm { width: 100%; } /* 2026-08-28：链接按钮不是 more-menu 的直接 flex 子项，需 width:100% 让 hover 蓝色撑满整行 */
+#more-wrap:hover .tb[data-tip]::after,
+#more-wrap:hover .tb[data-tip]::before { display: none; }
+
+/* ===== 折叠按钮（2026-09-01 旧 hover 子菜单已删，只剩左下按钮本体 + 右下状态栏层级条）===== */
+#btn-fold .icon { transform: rotate(90deg); }   /* 2026-08-26：折叠图标转 90°，表左右折叠概念（导图横向收展）*/
+/* ===== 定位按钮悬浮：多 Now 时浮出 1/2/3 菜单（2026-08-27）===== */
+#now-locate-wrap { position: relative; }
+#now-locate-wrap::after {                 /* 透明过桥区：覆盖按钮右缘到菜单左缘的 gap，鼠标从按钮移到菜单途中仍算在 wrap 内 */
+  content: ''; position: absolute; left: 100%; top: -6px; bottom: -6px; width: 44px;
+  background: transparent; pointer-events: auto;
+}
+:root { --now-menu-y: -8px; /* 定位按钮子菜单上下微调（负=上移），嫌偏下就改大负数 */ }
+#now-menu {
+  position: absolute; left: 100%; top: 0; bottom: auto; margin-left: 6px;
+  transform: translateY(var(--now-menu-y)); /* 2026-08-30 定：子菜单偏下，默认上移 8px，可自调 */
+  z-index: 86; /* 高于左 toolbar 85，不被遮 */
+  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px;
+  display: none; flex-direction: row; flex-wrap: nowrap; gap: 4px;
+  width: max-content;
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+}
+#now-menu.open { display: flex; }
+#now-menu::before { content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent; }
+.now-num {
+  min-width: 28px; height: 28px; padding: 0 6px;
+  border: none; background: transparent; color: var(--text);
+  font-size: 13px; border-radius: 6px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.now-num:hover { background: var(--sel); font-weight: 700; }  /* 悬浮项加粗；颜色按类型走下方规则 */
+.now-num.bold { font-weight: 700; }
+/* 非 Now 项（主节点 / 选中节点）：蓝 */
+.now-num:hover:not(.is-now), .now-num.bold:not(.is-now) { color: var(--accent); }
+/* Now 项（Now1/Now2…）：紫 */
+.now-num:hover.is-now, .now-num.bold.is-now { color: #8B5CF6; }
+/* 子菜单里有 hover 时，非 hover 的当前选中项恢复普通黑（只高亮真正悬浮的那一项） */
+#now-menu:has(.now-num:hover) .now-num.bold:not(:hover) { font-weight: 400; color: var(--text); }
+/* 悬停高亮第 N 层：复刻 hover 浅色外框 */
+.card.hl-level { border-color: var(--hover-border) !important; }
+.card.lv0.hl-level, .card.is-root.hl-level { border-color: var(--hover-border-root) !important; }
+.mm {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border: none; background: transparent; color: var(--text);
+  font-size: 13px; border-radius: 6px; cursor: pointer; text-align: left;
+  font-family: inherit;
+}
+.mm:hover:not(:disabled) { background: var(--sel); }
+.mm:disabled { opacity: .4; cursor: default; }
+.mm .icon { flex: none; opacity: .9; }
+.mm-label { flex: 1; }
+.mm .kbd { font-size: 11px; opacity: .55; margin-left: 8px; }
+.mm-sep { height: 1px; background: var(--line); margin: 4px 4px; }
+.mm-hidden { display: none !important; }
+
+/* 按钮 tooltip 浮动提示（按 data-side 方向；用户 2026-08-21：底部 toast 改向上） */
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; background: #1f2329; color: #fff;
+  padding: 5px 10px; border-radius: 6px;
+  font-size: 12px; white-space: nowrap; z-index: 90;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+[data-tip]:hover::before {
+  content: ""; position: absolute; border: 5px solid transparent; z-index: 90;
+  pointer-events: none;
+}
+[data-side="right"]:hover::after { left: 100%; top: 50%; transform: translate(var(--tip-offset-x), -50%); }
+[data-side="right"]:hover::before { left: 100%; top: 50%; transform: translate(calc(var(--tip-offset-x) - 5px), -50%); border-right-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 0; }
+[data-side="top"]:hover::after { bottom: 100%; left: 50%; transform: translate(-50%, -8px); }
+[data-side="top"]:hover::before { bottom: 100%; left: 50%; transform: translate(-50%, 0); border-top-color: #1f2329; border-bottom: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+[data-side="left"]:hover::after { right: 100%; top: 50%; transform: translate(-8px, -50%); }
+[data-side="left"]:hover::before { right: 100%; top: 50%; transform: translate(-2px, -50%); border-left-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 0; }
+
+/* ===== 下方节点工具栏（飞书式：黑底椭圆+圆角统一和左 toolbar 一致 10px，选中节点时浮动显示） ===== */
+.node-menu {
+  position: fixed; z-index: 70;
+  left: 50%; bottom: 32px; transform: translateX(-50%);
+  background: #1f2329; color: #fff;
+  border-radius: 10px; padding: 6px;
+  display: flex; gap: 2px; align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.30);
+}
+.node-menu.hidden { display: none; }
+.node-menu button {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: transparent; border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+  opacity: .85;
+  position: relative;
+}
+.node-menu button:hover { opacity: 1; background: #2c3137; }
+.node-menu button.on { color: var(--accent); opacity: 1; }
+.node-menu button.on .icon { stroke: currentColor; }
+/* 红色/黄色（2026-08-21 定：默认空心外框，选中实心） */
+.node-menu button.color-red .icon { fill: none; stroke: #ff4d4f; stroke-width: 2; }
+.node-menu button.color-yellow .icon { fill: none; stroke: #faad14; stroke-width: 2; }
+.node-menu button.color-red.on .icon { fill: #ff4d4f; stroke: #ff4d4f; }
+.node-menu button.color-yellow.on .icon { fill: #faad14; stroke: #faad14; }
+
+/* 底部白色 toast（位于 node-menu 上方，样式与黑色菜单一致但为白底；2026-08-26 新增） */
+.toast-below {
+  position: fixed; z-index: 80;
+  left: 50%; bottom: 92px; transform: translateX(-50%);
+  background: #fff; color: #1f2329;
+  border-radius: 10px; padding: 9px 16px;
+  display: none; align-items: center; gap: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  font-size: 13px; max-width: 80%;
+}
+.toast-below.show { display: flex; }
+.toast-below-msg { line-height: 1.4; }
+.toast-below-action { cursor: pointer; color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.toast-below-action:hover { text-decoration: underline; }
+
+/* ════════════════════════════════════════════════════════════
+   历史记录页（2026-08-27）：复用编辑视图（#view-map 原地渲染快照，保留连线/缩放/滚动）+ 右侧时间线侧栏
+   ════════════════════════════════════════════════════════════ */
+#history-view {
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: 45;
+  display: block;
+}
+#history-view.hidden { display: none; }
+/* 右侧栏 */
+#history-side {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 300px; box-sizing: border-box;
+  border-left: 1px solid var(--border, #e6e8eb);
+  background: #fafbfc;
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 16px rgba(0,0,0,.06);
+}
+#history-side-head {
+  padding: 12px; border-bottom: 1px solid var(--border, #e6e8eb);
+}
+#history-toolbar { display: flex; flex-direction: column; gap: 6px; }
+.hb-row { display: flex; gap: 6px; }
+.hb-row .hb { flex: 1; justify-content: center; }
+.hb {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--border, #e6e8eb); background: #fff;
+  border-radius: 6px; padding: 5px 9px; cursor: pointer;
+  font-size: 12px; color: var(--text, #1f2329);
+}
+.hb:hover { background: #f0f2f5; }
+.hb .icon { width: 15px; height: 15px; }
+/* 「只看差异」未选中=和普通按钮一样灰色；选中=红色边框 + 红字（不填充） */
+.hb.on {
+  color: #e5484d; border-color: #e5484d; background: #fff;
+}
+.hb.on:hover { background: #fff1f0; }
+#history-timeline {
+  flex: 1; overflow-y: auto; padding: 8px 6px;
+}
+.hist-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  position: relative;
+}
+.hist-item:hover { background: #eef0f3; }
+.hist-item.active { background: #e3edff; }
+.hist-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #c4c9d0; flex: 0 0 9px; border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #c4c9d0;
+}
+.hist-item.active .hist-dot { background: #0d72ff; box-shadow: 0 0 0 1px #0d72ff; }
+.hist-meta { min-width: 0; flex: 1; }
+/* 时间: 标签 写在一行（2026-08-27 改） */
+.hist-line {
+  font-size: 12px; color: var(--text, #1f2329);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 历史页差异标红（复用 #tree，卡片在 #tree 内；右键/编辑交互已被 historyMode 守卫拦截） */
+#tree .card.hist-diff {
+  outline: 2px solid #e5484d; outline-offset: 1px;
+  background: #fff1f0;
+}
+#tree .card.hist-diff.lv0,
+#tree .card.hist-diff.is-root { background: #ffd9d6; }
+
+/* ════════════════════════════════════════════════════════════
+   webview 内自建浮层（替代 window.prompt/confirm，2026-08-27）
+   ════════════════════════════════════════════════════════════ */
+.wb-mask {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+}
+.wb-dialog {
+  background: #fff; border-radius: 10px; padding: 18px 20px;
+  width: 340px; max-width: 86vw; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.wb-dialog-title { font-size: 14px; color: var(--text, #1f2329); line-height: 1.5; margin-bottom: 14px; }
+.wb-input {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--border, #e6e8eb);
+  border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--text, #1f2329);
+  outline: none;
+}
+.wb-input:focus { border-color: #0d72ff; }
+.wb-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.wb-btn {
+  border: 1px solid var(--border, #e6e8eb); background: #fff; border-radius: 6px;
+  padding: 6px 16px; font-size: 13px; cursor: pointer; color: var(--text, #1f2329);
+}
+.wb-btn:hover { background: #f0f2f5; }
+.wb-btn-ok { background: var(--accent); color: #fff; border-color: var(--accent); } /* 2026-09-01：跟随主题强调色（粉线版变粉，不再写死蓝） */
+.wb-btn-ok:hover { filter: brightness(0.92); }
+.wb-btn-danger { background: #e5484d; border-color: #e5484d; }
+.wb-btn-danger:hover { background: #d23c41; }
+
+/* ════════════════════════════════════════════════════════════
+   [[ 文件自动补全菜单（2026-08-29）
+   ════════════════════════════════════════════════════════════ */
+#link-suggest {
+  position: fixed;
+  z-index: 9999;
+  min-width: 240px;
+  max-width: 420px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  padding: 4px;
+  font-size: 13px;
+  color: #18191c;
+}
+#link-suggest .ls-item {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+#link-suggest .ls-item.on { background: #eef4ff; }
+#link-suggest .ls-name { overflow: hidden; text-overflow: ellipsis; }
+#link-suggest .ls-path { color: #9aa3af; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* 折叠按钮禁用态（2026-08-30：未选中节点时禁用） */
+
+/* ═══ 空格 + 鼠标拖拽平移（2026-08-31）：按住空格光标变抓手，拖动 = 平移画布 ═══ */
+#view-map.space-pan, #view-map.space-pan * { cursor: grab !important; }
+#view-map.space-panning, #view-map.space-panning * { cursor: grabbing !important; }
+
+/* Pro 卡点统一样式（2026-09-04）：未激活按钮悬浮仅图标变 ticket + 橙色（背景不动，视觉由 mindmap-app.js applyProGate 内联控制，这里只给过渡与指针） */
+.28-pro-gated { cursor: pointer; transition: color .12s ease; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Pro 两页弹窗（2026-09-03：Figma 设计稿落地 · 三段式布局版）
+   页面① ProFeaturesModal：固定头部（价格/试用）+ 滚动正文 + 固定底部（CTA）
+   页面② PaymentModal：竖向三步流程
+   主色 #0070F5 · 边框 #0d72ff · 圆角 20/21px
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ===== Pro / 支付 弹窗（HTML 页面2=Frame303 / 页面4=Frame301 设计稿）=====
+   固定窗口 374px + 内部滚动内容 + 浮层钉在窗口不滚
+   可调参数集中在 .pm-shell 的 CSS 变量里（窗口高/遮罩高/按钮距底/灰字距底/配色） */
+.pm-shell{
+  --pm-win-h: 374px;       /* 窗口高度（HTML 设计稿 374） */
+  --pm-mask-h: 126px;      /* 底部白色遮罩高度 */
+  --pm-cta-bottom: 44px;   /* 激活按钮距窗口底部 */
+  --pm-hint-bottom: 16px;  /* 灰字提示距窗口底部 */
+  --pm-blue: #0d72ff;
+  --pm-blue-btn: #0070f5;
+  --pm-div: rgba(13,114,255,.14);
+  --pm-text: rgba(0,0,0,.72);
+  --pm-text-dim: rgba(0,0,0,.5);
+}
+.pm-shell .modal{
+  position:relative;
+  width:565px; max-width:92vw; height:var(--pm-win-h);   /* 固定窗口，按设计稿 */
+  background:#fff; border:1px solid var(--pm-blue); border-radius:20px;
+  padding:0; overflow:hidden;
+  box-shadow:0 22px 60px rgba(20,40,80,.30);
+}
+.pm-shell .modal-content{ position:relative; width:100%; height:100%; padding:0; overflow:hidden; }
+.pm-shell ::-webkit-scrollbar{ width:8px; }
+.pm-shell ::-webkit-scrollbar-thumb{ background:rgba(13,114,255,.35); border-radius:8px; }
+.pm-shell ::-webkit-scrollbar-track{ background:transparent; }
+
+/* —— 滚动正文（=302 / =299 内容，填满窗口可滚；浮层绝对定位盖其上）—— */
+.pm-scroll, .pay-scroll{
+  position:absolute; inset:0; overflow-y:auto;
+  padding:16px 24px calc(var(--pm-mask-h) + 14px);   /* 底部留白避开遮罩 */
+}
+.pm-top{ text-align:center; }
+.pm-off{ font-family:"SF Pro Rounded","SF Pro Display",-apple-system,sans-serif; color:var(--pm-blue); font-size:42px; font-weight:800; line-height:1; }
+.pm-price-row{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:2px; }
+.pm-offlabel{ color:var(--pm-text-dim); font-size:12px; }
+.pm-price{ display:flex; align-items:baseline; gap:8px; }
+.pm-old{ text-decoration:line-through; color:rgba(0,0,0,.33); font-size:14px; }
+.pm-now{ color:var(--pm-blue-btn); font-size:24px; font-weight:700; }
+.pm-trial{ font-size:12px; color:var(--pm-text-dim); margin:10px 0 0; line-height:1.5; text-align:center; }
+.pm-trial b{ color:rgba(13,114,255,.7); font-weight:600; }
+
+.pm-div{ height:1px; background:var(--pm-div); margin:14px 0; }
+.pm-sec{ text-align:center; }
+.pm-sec-h{ color:var(--pm-blue); font-size:15px; font-weight:600; margin-bottom:4px; }
+.pm-p{ font-size:12px; color:var(--pm-text); line-height:1.7; margin:4px 0 10px; }
+.pm-blue{ color:var(--pm-blue); font-weight:600; }
+.pm-fig{ max-width:416px; margin:0 auto; border:1px solid var(--pm-blue); border-radius:14px; overflow:hidden; background:#fff; }
+.pm-fig img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+.pm-cap{ font-size:11px; color:#9d9d9d; text-align:center; margin:6px 0; line-height:1.4; }
+.pm-thanks{ text-align:center; font-size:11px; color:rgba(255,0,0,.86); margin:6px 0 2px; }
+.pm-note{ text-align:center; font-size:10.5px; color:rgba(0,0,0,.5); line-height:1.5; }
+
+/* —— 浮层：关闭按钮（钉右上，固定不滚）——
+.pm-close, .pay-close{
+  position:absolute; top:8px; right:12px; z-index:5;
+  width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+  font-size:20px; color:#5d5d5d; cursor:pointer; border-radius:50%; line-height:1;
+}
+.pm-close:hover, .pay-close:hover{ background:rgba(13,114,255,.08); color:var(--pm-blue); }
+
+/* —— 浮层：白色渐变遮罩（上透明下白，贴窗口底，固定不滚，不挡滚动）——
+.pm-mask, .pay-mask{
+  position:absolute; left:0; right:0; bottom:0; height:var(--pm-mask-h); z-index:3;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.96) 100%);
+}
+
+/* —— 浮层：激活按钮（钉底居中，固定不滚）——
+.pm-cta{
+  position:absolute; left:50%; bottom:var(--pm-cta-bottom); transform:translateX(-50%); z-index:5;
+  padding:10px 22px; border:0; border-radius:999px;
+  background:var(--pm-blue-btn); color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,112,245,.35);
+}
+.pm-cta:hover{ background:#0062d6; }
+
+/* —— 浮层：灰色提示文字（钉底居中，固定不滚）——
+.pm-scrollhint, .pay-scrollhint{
+  position:absolute; left:50%; bottom:var(--pm-hint-bottom); transform:translateX(-50%); z-index:5;
+  font-size:11px; color:#a9a9a9; pointer-events:none; white-space:nowrap;
+}
+
+/* —— 支付页（页面4 / 301）步骤流 —— */
+.pay-step{ display:flex; gap:14px; }
+.pay-step + .pay-step{ margin-top:18px; }
+.pay-num{ flex-shrink:0; font-family:"SF Pro Rounded","SF Pro Display",-apple-system,sans-serif; color:var(--pm-blue); font-size:30px; font-weight:800; line-height:1.1; }
+.pay-step-c{ flex:1; min-width:0; }
+.pay-h{ color:var(--pm-blue); font-size:14px; font-weight:600; margin-bottom:8px; }
+.pay-qrbox{ width:230px; height:270px; margin:0 auto; border:1px solid #4263eb; border-radius:16px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.pay-qrbox img{ max-width:100%; max-height:100%; object-fit:contain; }
+.pay-mail{
+  margin:2px 0 8px; padding:9px 14px; border:1px dashed var(--pm-blue); border-radius:10px;
+  background:rgba(13,114,255,.05); color:var(--pm-blue); font-weight:600; font-size:13px;
+  text-align:center; cursor:pointer; user-select:all;
+}
+.pay-mail:hover{ background:rgba(13,114,255,.12); }
+.pay-ol{ margin:4px 0 6px; padding-left:18px; font-size:12px; color:var(--pm-text); line-height:1.7; }
+.pay-note{ font-size:11px; color:#b0b0b0; line-height:1.55; }
+.pay-path{ font-size:12px; color:var(--pm-text); margin-bottom:8px; }
+.pay-shot{ height:280px; display:flex; justify-content:center; border:1px solid #5776ff; border-radius:16px; overflow:hidden; background:#fff; margin-bottom:6px; }
+.pay-shot img{ height:100%; width:auto; object-fit:contain; display:block; }
+.pay-thanks{ margin-top:14px; text-align:center; font-size:12px; color:rgba(255,0,0,.86); }
+
+/* —— 暗色主题 —— */
+.theme-dark .pm-shell{ --pm-text:rgba(232,235,242,.75); --pm-text-dim:rgba(232,235,242,.55); --pm-div:rgba(91,155,255,.18); }
+.theme-dark .pm-shell .modal{ background:#1f2230; border-color:#3a4a6a; }
+.theme-dark .pm-shell .pm-mask, .theme-dark .pay-mask{ background:linear-gradient(180deg, rgba(31,34,48,0) 0%, rgba(31,34,48,.96) 100%); }
+.theme-dark .pm-blue, .theme-dark .pm-sec-h, .theme-dark .pay-h, .theme-dark .pay-num{ color:#5b9bff; }
+.theme-dark .pm-old{ color:rgba(255,255,255,.35); }
+.theme-dark .pm-close, .theme-dark .pay-close{ color:#cfcfcf; }
+.theme-dark .pay-note, .theme-dark .pm-note{ color:#7d8598; }
+.theme-dark .pay-mail{ color:#5b9bff; border-color:#5b9bff; background:rgba(91,155,255,.08); }
+.theme-dark .pm-cap{ color:#8a93a6; }

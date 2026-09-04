@@ -1,0 +1,10 @@
+{
+  "id": "28-notes-mindmap",
+  "name": "28 Notes Mind Map",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "28Notes 思维导图：frontmatter 带 28notes: mindmap 的 md 文件，点开即为可拖拽、可编辑、可下钻的思维导图，编辑实时写回文件",
+  "author": "shin",
+  "isDesktopOnly": true,
+  "style": "styles.css"
+}
