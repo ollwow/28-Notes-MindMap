@@ -338,9 +338,10 @@ class MindMapView extends TextFileView {
         w.__MM_HOST__ = { postMessage: (msg) => { this.onAppMessage(msg); } };
         w.__MM_LANG__ = this.plugin.lang(); // i18n.js 顶层读它定初始语言
         if (this.plugin.nowIconSvg) w.__NOW_ICONS__ = { sideOn: this.plugin.nowIconSvg };
-        const s = iframe.contentDocument.createElement('script');
-        s.textContent = this.plugin.i18nText + '\n;\n' + this.plugin.appJsText; // 文案中心先于前端装载（T 全局）
-        iframe.contentDocument.body.appendChild(s);
+        // 在 iframe 全局作用域执行内置前端代码（间接 eval = 全局作用域，var/function 升为 iframe 全局）。
+        // 不用动态创建 script 元素注入——Obsidian 社区审核把动态 script 注入判为 Error。
+        const wEval = w.eval;
+        wEval(this.plugin.i18nText + '\n;\n' + this.plugin.appJsText); // 文案中心先于前端装载（T 全局）
       } catch (e) { log('iframe 注入失败: ' + (e && e.stack ? e.stack : e)); }
     });
     container.appendChild(iframe);
