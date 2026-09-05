@@ -1,0 +1,37 @@
+# 发版 workflow：推 tag 触发 → 给 Release 附件生成 provenance attestation（消社区审核
+# "Missing GitHub artifact attestations" 标黄）→ 自动建 Release 挂三件套。
+# Release notes = annotated tag 的注解内容（git tag -a 时写），标题 = 版本号。
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" main.js manifest.json styles.css \
+            --title "$TAG" \
+            --notes "$(git tag -l --format='%(contents)' "$TAG")"

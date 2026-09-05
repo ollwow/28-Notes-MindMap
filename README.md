@@ -2,13 +2,11 @@
 
  [English Version Introduction](#english-documentation)
 
-<br>
-
 - 纯本地、Markdown 格式的思维导图，AI 可直接读写，修改。
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
 - 简洁，优雅，易用。
 
-<img width="860" height="484" alt="首图" src="https://github.com/user-attachments/assets/6004e43c-df97-4453-bc1e-948167d1b986" />
+![首图](assets/banner.png)
 
 
 ---
@@ -67,11 +65,11 @@
 - **次要 Minor 功能**：你可以将次要的节点标记为 Minor。 然后一键隐藏所有次要 Minor 节点。 瞬间清净。
 - **按层级折叠功能**：右下角有层级数字，点击某个数字，如数字 2，可以一键只显示一二层级。瞬间从迷失到清晰。
 
-<img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
+![只显示 Now](assets/demo-focus.gif)
 
 *图注：「一键只显示重点」功能演示*
 
-<img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
+![折叠第二层级](assets/demo-fold.gif)
 
 *图注：「一键折叠至第二层级」功能演示*
 
@@ -83,7 +81,7 @@
 - **存为捷径功能**：你可以将进入的某个节点视图存为捷径，下次一打开直接进入。上次思维漫游到哪里，这次直接看哪里。
 
 
-<img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
+![进入当前节点](assets/demo-enter.gif)
 
 *图注：「进入节点」功能演示*
 
@@ -233,7 +231,7 @@
 - Design inspired by the “[28 Notes](https://space.bilibili.com/481595180)” with one-click focus on key points / hiding of non-essentials.
 - Simple, elegant, and easy to use.
 
-<img width="860" height="484" alt="首图" src="https://github.com/user-attachments/assets/6004e43c-df97-4453-bc1e-948167d1b986" />
+![首图](assets/banner.png)
 
 ---
 
@@ -286,11 +284,11 @@ The biggest pain point of mind maps is that once nodes grow, opening one feels o
 - **Minor**: Mark secondary nodes as Minor, then hide all Minor nodes with one click — instantly declutter.
 - **Level folding**: Level numbers sit at the bottom-right; click a number (e.g. 2) to show only levels 1–2 — instantly go from lost to clear.
 
-<img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
+![只显示 Now](assets/demo-focus.gif)
 
 *Caption: "Show only what matters" demo*
 
-<img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
+![折叠第二层级](assets/demo-fold.gif)
 
 *Caption: "Fold to level 2" demo*
 
@@ -299,7 +297,7 @@ Additionally, 28 Notes MindMap also supports:
 - **Enter node**: Drill into a node with one click, showing only it and its children. Peace and focus amid the noise.
 - **Save as shortcut**: Save a drilled-in node view as a shortcut and reopen it directly next time — pick up exactly where your mind left off.
 
-<img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
+![进入当前节点](assets/demo-enter.gif)
 
 *Caption: "Enter node" demo*
 
