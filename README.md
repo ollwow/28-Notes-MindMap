@@ -6,7 +6,8 @@
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
 - 简洁，优雅，易用。
 
-![28 Notes MindMap](assets/banner.png)
+<img width="860" height="484" alt="首图" src="https://github.com/user-attachments/assets/6004e43c-df97-4453-bc1e-948167d1b986" />
+
 
 ---
 <br>
@@ -60,18 +61,21 @@
 - **次要 Minor 功能**：你可以将次要的节点标记为 Minor。 然后一键隐藏所有次要 Minor 节点。 瞬间清净。
 - **按层级折叠功能**：右下角有层级数字，点击某个数字，如数字 2，可以一键只显示一二层级。瞬间从迷失到清晰。
 
-![一键只显示重点功能演示](assets/demo-focus.gif)
+<img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
 *图注：「一键只显示重点」功能演示*
 
-![一键折叠至第二层级演示](assets/demo-fold.gif)
+<img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
 *图注：「一键折叠至第二层级」功能演示*
+
+<br>
 
 除此之外，28 Notes MindMap 还支持：
 
 - **进入节点功能**：你可以一键进入某个节点，只显示这个节点和它的子节点。外面纷纷扰扰，这里清净聚焦。
 - **存为捷径功能**：你可以将进入的某个节点视图存为捷径，下次一打开直接进入。上次思维漫游到哪里，这次直接看哪里。
 
-![进入节点功能演示](assets/demo-enter.gif)
+
+<img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
 *图注：「进入节点」功能演示*
 <br>
 
@@ -152,7 +156,7 @@
 - **早鸟价 ¥38**（~~原价 ¥76~~ → -50%）
 - 买断制：一次购买，永久使用本地功能
 - 支持 **3 台设备**激活
-- 付款与激活方式：点此查看
+- 付款与激活方式：下载插件后，见：Obsidian → 设置 → 28 Notes → 许可证
 
 > 注：买断覆盖本地全部功能。但不包含未来可能上线的在线式 AI 生成服务 / 涉及服务器的功能（此处仅为说明，此类功能大概率不会做，因为目前 AI Agent  足够简单易用）
 
@@ -208,6 +212,22 @@
 
 ## English Documentation
 
+
+
+# 28 Notes MindMap
+
+
+
+- Markdown-based mind maps that AI can read, write, and edit directly.
+- Design inspired by the “[28 Notes](https://space.bilibili.com/481595180)” with one-click focus on key points / hiding of non-essentials.
+- Simple, elegant, and easy to use.
+
+<img width="860" height="484" alt="首图" src="https://github.com/user-attachments/assets/6004e43c-df97-4453-bc1e-948167d1b986" />
+
+---
+
+
+
 ## 🧤 Installation
 
 1. Open Obsidian desktop, go to Settings → Community plugins → Community plugins.
@@ -252,10 +272,10 @@ The biggest pain point of mind maps is that once nodes grow, opening one feels o
 - **Minor**: Mark secondary nodes as Minor, then hide all Minor nodes with one click — instantly declutter.
 - **Level folding**: Level numbers sit at the bottom-right; click a number (e.g. 2) to show only levels 1–2 — instantly go from lost to clear.
 
-![Show only what matters — demo](assets/demo-focus.gif)
+<img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
 *Caption: "Show only what matters" demo*
 
-![Fold to level 2 — demo](assets/demo-fold.gif)
+<img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
 *Caption: "Fold to level 2" demo*
 
 Additionally, 28 Notes MindMap also supports:
@@ -263,7 +283,7 @@ Additionally, 28 Notes MindMap also supports:
 - **Enter node**: Drill into a node with one click, showing only it and its children. Peace and focus amid the noise.
 - **Save as shortcut**: Save a drilled-in node view as a shortcut and reopen it directly next time — pick up exactly where your mind left off.
 
-![Enter node — demo](assets/demo-enter.gif)
+<img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
 *Caption: "Enter node" demo*
 
 ### ❹ Optimized for Knowledge Management
@@ -340,7 +360,7 @@ Details:
 - **Early-bird price ¥38** (~~original ¥76~~ → -50%)
 - One-time purchase: buy once, use local features forever
 - Supports activation on **3 devices**
-- Payment & activation: see here
+- Payment & activation: see in Obsidian → 28 Notes → Setting
 
 > Note: The one-time purchase covers all local features, but excludes possible future online AI-generation services / server-dependent features (noted for clarity only; such features are unlikely, as current AI Agents are simple enough).
 
