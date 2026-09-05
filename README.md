@@ -1,6 +1,8 @@
 # 28 Notes MindMap
 
- [English](#english-documentation)
+ [English Version Introduction](#english-documentation)
+
+<br>
 
 - 纯本地、Markdown 格式的思维导图，AI 可直接读写，修改。
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
@@ -29,7 +31,9 @@
 
 
 ![28 Notes MindMap 界面](assets/ui-main.png)
+
 *图注：28 Notes MindMap 界面*
+
 <br>
 
 ### ❷ AI 友好
@@ -44,10 +48,12 @@
 - **预埋 AI 指令**：你可以直接让 AI 改内容，而无需担心格式损坏。因为「格式规范」已经直接预埋在文件里了。未来预计将支持内置指令（简化版 Skill），和 AI 配合更丝滑。
 
 ![Markdown 大纲格式源文件](assets/source-md.png)
+
 *图注：28 Notes MindMap 源文件：Markdown 大纲格式*
 
 ![右键复制 AI 定位路径](assets/ai-path.png)
 *图注：右键复制 AI 定位路径*
+
 <br>
 
 ### ❸ 聚焦重点
@@ -62,9 +68,11 @@
 - **按层级折叠功能**：右下角有层级数字，点击某个数字，如数字 2，可以一键只显示一二层级。瞬间从迷失到清晰。
 
 <img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
+
 *图注：「一键只显示重点」功能演示*
 
 <img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
+
 *图注：「一键折叠至第二层级」功能演示*
 
 <br>
@@ -76,7 +84,9 @@
 
 
 <img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
+
 *图注：「进入节点」功能演示*
+
 <br>
 
 ### ❹ 专为知识管理优化
@@ -86,6 +96,7 @@
 - **28 笔记法思维**：设计理念源自 [28 笔记法](https://space.bilibili.com/481595180)。
 
 ![支持 Obsidian 双链](assets/obsidian-link.png)
+
 *图注：支持Obsidian 双链*
 
 ---
@@ -133,7 +144,7 @@
 - **28 Notes 原创的创新功能：试用期结束后，需激活以使用**
 - 如：Now、Minor、捷径、AI定位路径、多级折叠等。
 
-具体如下：
+**具体如下：**
 
 | 功能 | 通用免费版 | 创新 Pro 版 |
 |------|--------|--------|
@@ -244,6 +255,7 @@
 
 
 ![28 Notes MindMap interface](assets/ui-main.png)
+
 *Caption: 28 Notes MindMap interface*
 
 ### ❷ AI-Friendly
@@ -257,9 +269,11 @@ Most mind-map software stores data in proprietary formats, making it hard for AI
 - **Embedded AI instructions**: You can ask the AI to edit content directly without worrying about breaking the format, because the "format spec" is already embedded in the file. Built-in instructions (a simplified Skill) are planned to make AI collaboration even smoother.
 
 ![Markdown outline source file](assets/source-md.png)
+
 *Caption: 28 Notes MindMap source file — Markdown outline format*
 
 ![Right-click to copy the AI location path](assets/ai-path.png)
+
 *Caption: Right-click to copy the AI location path*
 
 ### ❸ Focus on What Matters
@@ -273,9 +287,11 @@ The biggest pain point of mind maps is that once nodes grow, opening one feels o
 - **Level folding**: Level numbers sit at the bottom-right; click a number (e.g. 2) to show only levels 1–2 — instantly go from lost to clear.
 
 <img width="1920" height="1080" alt="只显示 Now" src="https://github.com/user-attachments/assets/061fe50f-9b6d-41cb-8a0e-e4ddb874ddb7" />
+
 *Caption: "Show only what matters" demo*
 
 <img width="1916" height="1080" alt="折叠第二层级" src="https://github.com/user-attachments/assets/293a3738-37e5-4993-b19b-ede5ebad0ebc" />
+
 *Caption: "Fold to level 2" demo*
 
 Additionally, 28 Notes MindMap also supports:
@@ -284,6 +300,7 @@ Additionally, 28 Notes MindMap also supports:
 - **Save as shortcut**: Save a drilled-in node view as a shortcut and reopen it directly next time — pick up exactly where your mind left off.
 
 <img width="1920" height="1080" alt="进入当前节点" src="https://github.com/user-attachments/assets/dfb89b1f-84cf-4bd7-bb16-7ed0e6ae6c1d" />
+
 *Caption: "Enter node" demo*
 
 ### ❹ Optimized for Knowledge Management
@@ -293,6 +310,7 @@ Additionally, 28 Notes MindMap also supports:
 - **28 Notes Method thinking**: Design philosophy from [28 Notes Method](https://space.bilibili.com/481595180).
 
 ![Supports Obsidian bidirectional links](assets/obsidian-link.png)
+
 *Caption: Supports Obsidian bidirectional links*
 
 ---
