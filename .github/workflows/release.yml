@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 需要完整 tag 对象：Release notes 取 annotated tag 注解（浅克隆拿不到，0.1.2 实踩）
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2

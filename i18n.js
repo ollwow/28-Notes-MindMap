@@ -168,9 +168,9 @@ var I18N = {
     'license.err.lockedFmt': '尝试次数过多，请 {0} 分钟后再试', // 激活限流；{0} = 剩余分钟数
 
     // ============ 空图使用提示（新建空白思维导图后，主节点下方的三行提示） ============
-    'hint.line1': '选中节点 + Tab / 回车 → 新增子/同级节点', // 空图提示第一行
-    'hint.line2': '按住空格 + 拖动鼠标 → 移动视图', // 空图提示第二行
-    'hint.line3': 'Cmd + 鼠标滚动 → 缩放视图', // 空图提示第三行
+    'hint.line1': '选中节点 + Tab → 新增子节点', // 空图提示第一行
+    'hint.line2': '选中子节点 + 回车 → 新增同级节点', // 空图提示第二行
+    'hint.line3': '按住空格 + 拖动鼠标 → 移动视图', // 空图提示第三行
     // ============ 导图画面：节点图标 / 折叠箭头 / 备注等悬停提示 ============
     'tip.minorIcon': '此节点已次要 Minor（置灰）', // Minor 节点标题前小图标的悬停提示
     'tip.nowIcon': '此节点已标记 Now', // Now 节点标题前小圆点的悬停提示
@@ -442,9 +442,9 @@ var I18N = {
     'license.err.lockedFmt': 'Too many attempts. Try again in {0} minutes.',
 
     // ============ Empty-map usage hint (shown under root node after creating a blank mind map) ============
-    'hint.line1': 'Select a node + Tab / Enter to add',
-    'hint.line2': 'Space + Drag to pan',
-    'hint.line3': 'Cmd + Scroll to zoom',
+    'hint.line1': 'Select a node + Tab to add',
+    'hint.line2': 'Select a child node + Enter to add a sibling node',
+    'hint.line3': 'Space + Drag to pan',
 
     'tip.minorIcon': 'This node is marked Minor (grayed out)',
     'tip.nowIcon': 'This node is marked Now',

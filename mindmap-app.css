@@ -23,6 +23,9 @@
   --pro-cta-px: 14px;         /* 左右内边距：调大→按钮更宽。默认 14px */
   --pro-cta-py: 7px;          /* 上下内边距：调大→按钮更高。默认 7px */
   --pro-cta-radius: 8px;      /* 圆角（默认沿用左下角按钮的 8px）。调大→更圆 */
+  --pro-cta-border-w: 1px;    /* 描边粗细（Stroke）：0 = 完全没有边框；1 = 细线；调大→更粗。默认 1px */
+  --pro-cta-border-c: 0, 0, 0; /* 描边颜色（RGB 三个数，不是 # 号写法）：0, 0, 0 = 黑色；改红就写 255, 0, 0 */
+  --pro-cta-border-a: .18;    /* 描边深浅（不透明度）：0 = 全透明＝看不见；1 = 纯黑实线。默认 .18，嫌淡调 .3，嫌重调 .1 */
 
   /* ---- 提示框 tooltip ---- */
   --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
@@ -226,7 +229,8 @@ body {
 #md-editor {
   width: 100%; height: 100vh; border: none; outline: none; resize: none;
   padding: 16px 20px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* 不用 ui-monospace：老版 Obsidian 内核不识别该系统字体关键字；SFMono-Regular 在 macOS 即 SF Mono，同一款字 */
+  font-family: SFMono-Regular, Menlo, monospace;
   font-size: 13px; line-height: 1.7;
   background: #fff; color: var(--text);
 }
@@ -591,6 +595,9 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   width: auto; height: auto;   /* 覆盖 .tb 的 34x34 固定尺寸，改成由 padding 撑开 */
   padding: var(--pro-cta-py) var(--pro-cta-px);
   border-radius: var(--pro-cta-radius);
+  /* 描边（2026-09-05）：粗细/颜色/不透明度三个值都在上面 :root 改，不用动这里。
+     必须写在本条 #pro-cta 里覆盖 .tb 的 border:1px solid transparent（共用基础按钮样式），否则描边看不见 */
+  border: var(--pro-cta-border-w) solid rgba(var(--pro-cta-border-c), var(--pro-cta-border-a));
   background: var(--pro-cta-bg);
   color: var(--pro-cta-color);
   font-size: var(--pro-cta-fs);
