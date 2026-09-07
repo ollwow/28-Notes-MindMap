@@ -34,7 +34,8 @@ var I18N = {
     'mm.debug': '界面调试', // 菜单项：界面调试入口（已隐藏，备用）
     'mm.history': '历史记录', // 菜单项：打开历史记录页
     'mm.saveVersion': '保存此版本', // 菜单项：手动命名保存当前版本快照
-    'mm.about': '了解 28 笔记法 ↗', // 菜单项：跳转 B 站了解插件
+    'mm.about': '了解 28 Notes ↗', // 菜单项：跳转 B 站了解插件
+    'mm.joinGroup': '加入微信群 ↗', // 菜单项：跳转飞书 wiki 进群页（2026-09-07）
     'mm.settings': '设置与 Bug 提报', // 菜单项：打开插件设置页（2026-09-01）
 
     // ============ 宿主侧通知（屏幕右上角弹条）============
@@ -316,7 +317,8 @@ var I18N = {
     'mm.debug': 'UI debug',
     'mm.history': 'History',
     'mm.saveVersion': 'Save this version',
-    'mm.about': 'About the 28 Notes Method ↗',
+    'mm.about': 'About 28 Notes ↗',
+    'mm.joinGroup': 'Join WeChat Group ↗',
     'mm.settings': 'Settings & bug report',
 
     'display.mindmap': 'Mind map',

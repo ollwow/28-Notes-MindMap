@@ -348,6 +348,8 @@ const ICONS = {
   'bilibili-line': '<path fill="currentColor" d="M7.832 3.445a1 1 0 0 0-1.664 1.11L7 4zm10 1.11a1 1 0 0 0-1.664-1.11L17 4zM10 12a1 1 0 1 0-2 0zm-2 2a1 1 0 1 0 2 0zm8-2a1 1 0 1 0-2 0zm-2 2a1 1 0 1 0 2 0zM6 7v1h12V6H6zm15 3h-1v7h2v-7zm-3 10v-1H6v2h12zM3 17h1v-7H2v7zM7 4l-.832.555l2 3L9 7l.832-.555l-2-3zm10 0l-.832-.555l-2 3L15 7l.832.555l2-3zm-8 8H8v2h2v-2zm6 0h-1v2h2v-2zm-9 8v-1a2 2 0 0 1-2-2H2a4 4 0 0 0 4 4zm15-3h-1a2 2 0 0 1-2 2v2a4 4 0 0 0 4-4zM18 7v1a2 2 0 0 1 2 2h2a4 4 0 0 0-4-4zM6 7V6a4 4 0 0 0-4 4h2a2 2 0 0 1 2-2z"/>',
   // 设置（2026-09-01）：齿轮，lucide「settings」——「设置与 bug 提报」菜单图标
   'settings': '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  // 底部「加入微信群」临时 CTA 图标（lucide message-circle）
+  'message-circle': '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
   // 侧边 Ribbon「新建思维导图」按钮图标（Frame.svg 内联）；2026-08-30 定：节点链接复用此图标。
   // 原 SVG 外层包了 <g clip-path="url(#clip0_2018_5)">，但该 clipPath 在 iframe 内未定义会导致环不可见，此处去掉包裹、保留三路径。
   'frame': '<path fill="currentColor" d="M22.5927 12.0147C22.5927 14.7781 20.3465 17.0243 17.5822 17.0243C16.9523 17.0243 16.3492 16.9076 15.7959 16.6896C16.3153 16.4964 16.7913 16.215 17.2092 15.8661C17.3318 15.8789 17.4563 15.885 17.5822 15.885C19.7207 15.885 21.4534 14.1523 21.4534 12.0147C21.4534 9.87707 19.7207 8.14348 17.5822 8.14348C17.457 8.14348 17.3332 8.14943 17.2114 8.16221C16.793 7.81182 16.3162 7.52923 15.7959 7.33536C16.3492 7.11699 16.9523 7 17.5822 7C20.3465 7 22.5927 9.25128 22.5927 12.0147Z"/><path fill="currentColor" d="M14.0096 17.0243C16.773 17.0243 19.0192 14.7781 19.0192 12.0147C19.0192 9.25128 16.773 7 14.0096 7C11.2462 7 9 9.25128 9 12.0147C9 14.7781 11.2462 17.0243 14.0096 17.0243ZM14.0096 15.885C11.872 15.885 10.1393 14.1523 10.1393 12.0147C10.1393 9.87707 11.872 8.14348 14.0096 8.14348C16.1472 8.14348 17.8808 9.87707 17.8808 12.0147C17.8808 14.1523 16.1472 15.885 14.0096 15.885Z"/><path fill="currentColor" d="M2 11.35C1.64101 11.35 1.35 11.641 1.35 12C1.35 12.359 1.64101 12.65 2 12.65L2 12L2 11.35ZM2 12L2 12.65L10 12.65L10 12L10 11.35L2 11.35L2 12Z"/>',
@@ -377,6 +379,8 @@ function renderIcon(name, size = 18) {
   const stroke = o.fill ? 'none' : 'currentColor';
   return '<svg viewBox="' + o.vb + '" width="' + size + '" height="' + size + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">' + d + '</svg>';
 }
+// 更多菜单「加入 28 Notes 微信群」跳转地址（2026-09-07）
+const JOIN_GROUP_URL = 'https://leafmethod.feishu.cn/wiki/J1sAwHu36inRtMkiLnOcN9LonNe?from=from_copylink';
 // ===== Pro 功能卡点（2026-09-04）：体验期结束后，指定按钮悬浮变「待激活」按钮，点击进激活弹窗 =====
 // 按钮本身完全不变；仅当未激活（state.isPro=false，等价于试用已结束未激活）时：
 //   - 鼠标悬浮 → 仅图标换成 ticket 并染成 #F09343 橙（不动按钮背景，离屏还原；图标容器：工具栏按钮=自身，右键菜单项=.ctx-ic 只换图标不丢文字）
@@ -5373,6 +5377,7 @@ document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
     else if (act === 'toggle-view') switchView();
     else if (act === 'history') openHistoryPanel();
     else if (act === 'save-snapshot') manualSaveSnapshot();
+    else if (act === 'join-group') openUrl(JOIN_GROUP_URL); // 更多菜单「加入 28 Notes 微信群」（2026-09-07）
     else if (act === 'about') vscode.postMessage({ type: 'openUrl', url: 'https://space.bilibili.com/481595180' });
     else if (act === 'settings') { vscode.postMessage({ type: 'log', text: '更多菜单→打开设置请求发出' }); vscode.postMessage({ type: 'openSettings' }); } // 更多菜单「设置与 bug 提报」（2026-09-01）
     document.getElementById('more-menu').classList.remove('open');

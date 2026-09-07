@@ -223,7 +223,7 @@ body {
 #warn-box.hidden { display: none; }
 
 /* ===== 视图容器 + 自定义滚动条 ===== */
-#view-map { height: 100vh; overflow: auto; padding: 0 0 80px 0; }
+#view-map { position: relative; height: 100vh; overflow: auto; padding: 0 0 80px 0; }
 #view-map.hidden, #view-md.hidden { display: none; }
 #view-md { height: 100vh; }
 #md-editor {
@@ -604,10 +604,11 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   font-weight: 600;
   white-space: nowrap;
   box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
-  transition: filter .12s ease;
+  transition: filter .15s ease, transform .15s ease; /* 与底部社群按钮同手感 */
 }
 #pro-cta:hover { filter: brightness(1.08); background: var(--pro-cta-bg); } /* 覆盖 .tb:hover 的选中色，保持自身蓝底 */
-#pro-cta:active { filter: brightness(.94); }
+/* 点击反馈（2026-09-07 改）：与底部社群按钮统一为「轻微缩小」，不再用 brightness(.94) 压暗（白色底被压暗会显灰） */
+#pro-cta:active { transform: scale(0.98); }
 #pro-cta.hidden { display: none; }
 
 /* 2026-08-30：不用 opacity（会把 hover tooltip 的黑框一起调暗成灰框，所有 tooltip 统一小黑框）
