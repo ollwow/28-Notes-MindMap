@@ -21,6 +21,14 @@ jobs:
         with:
           fetch-depth: 0 # 需要完整 tag 对象：Release notes 取 annotated tag 注解（浅克隆拿不到，0.1.2 实踩）
 
+      # fetch-depth: 0 时 checkout 会做第二次 fetch（+<commit-sha>:refs/tags/<tag>），把 tag 引用
+      # 强制改指裸 commit，导致 %(contents) 读到 commit message 而非 tag 注解（0.1.3 / 0.1.4 实踩）。
+      # 这里把 annotated tag 对象重新拉回来，保证下一步读到的注解完整。
+      - name: Restore annotated tag object
+        env:
+          TAG: ${{ github.ref_name }}
+        run: git fetch --force --no-tags origin "+refs/tags/$TAG:refs/tags/$TAG"
+
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
@@ -34,6 +42,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
+          git tag -l --format='%(contents)' "$TAG" > release-notes.md
           gh release create "$TAG" main.js manifest.json styles.css \
             --title "$TAG" \
-            --notes "$(git tag -l --format='%(contents)' "$TAG")"
+            --notes-file release-notes.md
