@@ -309,6 +309,8 @@ const ICONS = {
   'save': '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
   'slash': '<path d="M2 22 22 2"/>',
   'text-quote': '<path d="M17 5H3"/><path d="M21 12H8"/><path d="M21 19H8"/><path d="M3 12v7"/>',
+  'home': '<path d="M21 19v-6.733a4 4 0 0 0-1.245-2.9L13.378 3.31a2 2 0 0 0-2.755 0L4.245 9.367A4 4 0 0 0 3 12.267V19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2"/>',
+  'square-mouse-pointer': '<path d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"/><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>',
   'squircle-dashed': '<path d="M13.77 3.043a34 34 0 0 0-3.54 0"/><path d="M13.771 20.956a33 33 0 0 1-3.541.001"/><path d="M20.18 17.74c-.51 1.15-1.29 1.93-2.439 2.44"/><path d="M20.18 6.259c-.51-1.148-1.291-1.929-2.44-2.438"/><path d="M20.957 10.23a33 33 0 0 1 0 3.54"/><path d="M3.043 10.23a34 34 0 0 0 .001 3.541"/><path d="M6.26 20.179c-1.15-.508-1.93-1.29-2.44-2.438"/><path d="M6.26 3.82c-1.149.51-1.931 1.291-2.44 2.44"/>',
   'eye': '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
   'bold': '<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>',
@@ -2061,12 +2063,7 @@ function updateToolbar() {
   updateDefaultPathBtn();
   updateFoldBar(); // 2026-08-30：右下角常驻折叠层级条跟随选中态刷新（22 处选中变化都会走这里）
   const hasSel = hasSingleSelection();
-  // 左折叠按钮：未选中禁用（tooltip「请先选择节点」）；选中可用（tooltip「点击可折叠其它节点」）
-  if (btnFold) {
-    btnFold.classList.toggle('disabled', !hasSel);
-    btnFold.dataset.tip = hasSel ? T('tb.foldSel') : T('tb.foldNoSel');
-  }
-  // 「进入该节点」按钮：同折叠按钮，未选中禁用（2026-08-30 定）
+  // 「进入该节点」按钮：未选中禁用（2026-08-30 定；左折叠按钮已删 2026-09-11，功能在层级条「1」）
   if (btnDrill) {
     btnDrill.classList.toggle('disabled', !hasSel);
     btnDrill.dataset.tip = hasSel ? T('tb.drill') : T('tb.drillDefault'); // 未选中用专用文案（tb.drillDefault，2026-08-30 定稿）
@@ -3584,8 +3581,14 @@ document.addEventListener('keydown', (e) => {
   }
   // 编辑态：只接管 Cmd+B（选区加粗，插 ** 不退出编辑）；其余让位浏览器原生（如 Cmd+Z 撤销文字）（2026-08-22 加）
   if (t && t.contentEditable === 'true') {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); wrapSelectionInEdit('**'); }
-    return;
+    if (menuEditOn) {
+      // 子菜单条目编辑中（2026-09-11）：普通键就地消费（条目编辑框自理）；
+      // Cmd/Ctrl 组合键落到下方画布快捷键（Cmd+M/N/B… 作用于选中节点 —— 鼠标被菜单占用时的操作手段）
+      if (!(e.metaKey || e.ctrlKey)) return;
+    } else {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); wrapSelectionInEdit('**'); }
+      return;
+    }
   }
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
     // 2026-08-28 快速编辑替换：armed proxy（隐藏 input 持焦点）时，打字键交给 proxy 走 IME 替换；
@@ -4815,48 +4818,33 @@ function updatePathMenuBtns() {
   b.dataset.side = 'right'; // 左侧 toolbar 按钮 → tooltip 向右浮动（避开画布）
 });
 // ===== 折叠体系（2026-09-01 定案：左右两入口，旧 hover 子菜单已删）=====
-// 左下按钮（折叠附近节点）：折叠 ⇄ 撤回 交替，全部单层语义——只把节点自己的 fold 置 true，
-//   绝不动后代 fold（展开后内部折叠状态保持原样；旧 foldDeep「逐级深折」历史遗留已删，2026-09-01）。
-// 右下状态栏层级条（高级折叠）：数字按钮 = foldSelByLevel / foldByLevel（同为单层语义）。
-// 术语：用户「第 N 层」= code depth N-1（currentRoot=depth0=第1层不进菜单）。
+// 「折叠 ⇄ 撤回」快照机制（原左下角折叠按钮的逻辑，2026-09-11 起扩展到层级条**所有**数字按钮）：
+//   同一层级按钮再点一次 = 撤回（恢复快照）；换一个层级 = 重新折叠（记新快照）；无限循环。
+//   全部单层语义——只把节点自己的 fold 置 true，绝不动后代 fold（展开后内部折叠状态保持原样）。
 // 选中节点时的折叠用 keepView(selNode) 保持选中节点屏幕位置不动（2026-08-26 位置刷新优化）；
-// 仅无选中的按层折叠（foldByLevel）仍 resetView() 居中当前根。
-const btnFold = document.getElementById('btn-fold');
-if (btnFold) {
-  btnFold.innerHTML = renderIcon('chevrons-down-up', 18);
-  btnFold.dataset.side = 'right';
-  btnFold.dataset.tip = T('tb.foldDefault'); // 默认（未选中）；updateToolbar 会按选中态刷新文案
-  // 2026-09-01 最终定案：左按钮 = 折叠 ⇄ 撤回 交替（全程单层语义，修「逐级折叠」bug）。
-  // 第 1 次点击（折叠）：画面除选中节点路径外全部收起 + 选中节点自身收起（只剩它自己）；
-  //   只置各节点自己的 fold=true，绝不动后代 fold——之后展开，里面折叠状态保持原样（不逐级深折）；
-  // 第 2 次点击（撤回）：完整恢复第 1 次点击前的折叠状态（外面兄弟、它自己的子层，刚刚是啥样就回到啥样）；
-  // 第 3 次再折叠……交替。折叠时记录全树 fold 快照，撤回时恢复快照。
-  let foldSnapActive = false, foldSnapMap = null;
-  btnFold.onclick = (e) => {
-    e.stopPropagation();
-    if (!hasSingleSelection()) return; // 未选中：禁用，tooltip 已提示「请先选择节点」
-    const sel = findNode(state.tree, state.selectedId);
-    if (foldSnapActive && foldSnapMap) {
-      // 撤回：恢复快照（完全回到折叠前的状态）
-      pushUndo();
-      restoreFoldSnapshot(foldSnapMap);
-      foldSnapActive = false; foldSnapMap = null;
-      emitUpdate();
-      keepView(sel ? sel.node : currentRoot());
-      render();
-    } else {
-      const path = pathTo(currentRoot(), state.selectedId);
-      if (!path) { foldByLevel(1); return; }
-      pushUndo();
-      foldSnapMap = captureFoldSnapshot(); // 记录当前全树 fold 状态
-      foldMinimalKeepPath(path);           // 外面全折 + 选中节点自身收起（只剩路径链和它自己；均单层，后代 fold 不动）
-      foldSnapActive = true;
-      emitUpdate();
-      keepView(path[path.length - 1]);
-      render();
-    }
-  };
-  applyProGate(btnFold); // Pro 卡点（2026-09-04）：左侧折叠按钮（⚠️ 必须在 onclick 赋值之后调用——applyProGate 靠包装 onclick 拦截，先调用会被上面的赋值覆盖掉）
+// 仅无选中的按层折叠仍 resetView() 居中当前根。
+let foldSnapActive = false, foldSnapMap = null, foldSnapLvl = null;
+// 层级条统一入口：lvl = 按钮数字（用于区分"同层再点=撤回"）；apply = 该按钮的纯折叠动作（不含 pushUndo/渲染）
+function foldRunWithUndo(lvl, apply, keepSel) {
+  const sel = hasSingleSelection() ? findNode(state.tree, state.selectedId) : null;
+  if (foldSnapActive && foldSnapMap && foldSnapLvl === lvl) {
+    // 同层再点 = 撤回：恢复快照（完全回到这次折叠前的状态）
+    pushUndo();
+    restoreFoldSnapshot(foldSnapMap);
+    foldSnapActive = false; foldSnapMap = null; foldSnapLvl = null;
+    emitUpdate();
+    if (keepSel && sel) keepView(sel.node); else resetView();
+    render();
+    return;
+  }
+  // 换层（或首次）= 折叠：记录全树 fold 快照后执行，之后可随时同层撤回
+  pushUndo();
+  foldSnapMap = captureFoldSnapshot();
+  apply();
+  foldSnapActive = true; foldSnapLvl = lvl;
+  emitUpdate();
+  if (keepSel && sel) keepView(sel.node); else resetView();
+  render();
 }
 // 「进入该节点」按钮（2026-08-30 定）：= 右键「进入当前节点」drillInto，需选中节点才可用
 const btnDrill = document.getElementById('btn-drill');
@@ -4897,8 +4885,14 @@ function pathTo(root, target) {
 }
 // 按层折叠（Mode A，无选中）：targetDepth=code depth；d<targetDepth 打开路径，d===targetDepth 只折该层（单层语义，更深层 fold 不动）
 function foldByLevel(targetDepth) {
-  const root = currentRoot();
   pushUndo();
+  foldByLevelPure(targetDepth);
+  emitUpdate();
+  resetView();
+}
+// 纯折叠动作（不含 pushUndo/渲染）—— 供层级条的「折叠⇄撤回」快照机制调用（foldRunWithUndo）
+function foldByLevelPure(targetDepth) {
+  const root = currentRoot();
   const walk = (node, d) => {
     if (d > 0) {
       if (d < targetDepth) node.fold = false;
@@ -4907,8 +4901,6 @@ function foldByLevel(targetDepth) {
     node.children.forEach(c => walk(c, d + 1)); // 遍历所有层，深层 fold 状态不变（不中途 return）
   };
   walk(root, 0);
-  emitUpdate();
-  resetView();
 }
 // 折偏路径兄弟侧枝（选中节点场景共用）：off-path 兄弟整棵深折（渐进式，2026-08-30），不碰选中节点本身及其子树
 function foldOffPathSiblings(path) {
@@ -4926,8 +4918,15 @@ function foldOffPathSiblings(path) {
 function foldSelByLevel(N) {
   const path = pathTo(currentRoot(), state.selectedId);
   if (!path) { foldByLevel(1); return; }
-  const selNode = path[path.length - 1];
   pushUndo();
+  foldSelByLevelPure(N, path);
+  emitUpdate();
+  keepView(path[path.length - 1]); // 按层级折叠选中子树：选中节点保持原位，不跳中心（2026-08-26 位置刷新优化）
+  render();
+}
+// 纯折叠动作（不含 pushUndo/渲染）—— 供层级条的「折叠⇄撤回」快照机制调用（foldRunWithUndo）
+function foldSelByLevelPure(N, path) {
+  const selNode = path[path.length - 1];
   foldOffPathSiblings(path);                                  // ① 其它无关极简（off-path 兄弟整棵深折）
   selNode.fold = false;                                        // 选中节点打开（让相对层可见）
   const walkSel = (node, d) => {                              // ② 选中子树只折目标层（不深折，还原"原来那个逻辑"）
@@ -4938,9 +4937,6 @@ function foldSelByLevel(N) {
     node.children.forEach(c => walkSel(c, d + 1));
   };
   walkSel(selNode, 0);
-  emitUpdate();
-  keepView(selNode); // 按层级折叠选中子树：选中节点保持原位，不跳中心（2026-08-26 位置刷新优化）
-  render();
 }
 // ===== 左下角折叠按钮的「折叠 ⇄ 撤回」辅助（2026-09-01 定案）=====
 // 记录当前根子树全部节点的 fold 状态（快照）；撤回时原样恢复。
@@ -4979,25 +4975,46 @@ let foldBarHoverFns = {};  // lvl -> () => hover 高亮（host 回 foldBarHover 
 function updateFoldBar() {
   if (state.historyMode) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; }
   // ---- 层级参数（Mode A/B 分支）----
+  // 2026-09-11 用户定：两个模式都从 1 开始、上限按整棵树最深层级（展示 1-5+，不随选中子树缩小）；
+  //   未选中点 1 = 折叠到只剩主节点（foldByLevelPure(0)）；选中点 1 = 只剩选中路径（foldMinimalKeepPath）；
+  //   label 恒为数字（不再交替 ↩，再点一次即撤销）；hasSel 随状态发宿主做未选中降透明度。
   let startLvl, maxLvl, clickFn, hoverFn, titleFn;
   const selPath = hasSingleSelection() ? pathTo(currentRoot(), state.selectedId) : null;
+  // 整棵树最深 code depth（两个模式的上限都用它）
+  let treeMax = 0;
+  (function d(n, dp) { if (!n) return; if (dp > treeMax) treeMax = dp; (n.children || []).forEach(c => d(c, dp + 1)); })(currentRoot(), 0);
   if (selPath) {
     const selNode = selPath[selPath.length - 1];
+    // Mode B（选中态）：所有数字都是「折叠 ⇄ 撤回」循环（同层再点 = 撤回，换层 = 重新折叠）。
+    //   1 = 只剩选中路径（原左下按钮功能）；2.. = 选中子树按相对层折叠。
+    //   上限 = 选中子树的层数（D+1）—— 2026-09-11 用户澄清：数字数量随选中变化，
+    //   选中浅节点（如倒数第二个）只显示 1-2，不显示用不到的后面数字。
+    //   文案统一「从此节点起，折叠到第 X 层级」（1 与其它一致，不提示撤回——用户自己点会发现）
     let D = 0;
     (function d(n, dp) { if (dp > D) D = dp; n.children.forEach(c => d(c, dp + 1)); })(selNode, 0);
-    // Mode B（选中态）：数字相对选中节点，2 起（1=选中自身的折叠归左下按钮管，不进层级条）
-    startLvl = 2; maxLvl = D + 1;
-    clickFn = (lvl) => foldSelByLevel(lvl - 1);
-    hoverFn = (lvl) => highlightSelLevel(selNode, lvl - 1);
-    titleFn = (lvl) => T('fold.selBelow', lvl - 1);
+    startLvl = 1; maxLvl = D + 1;
+    clickFn = (lvl) => foldRunWithUndo(lvl, () => {
+      if (lvl === 1) foldMinimalKeepPath(selPath);
+      else foldSelByLevelPure(lvl - 1, selPath);
+    }, true);
+    hoverFn = (lvl) => lvl === 1 ? highlightSelLevel(selNode, 0) : highlightSelLevel(selNode, lvl - 1);
+    titleFn = (lvl) => T('fold.selBelow', lvl);
   } else {
     const root = currentRoot();
     if (!root) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; } // 2026-08-30 防御：树未初始化/解析异常时 root 为 null
-    let maxDepth = 0;
-    (function d(n, dp) { if (!n) return; if (dp > maxDepth) maxDepth = dp; (n.children || []).forEach(c => d(c, dp + 1)); })(root, 0);
-    if (maxDepth < 1) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; } // 无层级可折 → 状态栏隐藏
-    startLvl = 2; maxLvl = maxDepth + 1;
-    clickFn = (lvl) => foldByLevel(lvl - 1);
+    // Mode A（未选中）：所有数字同为「折叠 ⇄ 撤回」循环；1 = 折叠到只剩主节点
+    //   （2026-09-11 修：原走 foldByLevelPure(0) 是空操作——其 walk 里 if(d>0) 把根排除，
+    //     主节点 fold 从未被置 → 第一层还在；改为直接给主节点自身置 fold）
+    //   2026-09-11 用户澄清：**单主节点也要显示「1」**（数几层出几个数字，不再隐藏）
+    startLvl = 1; maxLvl = treeMax + 1;
+    clickFn = (lvl) => foldRunWithUndo(lvl, () => {
+      if (lvl === 1) {
+        const root = currentRoot();
+        if (root && root.children.length) root.fold = true; // 主节点自身收起 = 画面只剩主节点（快照可撤回）
+      } else {
+        foldByLevelPure(lvl - 1);
+      }
+    }, false);
     hoverFn = (lvl) => highlightLevel(lvl - 1);
     titleFn = (lvl) => T('fold.level', lvl);
   }
@@ -5006,11 +5023,11 @@ function updateFoldBar() {
   foldBarClicks = {};
   foldBarHoverFns = {};
   for (let lvl = startLvl; lvl <= maxLvl; lvl++) {
-    levels.push({ lvl, label: String(lvl), title: titleFn(lvl) });
+    levels.push({ lvl, label: String(lvl), title: titleFn(lvl) }); // label 恒为数字（用户 2026-09-11：点 1 后不要出现 ↩，再点即撤销）
     foldBarClicks[lvl] = () => clickFn(lvl);
     foldBarHoverFns[lvl] = () => hoverFn(lvl);
   }
-  vscode.postMessage({ type: 'foldBarState', levels, hidden: false });
+  vscode.postMessage({ type: 'foldBarState', levels, hidden: false, hasSel: !!selPath });
 }
 
 // ===== 定位按钮（2026-08-28 重做）：主节点 + Now1/2/… + 选中节点 的按钮序列，循环定位 =====
@@ -5020,22 +5037,34 @@ let locateIdx = null; // 当前定位项在序列中的 index；null=未开始�
 function buildLocateItems() {
   const items = [];
   const root = currentRoot();
-  const nows = root ? collectNowNodes(root) : [];
-  const nowIds = new Set(nows.map(n => n.id));
-  const selectedIsNow = !!(state.selectedId && nowIds.has(state.selectedId));
-  // 主节点：除非它本身就是 Now（2026-08-30 Opt3：主节点即 Now → 隐藏主节点只显 now）
-  if (root && !nowIds.has(root.id)) items.push({ type: 'root', id: root.id, label: T('locate.root') });
-  // Now 项：单 now 不编号（Opt4）
-  nows.forEach((n, i) => {
-    const label = nows.length === 1 ? 'Now' : 'Now ' + (i + 1);
-    items.push({ type: 'now', idx: i, id: n.id, label });
-  });
-  // 选中节点：仅当选中不是 now 且不是当前主节点时才加（Opt2+2026-08-30：选中即 now/主节点 → 合并隐藏，从主节点开始循环）
-  const selectedIsRoot = !!(root && state.selectedId === root.id);
-  if (state.selectedId && !selectedIsNow && !selectedIsRoot && findNode(state.tree, state.selectedId)) {
-    items.push({ type: 'selected', id: state.selectedId, label: T('locate.selected') });
-  }
+  if (!root) return items;
+  const selId = state.selectedId;
+  // 2026-09-11 用户定：**多级子菜单 + 平级规则** —— 主节点和所有 Now 节点是**平级**的；
+  //   只有当某 Now 的**最近感兴趣祖先也是 Now**（Now 套 Now）、或选中节点挂在某 Now 之下时才嵌一级；
+  //   最近感兴趣祖先是主节点（或没有）→ 与主节点同级。循环顺序 = 先序 DFS：
+  //   主节点 → 与它平级的各分支 → 进入某 Now 的子 Now → … → 回出来到下一分支。
+  //   depth 供渲染切层（飞出面板按 depth 挂载，见 buildNowMenu）。
+  const typeOf = (n) => {
+    if (n.id === root.id) return nodeIsNow(n) ? 'now' : 'root';
+    if (nodeIsNow(n)) return 'now';
+    if (n.id === selId) return 'selected';
+    return null;
+  };
+  let nowIdx = 0; // Now 序号：locateToItem 靠它点亮当前 Now（丢了会全部变淡紫，2026-09-11 实踩）
+  (function walk(n, ancDepth, ancIsNow) {
+    const type = typeOf(n);
+    if (!type) { (n.children || []).forEach(c => walk(c, ancDepth, ancIsNow)); return; } // 非感兴趣节点：穿过并继承层深
+    const depth = n.id === root.id ? 0 : (ancIsNow ? ancDepth + 1 : 0);
+    const item = { type, id: n.id, node: n, depth, label: plainTitle(n.title), note: n.note || '' };
+    if (type === 'now') item.idx = nowIdx++;
+    items.push(item);
+    (n.children || []).forEach(c => walk(c, depth, type === 'now'));
+  })(root, 0, false);
   return items;
+}
+// 菜单里显示的节点名 = 纯文本（剥掉 ** 加粗 / ~~ 删除线 符号；格式本身是渲染层效果）
+function plainTitle(t) {
+  return String(t || '').replace(/\*\*/g, '').replace(/~~/g, '').trim();
 }
 function locateToItem(item, keepDim, autoBrightMs) {
   if (!item) return;
@@ -5133,20 +5162,264 @@ function clearNowLocate() {
   });
 }
 // 定位按钮悬浮菜单：2026-08-30 Opt1 改为始终弹（哪怕只有主节点），体验统一
+// 2026-09-11 用户定：子菜单「三段式自适应对齐」——
+//   ① 内容矮：与工具栏「顶对齐」（top:0，原位不动）；
+//   ② 内容高到快触屏底：上提，**底边贴工具栏底**（不是按钮格的底！）；
+//   ③ 头部提到上限（视口 30% 处）就停，剩下的内容菜单内滚动。
+//   注意：#now-menu 挂在 #now-locate-wrap（定位按钮那一小格）里，bottom:0 只能贴到
+//   按钮格底 —— 要贴工具栏底得用负 bottom 补齐两者的高差（纯 CSS 算不了，JS 量）。
+function alignNowMenu() {
+  const m = document.getElementById('now-menu');
+  const tb = document.getElementById('left-toolbar');
+  const wrap = document.getElementById('now-locate-wrap');
+  if (!m || !tb || !wrap) return;
+  const vh = window.innerHeight || 800;
+  const tbR = tb.getBoundingClientRect();
+  const wrapR = wrap.getBoundingClientRect();
+  const availBelow = vh - tbR.top - 24;          // 与工具栏顶对齐时，屏幕下方还剩多少（留 24px 边距）
+  if (m.scrollHeight <= availBelow) {                                  // ① 短：顶对齐（原位）
+    m.style.top = '0'; m.style.bottom = 'auto'; m.style.maxHeight = '';
+  } else {                                                             // ②③ 长：底贴工具栏底，头部封顶后滚动
+    m.style.top = 'auto';
+    m.style.bottom = (-Math.round(tbR.bottom - wrapR.bottom)) + 'px';  // 负 bottom：把底边从按钮格拉到工具栏底
+    m.style.maxHeight = Math.max(240, Math.floor(tbR.bottom - Math.max(120, vh * 0.30))) + 'px'; // 头最高到视口 30% 处
+  }
+}
+// 子菜单条目「二次点击进入编辑」（2026-09-11 用户定，融合画布逻辑）：
+//   悬浮 = 画布预览漂移；点 1 = 定位 + **选中**（画布选中边框 / 底部工具条 / 快捷键全生效）；
+//   再点同一条 = 光标进入**条目内**编辑（原始 Markdown，所见即所存）。
+//   提交走与画布编辑同一条数据通路：node.title → pushUndo → emitUpdate（写回源文件）→ render（画布同源更新）。
+//   Cmd/Ctrl 组合键放行给画布快捷键（鼠标被菜单占用时靠 Cmd+M 等操作）；普通键就地消费不干扰画布。
+let mmEditId = null; // 「已点过一次」的条目 id；再点同一条 = 进入编辑，点别的条 = 重新计数
+// 编辑期间锁菜单（2026-09-11 用户：删字后菜单缩小、鼠标被动"离开"→ 菜单闪没）：
+// menuEditOn 时 hide() 直接不执行（不收菜单、不回滚画布）；编辑结束（回车/失焦）时
+// 若鼠标确实已在菜单外，再补执行收起。
+let menuEditOn = false;
+let menuEditPendingHide = false;
+let requestMenuHide = null; // 由 bindNowLocateHover 注入（hide 在 IIFE 内部）
+// 2026-09-11 用户定：子菜单条目编辑期间 = 「操作只在子菜单里，画布完全让位」——
+//   编辑像正常文本框（全选/拖选/复制粘贴/删字都原生可用），保存后才同步到画布；
+//   Cmd/Ctrl 快捷键照常作用于选中节点（鼠标被菜单占用时的操作手段）。
+function startMenuEdit(b, item) {
+  const node = item.node;
+  const t = b.querySelector('.now-num-title');
+  if (!node || !t) return;
+  disarmProxy(); // selectNode 会 arm proxy（敲键=替换标题），条目内编辑期间必须让位
+  const originalRaw = node.title;
+  t.textContent = originalRaw;
+  t.contentEditable = 'true';
+  t.classList.add('menu-editing');
+  menuEditOn = true;
+  t.focus();
+  try { // 光标移到末尾
+    const sel = window.getSelection(), range = document.createRange();
+    range.selectNodeContents(t); range.collapse(false);
+    sel.removeAllRanges(); sel.addRange(range);
+  } catch (e) {}
+  const finish = (save) => {
+    menuEditOn = false;
+    t.removeEventListener('keydown', onKey);
+    t.removeEventListener('blur', onBlur);
+    t.removeEventListener('mousedown', stopEv);
+    t.contentEditable = 'false';
+    t.classList.remove('menu-editing');
+    try { t.blur(); } catch (e) {}
+    try { b.focus(); } catch (e) {} // 焦点留在子菜单（条目按钮上）：后续按键走菜单的键盘隔离，不再掉回画布（2026-09-11 用户）
+    const raw = save ? t.innerText.replace(/^\n+|\n+$/g, '') : originalRaw; // 首尾空行收掉（与画布同规则）
+    if (save && raw !== originalRaw) {
+      pushUndo();
+      node.title = raw;
+      emitUpdate(); // 写回源文件
+      render();     // 画布重渲染（同源数据，对应节点自动更新）
+      item.label = plainTitle(node.title);
+      item.note = node.note || '';
+      }
+    t.innerHTML = renderInline(node.title || ''); // 回渲染态（同源富文本）
+    if (menuEditPendingHide) { menuEditPendingHide = false; if (requestMenuHide) requestMenuHide(); } // 编辑期间鼠标已离开 → 提交后补收菜单
+  };
+  const onBlur = () => finish(true); // 点击空白 / 收菜单 = 提交（与画布编辑一致）
+  const stopEv = (e) => e.stopPropagation(); // 编辑中鼠标事件不出菜单（防画布侧任何响应干扰拖选/光标）
+  function onKey(ev) {
+    if (ev.isComposing || ev.keyCode === 229) return; // 输入法组字中的 Enter 只是选字上屏，不是保存（缺这条会提前提交+焦点掉回画布）
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); finish(true); return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); return; }
+    if (ev.key === 'Enter' && ev.shiftKey) { // 与画布一致：Shift+Enter = 存标题、转备注编辑
+      ev.preventDefault(); ev.stopPropagation(); finish(true); startMenuNoteEdit(b, item); return;
+    }
+    if (ev.metaKey || ev.ctrlKey) {
+      const k = (ev.key || '').toLowerCase();
+      // 复制/剪切/粘贴：编辑框里有选区或正在粘贴 → 原生行为（用户要求全选复制粘贴可用），不路由给画布
+      if ((k === 'c' || k === 'x') && String(window.getSelection() || '') !== '') { ev.stopPropagation(); return; }
+      if (k === 'v') { ev.stopPropagation(); return; }
+      return; // 其余 Cmd/Ctrl 组合键（Cmd+M/N/B…）放行冒泡 → 画布快捷键作用于选中节点
+    }
+    ev.stopPropagation(); // 普通键就地消费，不干扰画布
+  }
+  t.addEventListener('keydown', onKey);
+  t.addEventListener('blur', onBlur);
+  t.addEventListener('mousedown', stopEv);
+}
+// 条目内备注编辑（标题 Shift+Enter 转入，镜像画布）：备注是纯文本，编辑原文、回车/失焦提交
+function startMenuNoteEdit(b, item) {
+  const node = item.node;
+  if (!node) return;
+  let nt = b.querySelector('.now-num-note');
+  if (!nt) {
+    nt = document.createElement('span');
+    nt.className = 'now-num-note';
+    const body = b.querySelector('.now-num-body');
+    if (body) body.appendChild(nt); else return;
+  }
+  disarmProxy();
+  const originalRaw = node.note || '';
+  nt.textContent = originalRaw;
+  nt.contentEditable = 'true';
+  nt.classList.add('menu-editing');
+  menuEditOn = true;
+  nt.focus();
+  try {
+    const sel = window.getSelection(), range = document.createRange();
+    range.selectNodeContents(nt); range.collapse(false);
+    sel.removeAllRanges(); sel.addRange(range);
+  } catch (e) {}
+  const finish = (save) => {
+    menuEditOn = false;
+    nt.removeEventListener('keydown', onKey);
+    nt.removeEventListener('blur', onBlur);
+    nt.removeEventListener('mousedown', stopEv);
+    nt.contentEditable = 'false';
+    nt.classList.remove('menu-editing');
+    try { nt.blur(); } catch (e) {}
+    try { b.focus(); } catch (e) {} // 焦点留在子菜单（同上）
+    const raw = save ? nt.innerText.replace(/^\n+|\n+$/g, '') : originalRaw;
+    if (save && raw !== originalRaw) {
+      pushUndo();
+      node.note = raw;
+      emitUpdate(); // 写回源文件
+      render();     // 画布同步
+      item.note = raw;
+    }
+    if (node.note) nt.textContent = node.note;
+    else nt.remove(); // 没备注了 → 移除占位
+    if (menuEditPendingHide) { menuEditPendingHide = false; if (requestMenuHide) requestMenuHide(); } // 同上：提交后补收
+  };
+  const onBlur = () => finish(true);
+  const stopEv = (e) => e.stopPropagation();
+  function onKey(ev) {
+    if (ev.isComposing || ev.keyCode === 229) return;
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ev.stopPropagation(); finish(true); return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); return; }
+    if (ev.metaKey || ev.ctrlKey) {
+      const k = (ev.key || '').toLowerCase();
+      if ((k === 'c' || k === 'x') && String(window.getSelection() || '') !== '') { ev.stopPropagation(); return; }
+      if (k === 'v') { ev.stopPropagation(); return; }
+      return;
+    }
+    ev.stopPropagation();
+  }
+  nt.addEventListener('keydown', onKey);
+  nt.addEventListener('blur', onBlur);
+  nt.addEventListener('mousedown', stopEv);
+}
+// 子菜单（主面板 + 飞出子面板）统一事件隔离（2026-09-11 用户定）：鼠标/滚轮/普通按键不出菜单体系，
+//   画布零反应；Cmd/Ctrl 组合键放行 → 画布快捷键照常作用于选中节点。
+function isolateMenuEvents(el) {
+  el.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+  ['mousedown', 'mouseup', 'dblclick', 'click'].forEach(ev => el.addEventListener(ev, (e) => e.stopPropagation()));
+  el.addEventListener('keydown', menuKeyGuard);
+}
+function menuKeyGuard(e) {
+  if (menuEditOn) return; // 条目编辑框自理（Enter/Esc/Shift+Enter 已在框内处理）
+  if (e.metaKey || e.ctrlKey) return; // 组合键放行画布快捷键
+  e.stopPropagation(); // 普通按键不外传（画布选中态的 Enter=新建、Shift+Enter=画布备注 收不到）
+  if (e.shiftKey && e.key === 'Enter') { // Shift+Enter = 在子菜单里编辑当前项备注（不落到画布）
+    // 飞出面板不在 #now-menu 内 → 全局查（DOM 顺序 = 构建顺序 = 先序，与 locateIdx 对齐）
+    const btns = document.querySelectorAll('#now-menu .now-num');
+    const idx = (locateIdx != null && btns[locateIdx]) ? locateIdx : 0;
+    const bEl = btns[idx];
+    const items = buildLocateItems();
+    if (bEl && items[idx] && !bEl.querySelector('.menu-editing')) startMenuNoteEdit(bEl, items[idx]);
+  }
+  if (e.key === 'Enter' || e.key === ' ') e.preventDefault(); // 焦点在条目按钮上时抑制按钮激活（回车=确认语义）
+}
 function buildNowMenu() {
   const menu = document.getElementById('now-menu');
   if (!menu) return;
   menu.innerHTML = '';
+  mmEditId = null; // 每次重新弹出菜单，二次点击计数重置
   const items = buildLocateItems();
+  // 条目悬浮定位延时（2026-09-11 用户：一悬浮就定位太灵敏）—— 停够 --locate-item-delay-ms 才预览，扫过不动
+  let hoverTimer = null;
+  const hoverDelay = cfgNum('--locate-item-delay-ms', 200); // 旋钮在 :root「视觉调参区」--locate-hover-delay-ms 的下一行
+  // 2026-09-11 用户定（回归）：多级 = 同面板缩进树 —— 平级项（主/顶层 Now）并排，
+  //   Now 之下的子 Now / 选中节点按 depth 缩进一级（每级 18px），全部展开同时可见。
   items.forEach((item, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'now-num' + (i === locateIdx ? ' bold' : '') + (item.type === 'now' ? ' is-now' : '');
-    b.textContent = item.label;
-    b.title = T('locate.to', item.label);
-    b.onclick = (e) => { e.stopPropagation(); locateIdx = i; locateToItem(item); updateNowMenuBold(); };
+    // 多级缩进（2026-09-11 用户定）：Now 之下的子 Now / 选中节点缩进一级（每级 18px）；平级项并排
+    if (item.depth) b.style.paddingLeft = (8 + item.depth * 18) + 'px';
+    // 不设 b.title：系统原生 tooltip 用户不要（2026-09-11）
+    // 2026-09-11 用户定：**与画布节点同源渲染** —— 标题直接用 cardTitleInner(node)
+    //   （画布节点卡用的就是它：Minor/Now 前缀图标 + renderInline 富文本，加粗/删除线/链接原样呈现）；
+    //   备注放标题**下方**（不左右排）；全文不截断、长了折行（与 .card .title 同款 white-space/word-break）；
+    //   菜单项宽度与节点卡一致（max-content，上限同 --card-maxw）。
+    const ic = document.createElement('span');
+    ic.className = 'now-num-ic';
+    ic.innerHTML = item.type === 'root' ? renderIcon('home', 15)
+      : item.type === 'now' ? renderNowIcon('bottom')   // 底部工具条那款（更简洁、无火花）；白描边由 CSS 改回 currentColor
+      : renderIcon('square-mouse-pointer', 15);
+    const body = document.createElement('span');
+    body.className = 'now-num-body';
+    const t = document.createElement('span');
+    t.className = 'now-num-title';
+    // 同源 = 内容走同一个渲染引擎 renderInline（加粗/删除线/链接原样）；
+    // 不用 cardTitleInner —— 它包含节点卡专属的 Minor/Now 前缀图标，
+    // 会和子菜单自己的类型图标重复，且离开 .card 尺寸约束会炸成巨图（2026-09-11 实踩）。
+    t.innerHTML = item.node ? renderInline(item.node.title || '') : escapeHtml(item.label);
+    // 双击标题 = 进入条目内编辑（与二次点击等效；2026-09-11 用户定「双击写」）
+    t.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      if (!b.querySelector('.menu-editing')) startMenuEdit(b, item);
+    });
+    body.appendChild(t);
+    if (item.note) {
+      const nt = document.createElement('span');
+      nt.className = 'now-num-note';
+      nt.textContent = item.note;
+      // 双击备注 = 条目内编辑备注（2026-09-11 用户定；不再漏到画布的真节点上）
+      nt.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        if (!b.querySelector('.menu-editing')) startMenuNoteEdit(b, item);
+      });
+      body.appendChild(nt);
+    }
+    b.appendChild(ic);
+    b.appendChild(body);
+    b.onclick = (e) => {
+      e.stopPropagation();
+      // 编辑中：条目内点击属于文本操作（挪光标/拖选后松开），不当作"再点一次"（否则 selectNode 抢焦点、选区塌掉）
+      if (b.querySelector('.menu-editing')) return;
+      // 点在备注上：只定位/选中，不累计标题的「二次点击」（备注用双击进编辑，2026-09-11 用户定）
+      if (e.target.closest('.now-num-note')) return;
+      locateIdx = i;
+      locateToItem(item);
+      selectNode(item.id); // 与画布一致：定位的同时选中（选中边框 / 底部工具条 / 快捷键全生效）
+      updateNowMenuBold();
+      // 二次点击同一条 = 进入条目内编辑；点别的条 = 重新计数（2026-09-11 用户定）
+      if (mmEditId === item.id) { mmEditId = null; startMenuEdit(b, item); }
+      else mmEditId = item.id;
+    };
     // 2026-08-30 Bug：hover 只高亮不定位（点击才定位）；高亮超画框的节点无 el → 不动，符合"超了不管"
-    b.addEventListener('mouseenter', () => { if (menu.classList.contains('open')) highlightLocateItem(item); });
+    // 悬浮延时定位：停够 --locate-item-delay-ms 才预览（0=立刻，旧行为）；移开/重建菜单即取消
+    b.addEventListener('mouseenter', () => {
+      if (menuEditOn) return; // 编辑中：划过其它条目不触发定位预览（用户在打字，别带着画布乱跑）
+      if (!menu.classList.contains('open')) return;
+      if (!(hoverDelay > 0)) { highlightLocateItem(item); return; }
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => { if (menu.classList.contains('open')) highlightLocateItem(item); }, hoverDelay);
+    });
+    b.addEventListener('mouseleave', () => clearTimeout(hoverTimer));
     menu.appendChild(b);
   });
 }
@@ -5162,12 +5435,18 @@ function updateNowMenuBold() {
   const menu = document.getElementById('now-menu');
   const btn = document.getElementById('btn-locate');
   if (!wrap || !menu || !btn) return;
+  // 滚轮只滚菜单，不带动后面的画布（2026-09-11 用户）：画布的滚轮平移是 JS 监听，
+  // 靠事件冒泡触发 —— overscroll-behavior 拦不住它，必须在这里把 wheel 事件截住不外传。
+  // passive:true = 不阻止默认行为（菜单自身的原生滚动照常），只切断冒泡。
+  // 菜单与飞出子面板统一隔离（鼠标/滚轮/普通按键不出菜单体系，画布零反应；Cmd/Ctrl 放行）
+  isolateMenuEvents(menu);
   let timer = null;     // 收菜单计时（原有）
   let openTimer = null; // 悬停延时开启计时（2026-08-31 加：防扫过误触）
   const cancelPendingOpen = () => { if (openTimer) { clearTimeout(openTimer); openTimer = null; } };
   const show = () => {
     clearTimeout(timer);
     buildNowMenu(); menu.classList.add('open');
+    alignNowMenu(); // 三段式自适应对齐（见函数注释）
     // 阶段1：hover 主按钮 → 子菜单弹出并预览定位到"当前状态对应项"（2026-08-30 新需求：主按钮 hover 即定位预测，画布滚过去+其他变暗）
     // 当前状态 = 选中节点（若有）否则主节点；locateIdx 有值用它
     const items = buildLocateItems();
@@ -5191,6 +5470,7 @@ function updateNowMenuBold() {
   // - 离开时：若本次 hover 没点击固化 → 平滑回滚到「原位置」（回滚期间开，动画结束 onDone 再关）；
   //   若已点击固化 / 无原位置 → 直接关（画面停在当前项，不回滚）。
   const hide = () => {
+    if (menuEditOn) { menuEditPendingHide = true; return; } // 编辑中锁菜单：删字导致菜单缩小、鼠标被动离开也不收（提交时再补收）
     cancelPendingOpen(); // 还没弹出就离开 → 取消待弹（画布也不会被带偏）
     if (locateHoverFixed && locateConfirmedItemId) {
       // 已确认：退出时平滑滚回已确认节点（而不是停在上次 hover 预览的位置），到位瞬间关掉平滑 + 全亮
@@ -5229,8 +5509,9 @@ function updateNowMenuBold() {
   // 延时未到就移开按钮（只是扫过）→ 取消待弹：不弹菜单、也不触发定位预览（画布不动）
   btn.addEventListener('mouseleave', () => { if (openTimer) cancelPendingOpen(); });
   wrap.addEventListener('mouseleave', hide);
-  menu.addEventListener('mouseenter', () => { locateSmoothOn = true; clearTimeout(timer); });
+  menu.addEventListener('mouseenter', () => { locateSmoothOn = true; clearTimeout(timer); menuEditPendingHide = false; });
   menu.addEventListener('mouseleave', hide);
+  requestMenuHide = () => hide(); // 供条目编辑结束时补收（编辑中锁菜单，见 hide 守卫）
 })();
 // 高亮子菜单第 idx 项（加粗），其余不加粗
 function updateNowMenuBoldAt(idx) {

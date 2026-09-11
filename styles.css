@@ -85,8 +85,47 @@
 .status-bar .shin-foldbar { display: inline-flex; align-items: center; gap: 1px; }
 .status-bar .shin-foldbar > .shin-foldbar-btn { transform: translateY(var(--shin-foldbar-num-y)); }
 .status-bar .shin-foldbar-btn {
+  position: relative; /* 锚定自绘黑色小提示框（2026-09-11：不用系统 title，要和左下角按钮同款黑框） */
   cursor: pointer; padding: 1px 6px; min-width: 18px; text-align: center;
   font-size: var(--font-ui-smaller); color: var(--text-muted); border-radius: var(--radius-s);
+}
+/* 悬浮黑色小提示框：内容来自按钮的 data-tip（前端随折叠/撤回状态与选中态切换文案）
+   ⚠️ 选择器带 [data-tip] —— 没有提示的按钮（如「+」）不设该属性，避免渲染出空白黑框 */
+.status-bar .shin-foldbar-btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 12px); right: -6px; z-index: 200;
+  background: #1f2329; color: #fff; font-size: 12px; line-height: 1.5; font-weight: 400;
+  padding: 5px 10px; border-radius: 6px; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  opacity: 0; pointer-events: none; transform: translateY(3px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+/* 小箭头（5px 三角，指向下方按钮）：与左下角按钮 tooltip 同款（mindmap-app.css [data-tip]::before） */
+.status-bar .shin-foldbar-btn[data-tip]::before {
+  content: ""; position: absolute; bottom: calc(100% + 7px); right: 0; z-index: 200;
+  border: 5px solid transparent; border-top-color: #1f2329; border-bottom: 0;
+  opacity: 0; pointer-events: none; transform: translateY(3px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.status-bar .shin-foldbar-btn[data-tip]:hover::after { opacity: 1; transform: translateY(0); }
+.status-bar .shin-foldbar-btn[data-tip]:hover::before { opacity: 1; transform: translateY(0); }
+/* 未选中淡显：只淡文字（黑框提示自带 #fff，不受影响，保持和左下角一样的纯黑） */
+.status-bar .shin-foldbar-btn.shin-foldbar-dim { color: var(--text-faint); }
+/* 「+」弹层里的按钮：提示框改放左侧垂直居中 —— 向上弹会盖住弹层里上方的选项（用户 2026-09-11） */
+.status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::after {
+  bottom: auto; right: calc(100% + 10px); left: auto; top: 50%;
+  transform: translateY(-50%) translateX(3px);
+}
+.status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::before {
+  bottom: auto; right: calc(100% + 5px); left: auto; top: 50%;
+  border: 5px solid transparent; border-left-color: #1f2329; border-right: 0;
+  transform: translateY(-50%) translateX(3px);
+}
+.status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]:hover::after {
+  transform: translateY(-50%) translateX(0);
+}
+.status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]:hover::before {
+  transform: translateY(-50%) translateX(0);
 }
 .status-bar .shin-foldbar-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 .status-bar .shin-foldbar-more-wrap { position: relative; display: inline-flex; padding-top: 6px; margin-top: -6px; transform: translateY(var(--shin-foldbar-more-y)); }

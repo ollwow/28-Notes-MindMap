@@ -76,41 +76,33 @@ var I18N = {
 
     // ============ 设置页（设置 → 第三方插件 → 28 Notes）============
     'settings.uiHeading': '界面', // 设置页最顶端 H2 标题（2026-09-01 定）
-    'settings.language': '界面语言', // 语言设置项的名称
-    'settings.languageDesc': '支持中文和英文。', // 语言项下方说明文字
+    'settings.language': '界面语言', // 语言设置项的名称（2026-09-11 删「支持中文和英文」说明）
     'settings.langAuto': '跟随 Obsidian', // 语言下拉选项一：跟随客户端语言
     'settings.langZh': '中文', // 语言下拉选项二
     'settings.langEn': 'English', // 语言下拉选项三
-    'settings.theme': '主题', // 主题设置项名称（2026-08-31）
-    'settings.themeDescMd': '选择你已经习惯的平台风格，以降低使用摩擦。', // 主题项说明（<br> = 换行）
-    'settings.themeFeishu': '飞书（蓝线版）', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
-    'settings.themeFeishuGray': '飞书（灰线版）', // 主题下拉：飞书灰线
-    'settings.themeFeishuPink': '飞书（粉线版）', // 主题下拉：飞书粉线（2026-09-01 新增）
-    'settings.themeObsidian': 'Obsidian（适配中）', // 主题下拉：Obsidian（置灰不可选）
-    'settings.themeMindNode': 'MindNode（适配中）', // 主题下拉：MindNode（置灰不可选）
+    'settings.theme': '样式', // 主题设置项名称（2026-08-31）
+    'settings.themeFeishu': '蓝线', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
+    'settings.themeFeishuGray': '灰线', // 主题下拉：飞书灰线
+    'settings.themeFeishuPink': '粉线', // 主题下拉：飞书粉线（2026-09-01 新增）
     'settings.badgeStyle': '文件类型徽标', // 文件树徽章样式（2026-08-31）：文本/图标
     'settings.badgeStyleDesc': '指文件列表里，文件名右侧的类型徽标。此设计可避免文件类型混淆。',
     'settings.badgeStyleText': '28 Notes 文字', // 徽章样式下拉：文本（默认）
     'settings.badgeStyleIcon': '28 Notes 图标', // 徽章样式下拉：图标
-    'settings.hideHint': '隐藏新增页面提示', // 界面简化栏标题（2026-09-01）
+    'settings.hideHint': '新增页面提示', // 界面简化栏标题（2026-09-01）
     'settings.hideHintDesc': '新增思维导图后，主节点下方会有一行新手提示，可选择隐藏。',
 
 
 
     'settings.hintShow': '显示提示', // 界面简化下拉：显示
     'settings.hintHide': '隐藏提示', // 界面简化下拉：隐藏
-    'settings.tips': '使用技巧', // 「使用技巧」说明的标题（2026-09-01 挪到设置页最底部）
-    'settings.tipsMd': '{Mod} + Enter：节点内换行；选中图片后点击空格：放大查看；<br>状态栏（编辑窗口底部右侧）：高级折叠功能（请点击试试 =)', // 使用技巧内容（2026-09-01 新文案；<br> = 换行）
     'settings.tutorial': '使用教程', // 「使用教程」说明的标题（2026-09-01 新增，放在设置页最底部）
-    'settings.tutorialMd': '点击右侧按钮查看本插件使用教程。<br>另外，本插件设计大量融入「28笔记法」思想，<br>请在 B 站/小红书搜索「羊清乐」了解更多。', // 使用教程说明文案
     'settings.tutorialBtn': '查看教程 ↗', // 使用教程右侧按钮文案
     'settings.footnote': '尾注', // 「尾注」节标题
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
     'settings.sponsor': '赞助开发者', // 赞助项名称
-    'settings.sponsorMd': 'OTL', // 赞助说明内容
     'settings.sponsorBtn': '好！', // 展开/收起赞助二维码的按钮文字
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
-    'settings.bugMd': '请点击右侧 GitHub Issue 提交。<br>如不便访问，请添加 Up 主微信：Hi28Notes 直接沟通。<br><br>添加 Up 主微信后，你也可加入 28 笔记法插件开发群 / 知识管理交流群。', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
+    'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。<br>添加微信后，你也可咨询加入 28 笔记法插件开发群 / 知识管理交流群。', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
 
     // ---- 许可证 / 付费激活（2026-09-02 新增）----
     'license.heading': '许可证', // 设置页许可证区块标题
@@ -144,8 +136,8 @@ var I18N = {
     'license.okDeactivated': '已解除激活', // 解除激活提示
     // ---- 许可证栏（2026-09-04 合并为一行：未激活 / 已激活各一套文案）----
     'license.ctaTitle': '激活创新 Pro 版', // 未激活时的栏目标题
-    'license.ctaDescTrialMd': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。\n本插件为买断制，激活码永久有效，可激活三台设备。（不包含在线生成式 AI 功能）\n如有任何激活问题，请联系开发者微信：Hi28Notes', // 试用中备注（{0}=剩余天数）
-    'license.ctaDescExpiredMd': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。\n本插件为买断制，激活码永久有效，可激活三台设备。（不包含在线生成式 AI 功能）\n如有任何激活问题，请联系开发者微信：Hi28Notes', // 试用已结束备注
+    'license.ctaDescTrialMd': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。', // 试用中备注（{0}=剩余天数）
+    'license.ctaDescExpiredMd': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。', // 试用已结束备注
     'license.howToActivateBtn': '如何激活 ↗', // 设置页右侧按钮 → 直接弹付费教程弹窗
     'license.activeTitle': '已激活创新 Pro 版', // 已激活时的栏目标题
     'license.activeDescMd': '许可证号：{0}；设备上限：{1}；激活时间：{2}\n更换设备后，请点击右侧「解除绑定」后，再至新设备激活。', // 已激活备注（{0}许可证号 {1}设备上限 {2}激活时间）
@@ -257,8 +249,8 @@ var I18N = {
     'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里', // 复制节点链接 悬浮说明
 
     // ============ 折叠层级数字按钮悬停提示（右下角状态栏层级条）============
-    'fold.selBelow': '折叠选中节点之下第 {0} 层', // 选中态数字按钮（{0}=相对选中节点的层数）
-    'fold.level': '折叠第 {0} 层', // 未选中态数字按钮（{0}=相对主节点的层数）
+    'fold.selBelow': '从此节点起，折叠到第 {0} 层级', // 选中态数字按钮悬浮提示（{0}=按钮数字；2026-09-11 文案用户定）
+    'fold.level': '折叠到第 {0} 层级', // 未选中态数字按钮悬浮提示（{0}=按钮数字；2026-09-11 文案用户定）
 
     // ============ 定位菜单（点定位按钮/Now 侧边按钮弹出的目标列表）============
     'locate.root': '主节点', // 列表项标签：主节点
@@ -355,34 +347,26 @@ var I18N = {
 
     'settings.uiHeading': 'Interface',
     'settings.language': 'Interface language',
-    'settings.languageDesc': 'Supports Chinese and English.',
     'settings.langAuto': 'Follow Obsidian',
     'settings.langZh': '中文',
     'settings.langEn': 'English',
-    'settings.theme': 'Theme',
-    'settings.themeDescMd': 'Pick the platform style you are used to, to reduce friction.',
-    'settings.themeFeishu': 'Feishu (blue lines)',
-    'settings.themeFeishuGray': 'Feishu (gray lines)',
-    'settings.themeFeishuPink': 'Feishu (pink lines)',
-    'settings.themeObsidian': 'Obsidian (coming soon)',
-    'settings.themeMindNode': 'MindNode (coming soon)',
+    'settings.theme': 'Style',
+    'settings.themeFeishu': 'Blue lines',
+    'settings.themeFeishuGray': 'Gray lines',
+    'settings.themeFeishuPink': 'Pink lines',
     'settings.badgeStyle': 'File type badge',
     'settings.badgeStyleDesc': 'It refers to the type badge on the right of the file name in the file list. This design avoids confusion between file types.',
     'settings.badgeStyleText': '28 Notes text',
     'settings.badgeStyleIcon': '28 Notes icon',
-    'settings.hideHint': 'Hide new-page hint',
+    'settings.hideHint': 'New-page hint',
     'settings.hideHintDesc': 'After creating a new mind-map, a beginner hint appears below the root node. You can choose to hide it. ',
     'settings.hintShow': 'Show hint',
     'settings.hintHide': 'Hide hint',
-    'settings.tips': 'Tips',
-    'settings.tipsMd': '{Mod} + Enter: line break within a node;<br>After selecting an image, press Space to preview;<br>The status bar (bottom-right of the editing window) hides an advanced folding feature — give it a click =)',
     'settings.tutorial': 'Tutorial',
-    'settings.tutorialMd': 'Click the button on the right to view the plugin tutorial.<br>The plugin design borrows heavily from the "28 Notes Method". Search "羊清乐" on Bilibili / Xiaohongshu for more.',
     'settings.tutorialBtn': 'View tutorial ↗',
     'settings.footnote': 'Footnote',
     'settings.qrMissing': '(QR code image not found)',
     'settings.sponsor': 'Sponsor the developer',
-    'settings.sponsorMd': 'The developer has put a lot of effort into this plugin.<br>If you like it, feel free to Buy Me a Coffee OTL',
     'settings.sponsorBtn': 'Sure!',
     'settings.bug': 'Bugs & feature requests',
     'settings.bugMd': 'Please submit via the GitHub Issue button on the right.<br>If that\'s inconvenient, you can email ShinContactEM@Gmail.com,<br>or add the developer on WeChat: Hi28Notes.<br><br>After adding the developer on WeChat, you can also join the 28 Notes plugin development / knowledge management group chat.',
@@ -419,8 +403,8 @@ var I18N = {
     'license.okDeactivated': 'Deactivated',
     // ---- License section (2026-09-04 merged into a single row) ----
     'license.ctaTitle': 'Activate 28 Notes Pro',
-    'license.ctaDescTrialMd': 'Your trial has {0} days left. Some Pro features will be limited once it ends.\n\nThis is a one-time purchase: the code never expires and works on up to 3 devices (online generative AI features not included).\n\nActivation issues? Contact the developer on WeChat: Hi28Notes',
-    'license.ctaDescExpiredMd': 'Your trial has ended. Activate 28 Notes Pro to use all features.\n\nThis is a one-time purchase: the code never expires and works on up to 3 devices (online generative AI features not included).\n\nActivation issues? Contact the developer on WeChat: Hi28Notes',
+    'license.ctaDescTrialMd': 'Your trial has {0} days left. Some Pro features will be limited once it ends.',
+    'license.ctaDescExpiredMd': 'Your trial has ended. Activate 28 Notes Pro to use all features.',
     'license.howToActivateBtn': 'How to activate ↗',
     'license.activeTitle': '28 Notes Pro activated',
     'license.activeDescMd': 'License ID: {0}; Device limit: {1}; Activated: {2}\n\nBefore switching devices, click "Unbind" on the right, then activate on the new device.',
@@ -526,8 +510,8 @@ var I18N = {
     'ctx.copyAILocateTip': 'Let an AI agent quickly locate the node you want to edit',
     'ctx.copyLinkTip': 'Paste into another mind map to jump back here',
 
-    'fold.selBelow': 'Collapse level {0} below the selected node',
-    'fold.level': 'Collapse level {0}',
+    'fold.selBelow': 'From this node, fold to level {0}',
+    'fold.level': 'Fold to level {0}',
 
     'locate.root': 'Central node',
     'locate.selected': 'Selected node',

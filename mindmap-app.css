@@ -17,15 +17,15 @@
   /* ---- 右上角「激活创新 Pro 版」提示按钮（2026-09-04）---- */
   --pro-cta-top: 16px;        /* 距窗口顶部距离：调大→下移。默认 16px */
   --pro-cta-right: 16px;      /* 距窗口右侧距离：调大→左移。默认 16px */
-  --pro-cta-bg: #ffffff;     /* 背景色：与弹窗激活按钮同色 */
+  --pro-cta-bg: #ffffff;     /* ⚠️ 已失效（2026-09-11 白玻璃移植）：背景改由下方 --ui-bar-a 等控制 */
   --pro-cta-color:  #0070f5;   /* 文字颜色 */
   --pro-cta-fs: 13px;         /* 字号：调大→字更大。默认 13px */
   --pro-cta-px: 14px;         /* 左右内边距：调大→按钮更宽。默认 14px */
   --pro-cta-py: 7px;          /* 上下内边距：调大→按钮更高。默认 7px */
-  --pro-cta-radius: 8px;      /* 圆角（默认沿用左下角按钮的 8px）。调大→更圆 */
-  --pro-cta-border-w: 1px;    /* 描边粗细（Stroke）：0 = 完全没有边框；1 = 细线；调大→更粗。默认 1px */
-  --pro-cta-border-c: 0, 0, 0; /* 描边颜色（RGB 三个数，不是 # 号写法）：0, 0, 0 = 黑色；改红就写 255, 0, 0 */
-  --pro-cta-border-a: .18;    /* 描边深浅（不透明度）：0 = 全透明＝看不见；1 = 纯黑实线。默认 .18，嫌淡调 .3，嫌重调 .1 */
+  --pro-cta-radius: 8px;      /* ⚠️ 已失效（2026-09-11）：圆角改由 --ui-bar-radius 控制 */
+  --pro-cta-border-w: 1px;    /* ⚠️ 已失效（2026-09-11）：描边改由 --ui-bar-border 控制 */
+  --pro-cta-border-c: 0, 0, 0; /* ⚠️ 已失效（2026-09-11）：同上 */
+  --pro-cta-border-a: .18;    /* ⚠️ 已失效（2026-09-11）：同上 */
 
   /* ---- 提示框 tooltip ---- */
   --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
@@ -34,6 +34,7 @@
   --locate-autobright-ms: 1500;  /* 主按钮点击推进后，暗态自动全亮的延时（毫秒）：1000=约1秒后背景变亮（心理暗示已选中）；调大→暗得更久、调小→更快亮。改完重载插件生效 */
   --locate-fade-ms: 260ms;      /* 定位暗态↔亮态的渐变时长（纯 CSS）：调大→明暗过渡更慢更柔；调小→更快。重载方式：View → Force Reload */
   --locate-hover-delay-ms: 320; /* 定位按钮【悬停多久才弹子菜单】（毫秒）：鼠标必须停在按钮上这么久，才弹出子菜单并预览定位；没停够就移开（扫过）= 完全不弹、画布也不动。调大→更不容易误触；调小→更灵敏；0=立刻弹（旧行为）。改完需【禁用再启用插件】生效（CSS 与 JS 都只在插件启用时读盘一次） */
+  --locate-item-delay-ms: 320;  /* 子菜单条目【悬停多久才定位预览】（毫秒）：鼠标在条目上停够这么久，画布才滚过去预览；扫过不动。调大→更稳不易误触；调小→更灵敏；0=立刻定位（旧行为）。改完需【禁用再启用插件】生效 */
 
   /* ---- 链接前缀图标（globe / folder-closed / brackets / frame）---- */
   --link-ico-y: -1px;          /* 链接图标上下微调：正值→图标下移，负值→上移；默认 0（与文字居中）。嫌图标高了/低了就改这个。改完重载插件生效 */
@@ -202,6 +203,32 @@
 
   /* ---- 面包屑调参（2026-08-25，改完重载插件生效）---- */
   --crumb-color: #677b97;     /* 面包屑字色 + 分隔符 > 颜色（默认灰，和原 --muted 一致） */
+
+  /* ══ 浮层外观 · 白玻璃（2026-09-11 从 UI 调教器定稿移植）═══════════════
+     管的是这几处浮层：左下工具栏 / 更多菜单 / 路径子菜单 / 定位子菜单 /
+     节点工具条 / 右上「激活 Pro」按钮 / 节点右键菜单 / 底部提示条。
+     材质（背景 / 描边 / 圆角 / 模糊 / 边缘高光 / 投影）**全部**由下面这组变量
+     决定 —— 不要给某处单独写偏移量或单独的边框色，否则拖着调就会调不齐。
+     具体的规则在文件末尾「浮层外观」一节，那里只是引用这组变量。
+     改完重载插件生效。 */
+  --ui-ease: cubic-bezier(.32,.72,0,1);  /* 统一动效曲线（苹果味：起步快、收尾缓） */
+  --ui-bar-a: .97;                       /* 🎚 浮层背景「透明度」旋钮（用户 2026-09-11 指定要的可调项）：
+                                            0 = 全透明，1 = 纯白不透明；.66 = 定稿值。
+                                            半透明纯白是普通合成，渲染压力为零，任何电脑都稳 */
+  --ui-bar-radius: 11.5px;               /* 所有浮层容器的圆角 */
+  --ui-tb-radius: 6.5px;                 /* 所有按钮 / 菜单条目的圆角（与上面各自独立，不联动） */
+  --ui-bar-border: rgba(255,255,255,.8); /* 浮层描边（回退到白 —— 冷灰蓝让工具栏变丑，用户否决 2026-09-11；
+                                            底部工具条的轮廓问题另查，见 9f60ccb 的教训） */
+  --ui-edge: 0.88;                       /* 边缘高光强度 0~1：顶边最亮（光源在上）/ 底边弱反光 / 左右更弱 */
+  --ui-shadow-a: 0.9;                    /* 投影总强度倍数 0~2（1 = 标准，0 = 无阴影） */
+  --ui-bar-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px -10px rgba(20,40,80, calc(.28 * var(--ui-shadow-a))); /* 浮层投影 */
+  --ui-tb-hover: var(--sel);             /* 按钮 / 菜单条目悬停底色（默认沿用选中蓝） */
+  --ui-tb-press-scale: 0.98;             /* 按钮按下缩放（1 = 不缩放） */
+  --ui-menu-anim: 200ms;                 /* 节点工具条出场时长（0 = 关掉动效，恢复瞬间出现） */
+  --ui-menu-rise: 0px;                   /* 节点工具条出场位移（从下方浮上来的距离；0 = 只淡入） */
+  --ui-btn-anim: 160ms;                  /* 按钮状态变化（变亮 / 变暗 / 置灰）的过渡时长（0 = 瞬切） */
+  --ui-bar-pad: 4.2px;                     /* 🎚 工具条「粗细」旋钮（用户 2026-09-11 要的可调项）：左下工具栏 / 底部节点工具条的内边距。
+                                            调小 = 更瘦，调大 = 更胖（按钮大小不变，只变留白）。改完重载插件生效 */
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
@@ -572,7 +599,7 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   z-index: 85; /* 2026-08-30：高于 .toast-below(80)/.node-menu(70)/.ctx-menu(60)，tooltip 不再被白底 toast 盖 */
   display: flex; flex-direction: column; gap: 4px;
   background: #fff; border: 1px solid var(--line); border-radius: 10px;
-  padding: 6px;
+  padding: var(--ui-bar-pad, 6px); /* 粗细旋钮：调小 = 更瘦 */
   box-shadow: 0 2px 12px rgba(0,0,0,.10);
 }
 .tb {
@@ -673,6 +700,9 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
    故 opacity 过渡放回 .card 基础，此处用 body.locate-hovering 在定位时临时开启 border-color 过渡，还原预测节点高亮渐变） */
 body.locate-hovering .card { transition: opacity var(--locate-fade-ms), border-color var(--locate-fade-ms); }
 body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
+/* 主节点变暗观感对齐（2026-09-11 用户：主节点也要「变灰」）—— 蓝色实底大卡只降透明度
+   视觉上仍很显眼，补一层灰化，与白卡节点的变暗观感一致（目标节点高亮态不受影响） */
+body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: grayscale(.65); }
 .card.locate-predict { border-color: var(--sel-ln) !important; }
 .card.locate-predict.lv0, .card.locate-predict.is-root { border-color: var(--sel-root) !important; }
 .card.locate-predict.lv1 { border-color: var(--sel-lv1) !important; }
@@ -703,7 +733,7 @@ body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
 #more-wrap:hover .tb[data-tip]::before { display: none; }
 
 /* ===== 折叠按钮（2026-09-01 旧 hover 子菜单已删，只剩左下按钮本体 + 右下状态栏层级条）===== */
-#btn-fold .icon { transform: rotate(90deg); }   /* 2026-08-26：折叠图标转 90°，表左右折叠概念（导图横向收展）*/
+/* （2026-09-11 删 #btn-fold .icon 旋转规则 —— 左下角折叠按钮已删，功能迁至右下角层级条「1」） */
 /* ===== 定位按钮悬浮：多 Now 时浮出 1/2/3 菜单（2026-08-27）===== */
 #now-locate-wrap { position: relative; }
 #now-locate-wrap::after {                 /* 透明过桥区：覆盖按钮右缘到菜单左缘的 gap，鼠标从按钮移到菜单途中仍算在 wrap 内 */
@@ -712,34 +742,76 @@ body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
 }
 :root { --now-menu-y: -8px; /* 定位按钮子菜单上下微调（负=上移），嫌偏下就改大负数 */ }
 #now-menu {
-  position: absolute; left: 100%; top: 0; bottom: auto; margin-left: 6px;
-  transform: translateY(var(--now-menu-y)); /* 2026-08-30 定：子菜单偏下，默认上移 8px，可自调 */
+  position: absolute; left: 100%; bottom: 0; top: auto; margin-left: 6px;
+  /* 2026-09-11 用户定：**向上展开**（锚工具栏底边）—— 工具栏贴屏底，向下伸必出屏；
+     配合上面的 max-height 双保险：再长也只会顶到屏的上部，滚动看中间 */
+  transform: translateY(var(--now-menu-y)); /* 上下微调（负=上移），嫌偏下就改大负数 */
   z-index: 86; /* 高于左 toolbar 85，不被遮 */
   background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
   padding: 6px;
-  display: none; flex-direction: row; flex-wrap: nowrap; gap: 4px;
-  width: max-content;
+  /* 2026-09-11 用户定：横排 → 竖排（类似「更多」的子菜单）；条目宽度与节点卡一致（--card-maxw），超宽折行
+     align-items 用 stretch（2026-09-11 用户二次澄清：所有条目的悬浮背景条**一样长、拉满容器**，不跟随各自文字） */
+  display: none; flex-direction: column; align-items: stretch; gap: 2px;
+  width: max-content; max-width: calc(var(--card-maxw) + 52px);
+  /* 超长内容：菜单限高 + 内部滚动（2026-09-11 用户：长条目别伸出屏幕底部，滚着看） */
+  max-height: min(72vh, calc(100vh - 140px)); /* 上限取「视口 72%」与「留出底距」较小者，贴底也不出屏 */
+  overflow-y: auto; overscroll-behavior: contain; /* 滚到头不带动外层页面 */
+  scrollbar-width: thin; scrollbar-color: #c9ced8 transparent;
   box-shadow: 0 6px 24px rgba(0,0,0,.15);
 }
 #now-menu.open { display: flex; }
 #now-menu::before { content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent; }
 .now-num {
-  min-width: 28px; height: 28px; padding: 0 6px;
+  display: flex; align-items: flex-start; gap: 7px;
+  /* 宽度不写死：由菜单 stretch 拉成统一宽（2026-09-11 用户定：所有条目一样长）；
+     max-width 兜底超长折行（与节点卡 --card-maxw 同源） */
+  max-width: calc(var(--card-maxw) + 36px);
+  padding: 5px 8px;
   border: none; background: transparent; color: var(--text);
-  font-size: 13px; border-radius: 6px; cursor: pointer; font-family: inherit;
-  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--card-font); line-height: 1.55;  /* 字号/行高与画布节点一致（同源观感） */
+  border-radius: 6px; cursor: pointer; font-family: inherit;
+  text-align: left;
 }
 .now-num:hover { background: var(--sel); font-weight: 700; }  /* 悬浮项加粗；颜色按类型走下方规则 */
-.now-num.bold { font-weight: 700; }
+/* Now 项背景改紫（2026-09-11 用户定）：主节点/选中节点保持原背景（--sel），Now 用淡紫 */
+.now-num.is-now:hover, .now-num.is-now.bold { background: rgba(139, 92, 246, .14); }
+/* 2026-09-11 用户定：条目 = 类型图标 + **同源节点内容**（标题在上、备注另起一行在下）。
+   全文不截断：与 .card .title 同款 white-space: pre-line + word-break: break-word，长了折行。 */
+.now-num .now-num-ic { display: inline-flex; flex: none; opacity: .85; margin-top: 2px; }
+.now-num .now-num-ic svg { width: 15px; height: 15px; }
+/* Now 图标用底部工具条那款（更简洁、无火花）；原设计黑底白描边 → 子菜单里改回跟随文字色 */
+.now-num .now-num-ic svg [stroke="#fff"] { stroke: currentColor; }
+.now-num-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.now-num .now-num-title { word-break: break-word; white-space: pre-line; }  /* 同 .card .title */
+/* 条目内编辑态（双击/二次点击进入）：原始 Markdown 直编辑，蓝框提示「正在编辑」；标题与备注通用。
+   背景 inherit 复用条目底色（2026-09-11 用户定）；不设 min-width —— 菜单宽度全程实时吸附文字，
+   写多少长多少、到 --card-maxw 上限才折行（用户 2026-09-11「所见即所得地吸住」，之前的 140px 会顶宽短条目） */
+.now-num .menu-editing {
+  outline: 1.5px solid var(--sel); outline-offset: 2px; border-radius: 3px;
+  background: inherit; cursor: text;
+}
+/* 提交后焦点回到条目按钮（键盘隔离需要焦点留在菜单里）—— 但不要 Obsidian 的橙色 focus 外框 */
+#now-menu .now-num:focus, #now-menu .now-num:focus-visible { outline: none; box-shadow: none; }
+/* 标题内联图标（链接/双链/URL 小图标）：画布里的尺寸规则挂在 .card 下，这里给个对齐的同款尺寸 */
+.now-num .now-num-title svg { width: 14px; height: 14px; vertical-align: -2px; }
+.now-num .now-num-note {
+  color: var(--muted); font-size: 12px; font-weight: 400;
+  word-break: break-word; white-space: pre-line; text-align: left;
+}
+.now-num.is-now .now-num-ic { color: var(--now-color); } /* Now 项图标常态即紫（图标走 currentColor） */
+.now-num.bold { font-weight: 700; background: var(--sel); }  /* 循环定位的当前项：所有类型都有背景（2026-09-11 用户：点哪个跳哪个，后面都有背景色） */
 /* 非 Now 项（主节点 / 选中节点）：蓝 */
 .now-num:hover:not(.is-now), .now-num.bold:not(.is-now) { color: var(--accent); }
 /* Now 项（Now1/Now2…）：紫 */
 .now-num:hover.is-now, .now-num.bold.is-now { color: #8B5CF6; }
 /* 子菜单里有 hover 时，非 hover 的当前选中项恢复普通黑（只高亮真正悬浮的那一项） */
-#now-menu:has(.now-num:hover) .now-num.bold:not(:hover) { font-weight: 400; color: var(--text); }
+#now-menu:has(.now-num:hover) .now-num.bold:not(:hover):not(.is-now) { font-weight: 400; color: var(--text); background: transparent; }
 /* 悬停高亮第 N 层：复刻 hover 浅色外框 */
-.card.hl-level { border-color: var(--hover-border) !important; }
-.card.lv0.hl-level, .card.is-root.hl-level { border-color: var(--hover-border-root) !important; }
+/* 悬浮层级高亮（2026-09-11 用户定）：改用「选中」的深色边框 —— 原来是 hover 淡色，画面中不明显。
+   三档与选中态同色：普通=--sel-ln / 一级=--sel-lv1 / 根=--sel-root */
+.card.hl-level { border-color: var(--sel-ln) !important; }
+.card.lv1.hl-level { border-color: var(--sel-lv1) !important; }
+.card.lv0.hl-level, .card.is-root.hl-level { border-color: var(--sel-root) !important; }
 .mm {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 10px; border: none; background: transparent; color: var(--text);
@@ -779,7 +851,7 @@ body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
   position: fixed; z-index: 70;
   left: 50%; bottom: 32px; transform: translateX(-50%);
   background: #1f2329; color: #fff;
-  border-radius: 10px; padding: 6px;
+  border-radius: 10px; padding: var(--ui-bar-pad, 6px); /* 粗细旋钮（此行背景/文字色被浮层外观块覆盖，只看 padding） */
   display: flex; gap: 2px; align-items: center;
   box-shadow: 0 4px 20px rgba(0,0,0,.30);
 }
@@ -1069,3 +1141,141 @@ body.locate-hovering .card:not(.locate-predict) { opacity: .35; }
 .theme-dark .pay-note, .theme-dark .pm-note{ color:#7d8598; }
 .theme-dark .pay-mail{ color:#5b9bff; border-color:#5b9bff; background:rgba(91,155,255,.08); }
 .theme-dark .pm-cap{ color:#8a93a6; }
+
+/* ════════════════════════════════════════════════════════════════════
+   🧊 浮层外观 · 白玻璃（2026-09-11 从 UI 调教器定稿移植）
+   ────────────────────────────────────────────────────────────────────
+   管这 8 处浮层：左下工具栏 / 更多菜单 / 路径子菜单 / 定位子菜单 /
+   节点工具条 / 右上「激活 Pro」按钮 / 节点右键菜单 / 底部提示条。
+
+   所有可调值都在文件开头 :root 的「浮层外观 · 白玻璃」一节，这里只做引用 ——
+   要改观感去改那里的变量，不用动本节。
+
+   ⚠️ 最终方案（2026-09-11 定）：**半透明纯白 + 可调透明度，不用任何实时滤镜**。
+   排查过程：20px 重模糊 → 整窗闪烁（830fc43 回退）；6px 低模糊用户仍否决 ——
+   担心别的电脑性能不够（模糊开销随机器差异大，不能赌）。
+   半透明纯白 = 普通合成，渲染压力为零，任何电脑都稳。
+   ⚠️ 纪律：材质 = 背景 + 描边 + 圆角 + 边缘高光 + 投影，收口在第 1 条规则里。
+   不要给某一处单独加偏移量、也不要留它自己的边框色 —— 一有例外就会
+   "看着不是一套"，或者改一个变量别处不跟着动。
+   （若将来重新引入 backdrop-filter / background-image：容器自己写 backdrop-filter
+     会形成 backdrop root、内部浮层的模糊会失效，届时工具栏背景要交给内衬伪元素；
+     background 简写会重置 background-image，覆盖浮层背景处只能用 background-color。
+     历史实现见 2c72791 / 92043dc / 2b3ad66 / 0ae14bd。）
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. 所有浮层共用同一套材质 ── */
+#left-toolbar,
+.dp-menu,
+#more-menu,
+#now-menu,
+.node-menu,
+#pro-cta,
+.ctx-menu,
+.toast-below {
+  background-color: rgb(255 255 255 / var(--ui-bar-a, 1));
+  border: 1px solid var(--ui-bar-border, rgba(146,164,192,.4));
+  border-radius: var(--ui-bar-radius, 10px);
+  box-shadow: var(--ui-bar-shadow, 0 2px 12px rgba(0,0,0,.10)),
+    inset 0 1px 0 rgba(255,255,255, var(--ui-edge, 0)),
+    inset 0 -1px 0 rgba(255,255,255, calc(var(--ui-edge, 0) * .5)),
+    inset 1px 0 0 rgba(255,255,255, calc(var(--ui-edge, 0) * .22)),
+    inset -1px 0 0 rgba(255,255,255, calc(var(--ui-edge, 0) * .22)),
+    0 0 0 1px rgba(146,164,192, calc(var(--ui-edge, 0) * .15));
+  /* 注意：这里刻意不写 transition。主插件风格固定、材质永不变化，
+     transition 只会让浏览器白白监听属性变化、平添重绘负担。 */
+}
+/* 「激活 Pro」按钮 hover：只提亮、不再换背景 —— 它原来 hover 会换成不透明的
+   --pro-cta-bg，会把玻璃盖住。所以 --pro-cta-bg / --pro-cta-radius 现在不再生效
+   （按钮的材质已归到上面那组 --ui-* 变量）。 */
+#pro-cta:hover { background-color: rgb(255 255 255 / var(--ui-bar-a, 1)); }
+/* Pro 按钮保留自己的 hover 提亮 / 按下缩放过渡（只这两项，别收口材质过渡 —— 见上） */
+#pro-cta { transition: filter .15s ease, transform .15s ease; }
+
+/* ── 2. 按钮 / 菜单条目的圆角（与浮层圆角各自独立、不联动）── */
+.tb,
+.node-menu button,
+.dp-item,
+.mm,
+.now-num,
+.ctx-item {
+  border-radius: var(--ui-tb-radius, 8px);
+}
+.mm-sep, .ctx-sep { background: rgba(0,0,0,.07); }  /* 分隔线：白底上原来的灰线太显，压淡 */
+
+/* ── 3. 节点工具条（选中节点时在底部浮出的那排）──
+   ⚠️ 这里只放「出场动效」—— 材质（背景/描边/圆角/边缘高光/投影）一律不写！
+   教训（2026-09-11，用户抓的）：本节之前单独写了一条 box-shadow（想让它投影重一点），
+   位置在统一材质之后 → 把 --ui-edge 的整个边缘高光体系和外轮廓覆盖没了，
+   底部工具条就"没有轮廓"（左下工具栏没有这条覆盖，所以它有）——
+   又是「给单个浮层单独加东西」的老毛病（同描边漏管 / 子菜单透明度各算一套）。
+   想调投影去改 :root 的 --ui-bar-shadow / --ui-shadow-a，别在这里写。 */
+.node-menu {
+  transform: translateX(-50%);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--ui-menu-anim, 180ms) var(--ui-ease, ease),
+    transform var(--ui-menu-anim, 180ms) var(--ui-ease, ease),
+    visibility 0s linear;
+}
+.node-menu button { color: var(--text); opacity: .9; }
+.node-menu button:hover { opacity: 1; background: var(--ui-tb-hover, var(--sel)); }
+.node-menu button:active { transform: scale(var(--ui-tb-press-scale, 1)); }
+/* Now 图标的「圆 + 茎」在原实现里写死了白色（因为原来是黑底菜单），
+   换成白玻璃后白图标看不见 → 改回跟随文字色。（已标记 Now 的紫色态走
+   .node-menu button.on .icon 那条，不受影响。） */
+.node-menu button [stroke="#fff"] { stroke: currentColor; }
+
+/* 【出场动效】缓入缓出。原来靠 .node-menu.hidden { display:none } 切显隐，
+   而 display 是离散属性、写 transition 也不会动，所以这里把"隐藏"换成：
+     常驻 display:flex（布局不塌）+ opacity:0 + visibility:hidden + 不接收点击
+     + 从下方 --ui-menu-rise 处、缩到 96% 浮上来。
+   visibility 靠 transition-delay 控时机：淡出时延迟到动效结束才真正隐藏
+   （否则会提前消失、看不到淡出），淡入不延迟。
+   --ui-menu-anim = 0 时延迟也是 0 → 等价于原来的瞬间显隐（想关掉动效就设 0）。 */
+.node-menu.hidden {
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(var(--ui-menu-rise, 8px)) scale(.96);
+  transition:
+    opacity var(--ui-menu-anim, 180ms) var(--ui-ease, ease),
+    transform var(--ui-menu-anim, 180ms) var(--ui-ease, ease),
+    visibility 0s linear var(--ui-menu-anim, 180ms);
+}
+/* 工具条是「第一次选中节点时才创建」（ensureNodeMenu 只在 showNodeMenu 里调），
+   新建 + 同帧变成可见 = 浏览器只做一次样式计算 → transition 检测不到变化、不播放。
+   @starting-style 专门解决这个"初次出现也要有起点"的问题；
+   老内核不认识这条规则会直接忽略，退化成首帧瞬间出现，不会报错。 */
+@starting-style {
+  .node-menu:not(.hidden) {
+    opacity: 0;
+    transform: translateX(-50%) translateY(var(--ui-menu-rise, 8px)) scale(.96);
+  }
+}
+
+/* ── 5. 按钮的「状态变化」过渡（变亮 / 变暗 / 置灰不再瞬切）──
+   工具栏按钮的状态类（.active-hide / .now-on / .dp-changed / .disabled / :disabled）、
+   节点工具条的 .on、各菜单条目 —— 一律只是改 color（或 color + opacity），
+   补上过渡后就是平滑的。
+   图标由 renderIcon() 生成、stroke/fill 都写死 currentColor → 跟着 color 走，
+   所以"按钮换色" = "图标换色"，一起渐变。
+   属性一次列全：color / background-color / opacity / border-color / box-shadow / transform。 */
+.tb,
+.node-menu button,
+.dp-item,
+.mm,
+.now-num,
+.ctx-item,
+#crumb a {
+  transition:
+    color var(--ui-btn-anim, 160ms) var(--ui-ease, ease),
+    background-color var(--ui-btn-anim, 160ms) var(--ui-ease, ease),
+    opacity var(--ui-btn-anim, 160ms) var(--ui-ease, ease),
+    border-color var(--ui-btn-anim, 160ms) var(--ui-ease, ease),
+    box-shadow var(--ui-btn-anim, 160ms) var(--ui-ease, ease),
+    transform var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
+}
+.tb .icon { transition: transform var(--ui-btn-anim, 160ms) var(--ui-ease, ease); } /* 折叠按钮展开 / 收起时图标转 90° */
