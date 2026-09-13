@@ -29,6 +29,8 @@
 
   /* ---- 提示框 tooltip ---- */
   --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
+  --tip-top-box-gap: 10px;     /* 底部工具条 tooltip【黑框】与按钮的间距：调大→框更远离按钮。改完重载插件生效 */
+  --tip-top-arrow-gap: 5px;   /* 底部工具条 tooltip【小三角】与按钮的间距（独立于黑框）：与 box-gap 同值=三角贴住框底；调大→三角往下脱开；调小→三角藏进框后。改完重载插件生效 */
 
   /* ---- 定位按钮 ---- */
   --locate-autobright-ms: 1500;  /* 主按钮点击推进后，暗态自动全亮的延时（毫秒）：1000=约1秒后背景变亮（心理暗示已选中）；调大→暗得更久、调小→更快亮。改完重载插件生效 */
@@ -64,7 +66,7 @@
   --root-radius: 10px;        /* 根圆角✅ */
 
   /* ---- 一级节点 ---- */
-  --lv1-bg: #f3f3f3;          /* 一级节点背景色✅ */
+  --lv1-bg: #f3f3f3e0;          /* 一级节点背景色✅ */
 
   /* ---- 悬停 / 选中外框 ---- */
   --hover-border: #b5cfff;    /* 悬停外框（一级/普通） */
@@ -250,7 +252,8 @@ body {
 #warn-box.hidden { display: none; }
 
 /* ===== 视图容器 + 自定义滚动条 ===== */
-#view-map { position: relative; height: 100vh; overflow: auto; padding: 0 0 80px 0; }
+/* 单坐标系画布（2026-09-13）：无滚动层，视图 = #tree 一个 transform（translate(pan) scale(zoom)），画布无限 */
+#view-map { position: relative; height: 100vh; overflow: hidden; padding: 0; }
 #view-map.hidden, #view-md.hidden { display: none; }
 #view-md { height: 100vh; }
 #md-editor {
@@ -261,25 +264,9 @@ body {
   font-size: 13px; line-height: 1.7;
   background: #fff; color: var(--text);
 }
-#view-map::-webkit-scrollbar { width: 10px; height: 10px; }
-#view-map::-webkit-scrollbar-track { background: transparent; }
-#view-map::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 5px; }
-#view-map::-webkit-scrollbar-thumb:hover { background: #b8bdc6; }
-#view-map { scrollbar-width: thin; scrollbar-color: #d0d4dc transparent; }
-
 /* ===== 垂直树 ===== */
-/* 画布：树永远在画布正中心（flex 居中），四周对称留白由 JS 动态撑开（updateCanvas），平移/滚动自由、不截断 */
-#canvas {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  min-width: 100%; min-height: 100%;
-  /* 2026-09-01：触控板斜向滚动顿挫（先上再左）的修法——把滚动内容提升为 GPU 合成层，
-     斜向滚动同时动两轴，主线程重绘大画布会掉帧；合成层让滚动走合成器、丝滑 */
-  transform: translateZ(0);
-  will-change: transform;
-}
-/* 四周小留白（内容距树边界；左右为 0：去掉左右白条，2026-08-21 定） */
-#tree { padding: 40px 0 120px 0; transform-origin: 0 0; }
+/* 树绝对定位在视口原点，位置完全由 transform 决定；树尺寸变化不会推动任何内容（无 flex 居中） */
+#tree { position: absolute; left: 0; top: 0; padding: 40px 0 120px 0; transform-origin: 0 0; }
 /* 面包屑（下钻导航）：贴合原生路径栏风格
    - 白底、无上下线、灰字、分隔符 > 淡灰
    - 每段可点，hover 单段轻微高亮；字略加粗（500，不夸张） */
@@ -581,7 +568,7 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .fold-badge { font-size: 10px; line-height: 1; font-weight: 600; }
 
 /* 贝塞尔连线层（2026-08-21 定：替换竖线+横线） */
-#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; transform: translateZ(0); } /* 2026-09-01：连线层提合成层，减少斜向滚动重绘 */
+#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; } /* 2026-09-13：去掉 translateZ(0)——提层的连线层会随 #tree 放大被位图拉伸而发虚；原为减少斜向滚动重绘 */
 #edges path { fill: none; stroke: var(--edge); stroke-width: var(--edge-width); }
 /* 拖拽预测曲线（2026-08-28，飞书式）：颜色可调（调参区 --drag-edge），与拔插高亮（--accent）同色系 */
 #drag-edge { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
@@ -841,8 +828,8 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 }
 [data-side="right"]:hover::after { left: 100%; top: 50%; transform: translate(var(--tip-offset-x), -50%); }
 [data-side="right"]:hover::before { left: 100%; top: 50%; transform: translate(calc(var(--tip-offset-x) - 5px), -50%); border-right-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 0; }
-[data-side="top"]:hover::after { bottom: 100%; left: 50%; transform: translate(-50%, -8px); }
-[data-side="top"]:hover::before { bottom: 100%; left: 50%; transform: translate(-50%, 0); border-top-color: #1f2329; border-bottom: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+[data-side="top"]:hover::after { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * var(--tip-top-box-gap, 10px))); }
+[data-side="top"]:hover::before { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * var(--tip-top-arrow-gap, 10px))); border-top-color: #1f2329; border-bottom: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; } /* 三角与框各自独立可调（2026-09-11 用户定） */
 [data-side="left"]:hover::after { right: 100%; top: 50%; transform: translate(-8px, -50%); }
 [data-side="left"]:hover::before { right: 100%; top: 50%; transform: translate(-2px, -50%); border-left-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 0; }
 

@@ -109,8 +109,7 @@
 }
 .status-bar .shin-foldbar-btn[data-tip]:hover::after { opacity: 1; transform: translateY(0); }
 .status-bar .shin-foldbar-btn[data-tip]:hover::before { opacity: 1; transform: translateY(0); }
-/* 未选中淡显：只淡文字（黑框提示自带 #fff，不受影响，保持和左下角一样的纯黑） */
-.status-bar .shin-foldbar-btn.shin-foldbar-dim { color: var(--text-faint); }
+/* （2026-09-13 删 .shin-foldbar-dim 未选中淡显 —— 数字语义统一后选中与否视觉不再区分） */
 /* 「+」弹层里的按钮：提示框改放左侧垂直居中 —— 向上弹会盖住弹层里上方的选项（用户 2026-09-11） */
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::after {
   bottom: auto; right: calc(100% + 10px); left: auto; top: 50%;
@@ -128,7 +127,18 @@
   transform: translateY(-50%) translateX(0);
 }
 .status-bar .shin-foldbar-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+/* 不可用置灰（2026-09-13）：按住 Cmd / Cmd+Option 时，超出选中节点子树层数的数字变灰、点了不响应
+   （用户 2026-09-13 定：能点的正常显示、不能点的置灰；没选中节点时不置灰——快捷键退化成普通点击） */
+.status-bar .shin-foldbar-btn.shin-foldbar-na,
+.status-bar .shin-foldbar-btn.shin-foldbar-na:hover { color: var(--text-faint); background: transparent; cursor: default; }
+/* 右键菜单打开时收掉悬浮黑框提示（2026-09-13 用户定：黑框和菜单同屏会互相干扰）
+   content:none 直接让伪元素不生成 —— 比 opacity 更彻底；类由宿主 oncontextmenu 加、menu.onHide 摘 */
+.status-bar .shin-foldbar-btn.shin-foldbar-menu-open[data-tip]::after,
+.status-bar .shin-foldbar-btn.shin-foldbar-menu-open[data-tip]::before { content: none; }
 .status-bar .shin-foldbar-more-wrap { position: relative; display: inline-flex; padding-top: 6px; margin-top: -6px; transform: translateY(var(--shin-foldbar-more-y)); }
+/* 「+」在状态栏最右：置灰时悬浮的「暂不可用」提示框若沿用默认 right:-6px 会往右溢出屏幕；
+   改 right:0 让提示框右缘与「+」对齐、整体向左展开（2026-09-13） */
+.status-bar .shin-foldbar-more[data-tip]::after { right: 0; }
 .status-bar .shin-foldbar-pop {
   position: absolute; bottom: calc(100% + var(--shin-foldbar-pop-gap)); right: var(--shin-foldbar-pop-right);
   display: none; flex-direction: column; align-items: center; gap: var(--shin-foldbar-pop-gap-y);

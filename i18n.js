@@ -189,7 +189,7 @@ var I18N = {
     'tb.showMinor': '显示 Minor 节点（{Mod} + {Alt} + M）', // 隐藏 Minor 按钮：隐藏中（点此显示）
     'tb.hideMinor': '隐藏 Minor 节点（{Mod} + {Alt} + M）', // 隐藏 Minor 按钮：显示中（点此隐藏）
     'tb.nowReadonly': '此按钮在历史页面无法操作', // 历史页里 Now 按钮被禁用的提示
-    'tb.noNow': '当前没有 Now 节点（{Alt}+{Mod}+N）', // 图里没有任何 Now 节点时 Now 按钮的提示（置灰）
+    'tb.noNow': '当前视图没有 Now 节点', // 图里没有任何 Now 节点时 Now 按钮的提示（置灰）
     'tb.nowShowAll': '取消只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：开启中（点此恢复显示全部）
     'tb.nowOnly': '只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：关闭中（点此只看 Now）
     'tb.pathInvalid': '默认路径已失效（绑定节点已不存在）', // 默认路径按钮：存的默认路径指向的节点被删（置灰）
@@ -249,8 +249,12 @@ var I18N = {
     'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里', // 复制节点链接 悬浮说明
 
     // ============ 折叠层级数字按钮悬停提示（右下角状态栏层级条）============
-    'fold.selBelow': '从此节点起，折叠到第 {0} 层级', // 选中态数字按钮悬浮提示（{0}=按钮数字；2026-09-11 文案用户定）
-    'fold.level': '折叠到第 {0} 层级', // 未选中态数字按钮悬浮提示（{0}=按钮数字；2026-09-11 文案用户定）
+    'fold.menuKeep': '「选中节点」折叠到第 {0} 层级（同时外部保持不变）（点击）', // 折叠数字右键第一项 = 选中后的默认左键行为（{0}=按钮数字；2026-09-13 文案用户定）
+    'fold.menuMin': '「选中节点」折叠到第 {0} 层级（同时外部折叠到最简）（Cmd + 点击）', // 折叠数字右键第二项 / Cmd 快捷键（{0}=按钮数字；2026-09-13 文案用户定）
+    'fold.level': '折叠到第 {0} 层级', // 悬浮提示·未选中节点（{0}=按钮数字；2026-09-11 文案用户定）
+    'fold.levelKeep': '「选中节点」折叠到第 {0} 层级（同时外部保持不变）', // 悬浮提示·选中节点（不按修饰键 = 默认行为；2026-09-13 用户定）
+    'fold.levelMin': '「选中节点」折叠到第 {0} 层级（同时外部折叠到最简）', // 悬浮提示·选中节点 + 按住 Cmd（2026-09-13 用户定）
+    'fold.noMore': '暂不可用', // 悬浮提示·置灰的按钮（选中后超出该节点子树层数 / 「+」里全是置灰项；2026-09-13 用户定，后改「暂不可用」）
 
     // ============ 定位菜单（点定位按钮/Now 侧边按钮弹出的目标列表）============
     'locate.root': '主节点', // 列表项标签：主节点
@@ -455,7 +459,7 @@ var I18N = {
     'tb.showMinor': 'Show Minor nodes ({Mod} + {Alt} + M)',
     'tb.hideMinor': 'Hide Minor nodes ({Mod} + {Alt} + M)',
     'tb.nowReadonly': 'This button is unavailable on the history page',
-    'tb.noNow': 'No Now nodes yet ({Alt}+{Mod}+N)',
+    'tb.noNow': 'No Now nodes in the current view',
     'tb.nowShowAll': 'Stop showing Now nodes only ({Mod} + {Alt} + N)',
     'tb.nowOnly': 'Show Now nodes only ({Mod} + {Alt} + N)',
     'tb.pathInvalid': 'The default path is broken (its node no longer exists)',
@@ -510,8 +514,12 @@ var I18N = {
     'ctx.copyAILocateTip': 'Let an AI agent quickly locate the node you want to edit',
     'ctx.copyLinkTip': 'Paste into another mind map to jump back here',
 
-    'fold.selBelow': 'From this node, fold to level {0}',
+    'fold.menuKeep': 'Fold "the selected node" to level {0} (keep everything else unchanged) (click)',
+    'fold.menuMin': 'Fold "the selected node" to level {0} (fold everything else to the minimum) (Cmd + click)',
     'fold.level': 'Fold to level {0}',
+    'fold.levelKeep': 'Fold "the selected node" to level {0} (keep everything else unchanged)',
+    'fold.levelMin': 'Fold "the selected node" to level {0} (fold everything else to the minimum)',
+    'fold.noMore': 'Temporarily unavailable',
 
     'locate.root': 'Central node',
     'locate.selected': 'Selected node',

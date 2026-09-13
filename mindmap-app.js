@@ -73,7 +73,6 @@ window.addEventListener('unhandledrejection', e => showError('Promise 未捕获:
 const vscode = vscodeApi;
 
 const treeEl = document.getElementById('tree');
-const canvasEl = document.getElementById('canvas');
 // 贝塞尔连线层（2026-08-21 定：替换竖线+横线，接近飞书视觉）
 const edgesSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 edgesSvg.id = 'edges';
@@ -86,7 +85,7 @@ dragSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 const viewMap = document.getElementById('view-map');
 const viewMd = document.getElementById('view-md');
 const mdEditor = document.getElementById('md-editor');
-const state = { tree: null, selectedId: null, dragId: null, dragIds: null, view: 'map', currentRootId: null, currentRootPid: '', defaultPid: '', currentFilename: '', warnings: [], selectedImg: null, multiSelected: new Set(), marquee: false, isLink: false, bookmarkHealed: false, bookmarkRetried: false, editingNoteId: null, hideDone: false, hideHint: false, editingTitleId: null, editingTitleEl: null, editingEl: null, dragPreview: null, dragRows: null, userTouchedView: false,
+const state = { tree: null, selectedId: null, dragId: null, dragIds: null, view: 'map', currentRootId: null, currentRootPid: '', defaultPid: '', currentFilename: '', warnings: [], selectedImg: null, multiSelected: new Set(), marquee: false, isLink: false, bookmarkHealed: false, bookmarkRetried: false, editingNoteId: null, hideDone: false, hideHint: false, editingTitleId: null, editingTitleEl: null, editingEl: null, dragPreview: null, dragRows: null,
   // 路径历史栈（上一/下一路径）：存 pid 序列，空串=根
   pathHistory: [], pathHistoryIndex: -1, suppressHistory: false,
   // 刚新建的节点 id 集合：仅这些节点在「清空回车 / ESC」时取消（删节点），已有节点清空只回退、绝不误删
@@ -849,7 +848,13 @@ function goTo(id) {
   // 2026-08-30：改同步执行。原来放 requestAnimationFrame 里 → render 后先显示旧视口位置、
   // 下一帧才跳到定位后的位置 = 用户看到的"下钻后画面跳一下"（与开屏那个 bug 同源）。
   // 同步执行：渲染与定位在同一帧完成，视觉上无中间态。render() 后 DOM 已更新，同步读布局是准确的。
-  locateCenter(); persistNow();
+  // 下钻/返回后主节点（新根）放到 --locate-selected-x（定位选中节点 X，用户自定义的关注位）：
+  // goTo 会清 selectedId → 走 locateCenter 的无选中分支会把根放 --locate-first-x（默认 0.25），
+  // 主节点偏左（2026-09-13 反馈）。这里显式按「主节点 = 当前关注」定位。
+  const rootCard = document.querySelector('.node-row[data-id="' + currentRoot().id + '"] .card');
+  if (rootCard) placeCardAtViewport(rootCard, cfgNum('--locate-selected-x', 0.5));
+  else locateCenter(); // 极端兜底：根卡片不在（空树/时序）→ 走通用智能定位
+  persistNow();
 }
 function drillInto(id) { goTo(id); }
 function renderCrumb() {
@@ -930,14 +935,14 @@ function render() {
   }
   renderWarnings();
   renderCrumb();
-  // 重设 transform 保留缩放/平移（render 重建 DOM 后 transform 失效）+ 画布尺寸跟随内容
+  // 重设 transform 保留缩放/平移（render 重建 DOM 后 transform 失效）
   applyTreeTransform();
-  updateCanvas();
   // 节点快捷菜单跟随选中状态（渲染后重新定位；无选中时隐藏，单选/多选都显示）
   if (state.selectedId || state.multiSelected.size) showNodeMenu();
   else hideNodeMenu();
   updateNowSideBtn(); // 刷新侧边 Now 按钮的置灰/图标态
   updateFoldBar(); // 2026-08-30：右下角常驻折叠层级条跟随树结构/层级数刷新（折叠操作后层数变化）
+  applyPendingKeepView(); // 2026-09-13：keepView 的锚定补偿在 render 末尾同步应用（一次绘制即最终画面）
   requestAnimationFrame(drawEdges);
 }
 // 画布空隙的拖拽预测/落点：handler 全部读 state 实时值，绑一次即可，不随 render 重绑（2026-08-24 从 render 里移出）
@@ -998,9 +1003,11 @@ function stopAutoScroll() {
 function tickAutoScroll() {
   if (!autoScrollRAF) return;
   if (autoScrollDX || autoScrollDY) {
-    const bt = viewMap.scrollTop, bl = viewMap.scrollLeft;
-    viewMap.scrollBy(autoScrollDX, autoScrollDY);
-    if (viewMap.scrollTop === bt && viewMap.scrollLeft === bl) { stopAutoScroll(); return; } // 到边界即停
+    panX -= autoScrollDX / (zoom || 1); // 单坐标系：画布无限无边界，滚屏=改 pan
+    panY -= autoScrollDY / (zoom || 1);
+    applyTreeTransform();
+    drawEdges();
+    schedulePersist();
     // 节点拖拽中：画面滚了、光标底下节点变了 → 重新预测落点并高亮（框选时不跑，避免误显插入线）
     if (state.dragId) {
       buildDragRects(); // 画面滚了 → 节点视口坐标变了，刷新缓存再预测
@@ -1099,6 +1106,34 @@ function drawEdges() {
   edgesSvg.setAttribute('width', treeEl.scrollWidth || 10);
   edgesSvg.setAttribute('height', treeEl.scrollHeight || 10);
   edgesSvg.innerHTML = paths.length ? '<path d="' + paths.join(' ') + '"/>' : '';
+}
+// ── 连线重画调度器（2026-09-13）────────────────────────────────────────────
+// 图片/媒体是异步逐个到达的，每个到达都可能改变行高 → 需要重画曲线。若在加载回调里直接整树
+// 重画，图片多的文件会退化成「一个资源一次全量重画」：单次要遍历整棵树、读全部卡片矩形、重拼
+// 全部 SVG 路径，成百次叠加足以占满主线程——连 layoutSettled 的兜底定时器都会被饿死，表现
+// 为「打开大文件卡死十几秒」。改法：异步触发源合并——安静 EDGES_QUIET 后画一次，资源持续
+// 到达时按 EDGES_MAX_WAIT 保底跟进。只接管「异步资源加载完成」这一类触发；平移/缩放/拖拽/
+// 编辑/折叠等交互触发的重画保持原来的即时调用，手感不变。
+// 揭幕前（viewMap opacity:0）不排：画面不可见时重画只会抢主线程，而抢的正是资源加载本身；
+// 揭幕那一刻 startInitCenter 的 ResizeObserver 回调会同步重画一次，不会漏。
+let edgesTimer = null, edgesFirstAt = 0;
+const EDGES_QUIET = 180;    // 静默时长（ms）：异步资源安静这么久才重画一次
+const EDGES_MAX_WAIT = 700; // 保底上限（ms）：资源持续到达时也按这个节奏跟进
+function viewHiddenForEdges() { return viewMap.style.opacity === '0'; }
+function scheduleEdges() {
+  if (viewHiddenForEdges()) return;
+  const now = performance.now();
+  if (edgesTimer == null) edgesFirstAt = now;
+  else clearTimeout(edgesTimer);
+  const wait = (now - edgesFirstAt >= EDGES_MAX_WAIT) ? 0 : EDGES_QUIET;
+  edgesTimer = setTimeout(() => { edgesTimer = null; drawEdges(); }, wait);
+}
+// 编辑/组字用的重画（2026-09-13）：编辑中卡片一变宽，它自己的子节点整列立刻被布局挤走 → 连线必须
+// 跟上；但组字期间不能做同步重活（会打断输入法候选/成对符号配对）→ 合并到下一帧，一帧最多一次。
+let edgesFrameId = 0;
+function redrawEdgesNextFrame() {
+  if (edgesFrameId) return;
+  edgesFrameId = requestAnimationFrame(() => { edgesFrameId = 0; drawEdges(); });
 }
 // 是否选中（单选或多选）
 function isSelected(id) {
@@ -1216,6 +1251,9 @@ function buildCard(node, depth, done) {
     foldTag.onclick = e => {
       e.stopPropagation();
       if (state.historyMode) { node.fold = !node.fold; renderHistoryTree(); return; } // 历史页只读：只翻快照视图（保持当前平移，不跳回实时导图）
+      // 单坐标系（2026-09-13）：折叠只增删该卡下方的子树，卡片自身与其上内容布局不动、相机不动 → 画面天然不跳，无需锚定补偿
+      // keepView 锚定本节点：布局里父节点垂直居中于其子树，折叠/展开改子树高度会把本节点推走
+      //（2026-09-13 实测：展开后被点节点跑到下面）→ 锚定它自己，其余内容随布局变
       pushUndo(); node.fold = !node.fold; keepView(node); emitUpdate(); render();
     };
     card.appendChild(foldTag);
@@ -1247,8 +1285,8 @@ function buildCard(node, depth, done) {
       img.title = T('tip.image');
       reqImg(p, img);
       // 图片异步加载完 → 树 reflow → 节点坐标变，重画曲线防错位（2026-08-25 修：覆盖打开/切页后图片晚于 render 到达的情况）
-      img.onload = () => requestAnimationFrame(drawEdges);
-      img.onerror = () => requestAnimationFrame(drawEdges);
+      img.onload = () => scheduleEdges();
+      img.onerror = () => scheduleEdges();
       img.onclick = e => {
         e.stopPropagation();
         selectNode(node.id);
@@ -1315,9 +1353,9 @@ function buildCard(node, depth, done) {
       media.dataset.path = p;
       media.title = p;
       reqImg(p, media); // 复用宿主资源解析（按文件名 → vault 可访问地址）
-      media.onload = () => requestAnimationFrame(drawEdges);
-      media.onloadedmetadata = () => requestAnimationFrame(drawEdges);
-      media.onerror = () => { media.classList.add('img-missing'); requestAnimationFrame(drawEdges); };
+      media.onload = () => scheduleEdges();
+      media.onloadedmetadata = () => scheduleEdges();
+      media.onerror = () => { media.classList.add('img-missing'); scheduleEdges(); };
       box.appendChild(media);
     });
     card.appendChild(box);
@@ -1479,7 +1517,6 @@ let savedViewKey = ''; // 本视图的存储 key（main.js sendInit 下发 viewK
 function readView() {
   return {
     zoom: zoom, panX: panX, panY: panY,
-    scrollLeft: viewMap.scrollLeft, scrollTop: viewMap.scrollTop,
     currentRootPid: state.currentRootPid || '',
     debugMode: !!debugMode
   };
@@ -1502,14 +1539,10 @@ function schedulePersist() {
     vscode.postMessage({ type: 'setView', viewKey: key, value: view });
   }, 150);
 }
-// 等布局真正稳定再定滚动位置：图片 decode + 字体就绪 + 双 rAF。
-// 否则异步加载让树 reflow → 还原的 scroll 算在旧尺寸上 → 画面偏移（之前「默认有时偏中心」的根因之一）。
+// 等布局真正稳定再定位：图片 decode + 字体就绪 + 双 rAF。
+// 否则异步加载让树 reflow → 定位算在旧尺寸上 → 画面偏移。
 function layoutSettled(cb) {
   const imgs = Array.prototype.slice.call(document.querySelectorAll('#tree img'));
-  // 2026-09-01 修「开屏/切回画面漂到空白、思维导图在右下角」：web 字体异步加载，即使无图片也必须等 fonts.ready
-  // 再 fire——否则字体 reflow 在 fire 后发生，hasSavedView 分支的 updateCanvas 算字体前旧尺寸（偏小）→
-  // canvas 范围不够 → scroll=saved 被 clamp 到 0 → 视口显示 canvas 左上空白、树跑到右下角
-  // （PAN_MARGIN=2000 让 canvas 比 viewport 大，scroll 0 = 看左上余量，树在 canvas 中部=视口右下）。
   let pending = imgs.length + 1; // +1 等字体 ready
   let settled = false;
   const fire = () => { if (settled) return; settled = true; requestAnimationFrame(() => requestAnimationFrame(cb)); };
@@ -1519,62 +1552,24 @@ function layoutSettled(cb) {
   else onOne(); // 无 fonts API（老环境）：直接当作字体就绪
   setTimeout(fire, 2000); // 兜底：坏图/字体 API 卡住也不阻塞还原
 }
-// 通用画布方案（2026-08-21 反馈"视图不对称/截断"后重做）：
-// 树永远放在画布正中心（flex 居中），四周留对称余量 PAN_MARGIN；视图 = 滚到画布中心。
-// 内容比视口大时由滚动条访问（不截断、不挤压），拖动平移在对称空间里自由移动。
-const PAN_MARGIN = 2000;
-function updateCanvas() {
-  const w = (treeEl.offsetWidth || viewMap.clientWidth) + PAN_MARGIN * 2;
-  const h = (treeEl.offsetHeight || viewMap.clientHeight) + PAN_MARGIN * 2;
-  canvasEl.style.minWidth = w + 'px';
-  canvasEl.style.minHeight = h + 'px';
-}
+// 整树居中（兜底定位：无卡片可定位时用）。单坐标系下画布无限，居中 = 解 pan 使树中心落在视口中心：
+// screen = zoom*(world+pan) → pan = viewport/(2*zoom) - treeSize/2
 function centerView() {
-  updateCanvas();
-  viewMap.scrollLeft = Math.max(0, (canvasEl.offsetWidth - viewMap.clientWidth) / 2);
-  viewMap.scrollTop = Math.max(0, (canvasEl.offsetHeight - viewMap.clientHeight) / 2);
+  panX = viewMap.clientWidth / (2 * (zoom || 1)) - treeEl.offsetWidth / 2;
+  panY = viewMap.clientHeight / (2 * (zoom || 1)) - treeEl.offsetHeight / 2;
+  applyTreeTransform();
 }
-// 打开错位修复（2026-08-24）：大画布的图片异步加载 → init 时 centerView 算的位置随后失效。
-// 用 ResizeObserver 监听 treeEl 尺寸，用户没碰过视图时持续重新居中；首次交互或 3 秒后停（避免和编辑锚定打架）。
+// 开屏观察期（2026-09-13 简化）：单坐标系下图片/字体晚到的 reflow 不会移动相机（无 flex 居中、无滚动裁剪），
+// 观察期只剩一件事——reflow 后重画曲线；onSettled 在首帧回调触发揭幕（viewMap 从 opacity:0 恢复）。
 let initCenterObs = null;
-// onSettled（2026-08-30）：首次「布局已稳定并定位完」的回调，用于开屏揭幕（viewMap 从 opacity:0 恢复）。
-// 必须与 ResizeObserver 首帧挂钩——之前在 layoutSettled 回调里同步揭幕，而 ResizeObserver 是异步的，
-// 导致显示时位置还是旧的（画布左上角/右下角），下一帧才跳到定位后的位置 = 用户看到的"从别处飞过来"。
-function startInitCenter(keepView, onSettled) {
+function startInitCenter(onSettled) {
   if (initCenterObs) initCenterObs.disconnect();
   let settled = false;
   const done = () => { if (settled) return; settled = true; try { if (onSettled) onSettled(); } catch (e) {} };
-  if (keepView) {
-    // 已恢复上次位置：图片/字体异步加载让树 reflow → 只重画曲线，绝不自动居中（否则覆盖用户位置）
-    initCenterObs = new ResizeObserver(() => { updateCanvas(); applyTreeTransform(); drawEdges(); done(); });
-    initCenterObs.observe(treeEl);
-    setTimeout(() => { if (initCenterObs) { initCenterObs.disconnect(); initCenterObs = null; } done(); }, 3000);
-    return;
-  }
-  state.userTouchedView = false;
-  let positioned = false;
-  initCenterObs = new ResizeObserver(() => {
-    if (state.userTouchedView) { done(); return; }
-    // 2026-08-30：只在首次回调真正定位。之后图片/字体加载引起的 reflow 只重画曲线、绝不重新定位。
-    // 之前每次 reflow 都 locateCenter（3 秒窗口内），导致：①揭幕后画面还在被反复微调 = 开屏漂移；
-    // ②开屏后 3 秒内下钻，treeEl 尺寸一变又被拉去定位 = 下钻漂移。定位一次就够，位置以首次为准。
-    if (!positioned) {
-      positioned = true;
-      // 2026-08-29 定：开屏智能定位（=定位按钮效果，当前根/Now 节点放到 --locate-* 旋钮位置），
-      // 不再用整画布居中——大树画布一居中当前根就跑屏幕外，"打开后不知道飘哪去了"的根因
-      locateCenter();
-    }
-    // 重定位同时必须重画曲线：图片/字体异步加载让树 reflow → 节点本地坐标变了，
-    // 但曲线是 render 时画的一次，旧坐标会脱离节点（2026-08-25 修：之前只 centerView 不重画，
-    // 导致打开/切页后曲线错位，点"定位到中心"重渲染才恢复）
-    drawEdges();
-    done();
-  });
-  initCenterObs.observe(treeEl);
+  initCenterObs = new ResizeObserver(() => { drawEdges(); done(); });
+  initCenterObs.observe(treeEl); // observe 即触发首帧回调 → drawEdges + 揭幕
   setTimeout(() => { if (initCenterObs) { initCenterObs.disconnect(); initCenterObs = null; } done(); }, 3000);
 }
-// 用户主动动了视图（滚动/缩放/拖拽/按键）→ 不再自动重居中，尊重用户位置
-function markUserTouched() { state.userTouchedView = true; }
 // 读 CSS 调参区数值（app.css :root 的 --locate-* 等，改完重载插件生效）
 function cfgNum(name, def) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name);
@@ -1589,10 +1584,9 @@ function cfgBool(name, def) {
 // 智能定位（定位按钮 / 下钻·返回后自动调用）：
 // - 选中节点或编辑中 → 该节点居中（水平=--locate-selected-x）
 // - 未选中 → 第一层级=最前面那个节点=当前根（currentRoot）居中（水平=--locate-first-x）
-// 垂直位置统一=--locate-y；是否重置缩放/平移=--locate-reset-zoom / --locate-reset-pan
+// 垂直位置统一=--locate-y；是否重置缩放=--locate-reset-zoom（2026-09-13 单坐标系后 --locate-reset-pan 废弃）
 // 旋钮集中在 app.css :root 的「定位调参」区，改完重载插件生效
-// 定位共用（2026-08-27 体检精简；2026-08-30 加缓动）：
-// 算出目标 scroll → animateScrollTo 从当前值按缓动曲线插值过去（rAF 循环）。
+// 定位共用：算出目标 pan/zoom → animateScrollTo 从当前值按缓动曲线插值过去（rAF 循环）。
 // 缓动曲线用三次贝塞尔近似（视频软件那种"先缓后快再缓"=easeInOut），控制点走 CSS 变量可调。
 let scrollAnimRAF = null;
 let scrollAnimFallback = null; // 缓动兜底定时器句柄：每次 animateScrollTo 先清旧定时器，避免叠加导致 onDone 晚/重复触发
@@ -1607,13 +1601,12 @@ function easeCubicBezier(t, x1, y1, x2, y2) {
   const y = 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t;
   return y;
 }
-function animateScrollTo(targetLeft, targetTop, targetZoom, targetPanX, targetPanY, onDone) {
+function animateScrollTo(targetPanX, targetPanY, targetZoom, onDone) {
   if (scrollAnimRAF) cancelAnimationFrame(scrollAnimRAF);
   if (scrollAnimFallback) { clearTimeout(scrollAnimFallback); scrollAnimFallback = null; }
   // 开关关闭 = 瞬间到位：不走 rAF 缓动，直接落位（2026-08-30 定，见 locateSmoothOn 注释）
   if (!locateSmoothOn) {
-    viewMap.scrollLeft = targetLeft; viewMap.scrollTop = targetTop;
-    zoom = targetZoom; panX = targetPanX; panY = targetPanY;
+    panX = targetPanX; panY = targetPanY; zoom = targetZoom;
     applyTreeTransform(); drawEdges();
     if (onDone) onDone();
     return;
@@ -1623,56 +1616,41 @@ function animateScrollTo(targetLeft, targetTop, targetZoom, targetPanX, targetPa
   const y1 = cfgNum('--locate-anim-y1', 0);
   const x2 = cfgNum('--locate-anim-x2', 0.58);
   const y2 = cfgNum('--locate-anim-y2', 1);
-  const sL0 = viewMap.scrollLeft, sT0 = viewMap.scrollTop;
   const z0 = zoom, pX0 = panX, pY0 = panY;
   const t0 = performance.now();
   // 兜底：切标签页/窗口失焦时浏览器会暂停 rAF → 动画卡住不完成；dur+200ms 后强制收尾（2026-08-30 报"曲线消失"）
   scrollAnimFallback = setTimeout(() => {
     if (scrollAnimRAF === null) return;
     scrollAnimRAF = null; scrollAnimFallback = null;
-    viewMap.scrollLeft = targetLeft; viewMap.scrollTop = targetTop;
-    zoom = targetZoom; panX = targetPanX; panY = targetPanY;
+    panX = targetPanX; panY = targetPanY; zoom = targetZoom;
     applyTreeTransform(); drawEdges();
     if (onDone) onDone();
   }, dur + 200);
   const step = (now) => {
     const t = Math.min(1, (now - t0) / dur);
     const e = easeCubicBezier(t, x1, y1, x2, y2);
-    viewMap.scrollLeft = sL0 + (targetLeft - sL0) * e;
-    viewMap.scrollTop = sT0 + (targetTop - sT0) * e;
-    if (targetZoom !== z0 || targetPanX !== pX0 || targetPanY !== pY0) {
-      zoom = z0 + (targetZoom - z0) * e;
-      panX = pX0 + (targetPanX - pX0) * e;
-      panY = pY0 + (targetPanY - pY0) * e;
-      applyTreeTransform();
-    }
+    zoom = z0 + (targetZoom - z0) * e;
+    panX = pX0 + (targetPanX - pX0) * e;
+    panY = pY0 + (targetPanY - pY0) * e;
+    applyTreeTransform();
     drawEdges();
     if (t < 1) scrollAnimRAF = requestAnimationFrame(step);
     else { scrollAnimRAF = null; if (scrollAnimFallback) { clearTimeout(scrollAnimFallback); scrollAnimFallback = null; } if (onDone) onDone(); }
   };
   scrollAnimRAF = requestAnimationFrame(step);
 }
+// 卡片中心的世界坐标（#tree 内布局坐标，不含 pan/zoom）：offset 链累加，不读屏幕矩形 → 与当前相机无关、无时序问题
+function worldCenter(el) {
+  let x = 0, y = 0, n = el;
+  while (n && n !== treeEl) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+  return { x: x + el.offsetWidth / 2, y: y + el.offsetHeight / 2 };
+}
+// 把卡片中心放到视口 (xRatio, --locate-y) 处：解 pan = 目标屏幕点/zoom - 世界坐标（screen = zoom*(world+pan)）
 function placeCardAtViewport(el, xRatio, onDone) {
-  const startZoom = zoom, startPanX = panX, startPanY = panY;
-  if (cfgBool('--locate-reset-zoom', true)) zoom = 1;
-  if (cfgBool('--locate-reset-pan', true)) { panX = 0; panY = 0; }
-  applyTreeTransform();
-  const z = zoom || 1;
-  const yRatio = cfgNum('--locate-y', 0.5);
-  const sL0 = viewMap.scrollLeft, sT0 = viewMap.scrollTop;
-  viewMap.scrollLeft = 0; viewMap.scrollTop = 0; // 从 0 算起，避免叠加漂移
+  const z2 = cfgBool('--locate-reset-zoom', true) ? 1 : zoom;
   const vr = viewMap.getBoundingClientRect();
-  const rect = el.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-  const tx = vr.left + vr.width * xRatio, ty = vr.top + vr.height * yRatio;
-  const targetLeft = (cx - tx) / z;
-  const targetTop = (cy - ty) / z;
-  // 还原起点 scroll/zoom/pan，交给 animateScrollTo 缓动过去
-  viewMap.scrollLeft = sL0; viewMap.scrollTop = sT0;
-  zoom = startZoom; panX = startPanX; panY = startPanY;
-  applyTreeTransform();
-  animateScrollTo(targetLeft, targetTop, cfgBool('--locate-reset-zoom', true) ? 1 : startZoom,
-    cfgBool('--locate-reset-pan', true) ? 0 : startPanX, cfgBool('--locate-reset-pan', true) ? 0 : startPanY, onDone);
+  const c = worldCenter(el);
+  animateScrollTo(vr.width * xRatio / z2 - c.x, vr.height * cfgNum('--locate-y', 0.5) / z2 - c.y, z2, onDone);
 }
 function locateCenter(forceIdx) {
   const selX = cfgNum('--locate-selected-x', 0.5);
@@ -1700,7 +1678,8 @@ function locateCenter(forceIdx) {
 }
 function resetView() {
   render();
-  requestAnimationFrame(() => { locateCenter(); persistNow(); });
+  locateCenter(); // 2026-09-13 改同步：rAF 版会先画一帧「新树 + 旧位置」再开始居中 → 大树上一眼看到跳变；locateCenter 只读几何 + 写 pan/scroll，同步安全
+  persistNow();
 }
 // 更新为当前路径：把当前界面（下钻根节点）存为默认路径（持久化，跨重启）
 function saveAsCurrent() {
@@ -1758,22 +1737,29 @@ function historyForward() {
   state.suppressHistory = false;
   updatePathMenuBtns();
 }
-// 折叠后保持节点屏幕位置（防画面漂移；2026-08-21 定）
+// 画面锚定（2026-08-26 位置刷新优化；2026-09-13 改同步应用）：
+// 用于「锚点上方/周围布局会变」的批量操作（层级条选中折叠、隐藏完成开关、Now 开关、节点菜单动作）——
+// 单点折叠按钮不需要它：折叠只增删该卡下方的子树，卡片自身位置不变。
+// 用法约束：keepView(node) 之后同一任务里必须紧跟 render()——锚定量在 render 末尾同步消费。
+// 曾用 rAF 延后应用：浏览器会先把新布局画出来（卡片挪位、线还是旧的、pan 未补），
+// 下一帧才补位置 + 重画 → 大树上一眼看到「内容先动、线慢半拍」的跳变；折叠大批量子节点时尤其明显。
+// 改为 render 末尾同步应用后，从点击到上屏只有一次绘制，就是最终画面。
+let pendingKeepView = null; // { id, x, y }：keepView 记、render() 末尾 applyPendingKeepView 消费
 function keepView(node) {
   const b = rectCenter(node.id);
   if (!b) return;
-  requestAnimationFrame(() => {
-    // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」真凶：
-    // init 里 setHideDone/setShowNow 必调 keepView——b 在 pan=0（init 重置后）时捕获，
-    // rAF 触发时 init 已把 pan 还原成用户值 → 补偿量 (b-a) 恰好抵消还原 → pan 归 0；
-    // rAF 若晚于 scroll 还原，补偿量还会混入 scroll（实踩日志 pan=scroll 同款怪值）。
-    // init 期间的视图位置由 init 自己的还原/定位分支全权负责，锚定补偿只服务正常使用期。
-    if (!booted) return;
-    const a = rectCenter(node.id);
-    if (a) { panX += (b.x - a.x) / zoom; panY += (b.y - a.y) / zoom; applyTreeTransform(); } // 屏幕差÷zoom（2026-08-22：与编辑锚定同修，zoom≠1 时不过量）
-    drawEdges(); // 补偿平移后立即重画曲线，防止「节点头和线错位」（2026-08-21 修）
-    persistNow(); // 折叠导致视图平移后记住（离散事件，立即写）
-  });
+  pendingKeepView = { id: node.id, x: b.x, y: b.y }; // 记下 render 前的锚点坐标
+}
+function applyPendingKeepView() {
+  if (!pendingKeepView) return;
+  const p = pendingKeepView; pendingKeepView = null;
+  // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」的规矩沿用：
+  // init 期间的视图位置由 init 自己的还原/定位分支全权负责，锚定补偿只服务正常使用期（booted 门闩）。
+  if (!booted) return;
+  const a = rectCenter(p.id);
+  if (a) { panX += (p.x - a.x) / zoom; panY += (p.y - a.y) / zoom; applyTreeTransform(); } // 屏幕差÷zoom（2026-08-22：与编辑锚定同修，zoom≠1 时不过量）
+  drawEdges(); // 补偿平移后立即重画曲线，防止「节点头和线错位」（2026-08-21 修）
+  persistNow(); // 折叠导致视图平移后记住（离散事件，立即写）
 }
 function rectCenter(id) {
   const el = document.querySelector('.node-row[data-id="' + id + '"] .card');
@@ -1800,7 +1786,6 @@ function findViewAnchorBeside(hiddenId) {
 
 // （原 findNearestCard 缩放锚点辅助已于 2026-08-31 移除：缩放改为指针中心，见 wheel 监听处）
 document.addEventListener('wheel', (e) => {
-  markUserTouched(); // 任何滚轮（缩放/触控板滚动）= 用户接管视图，停止打开时的自动重居中（2026-08-24）
   // 图片预览打开时，触控板捏合（ctrlKey）缩放图片本身，而不是后面的思维导图背景（2026-08-26 需求）
   const pv = document.getElementById('img-preview');
   if (pv && !pv.classList.contains('hidden')) {
@@ -1838,13 +1823,11 @@ document.addEventListener('wheel', (e) => {
   zoom = next;
   applyTreeTransform();
   drawEdges(); // zoom 变了，曲线内部坐标要按新 zoom 重算，否则线和节点错位
-  schedulePersist(); // 缩放后记住视图（平移/滚动走 viewMap 的 scroll 事件）
+  schedulePersist(); // 缩放后记住视图（平移各入口各自 schedulePersist/persistNow）
 }, { passive: false });
-// 滚动（触控板双指 / 滚动条 / 任何改 scrollLeft·Top 的操作）= 视图变动 → 记住
-viewMap.addEventListener('scroll', schedulePersist, { passive: true });
 
 // ===== 空格 + 鼠标拖拽平移画布（2026-08-31；行业共识，对齐 Figma/飞书）=====
-// 按住空格 → 光标变抓手（#view-map.space-pan）；左键拖动 = 平移（改 scrollLeft/Top，与触控板双指滚动
+// 按住空格 → 光标变抓手（#view-map.space-pan）；左键拖动 = 平移（改 panX/panY，与触控板双指滚动
 // 同一通道，滚动手感一致、位置还原走现有 scroll 持久化）。空格的按下挂全局 keydown 的「空格预览」分支
 // （选中图片时仍是预览、不动画布）；松开/失焦在此统一复位。
 let spacePanHeld = false, spacePanning = false;
@@ -1854,6 +1837,17 @@ function endSpacePan() {
 }
 document.addEventListener('keyup', (e) => { if (e.key === ' ') endSpacePan(); });
 window.addEventListener('blur', endSpacePan);
+// 修饰键状态上报给宿主（2026-09-13 修 Bug）：右下状态栏的折叠数字靠 Cmd / Cmd+Option 区分三种操作，
+// 宿主侧虽然能从点击/悬停事件读到修饰键，但「鼠标停在按钮上、焦点还在画布 iframe 里按 Cmd」这一下
+// 宿主收不到键盘事件 → 置灰不刷新。这里把 iframe 内的按键状态同步过去（点/悬停事件本身仍是最准来源）。
+// 只在状态真变化时发（普通打字不打扰）。
+let lastFoldMod = { cmd: false, alt: false };
+['keydown', 'keyup'].forEach(ev => document.addEventListener(ev, (e) => {
+  const cmd = !!e.metaKey, alt = !!e.altKey;
+  if (cmd === lastFoldMod.cmd && alt === lastFoldMod.alt) return;
+  lastFoldMod = { cmd, alt };
+  vscode.postMessage({ type: 'foldMod', cmd, alt });
+}));
 // capture 阶段拦在框选（viewMap mousedown）之前：空格按住时拖拽只平移，不框选、不选中节点
 document.addEventListener('mousedown', (e) => {
   if (!spacePanHeld || e.button !== 0) return;
@@ -2003,7 +1997,7 @@ viewMap.addEventListener('mousedown', (e) => {
   box.style.display = 'none';
   const move = ev => {
     const dx = Math.abs(ev.clientX - startX), dy = Math.abs(ev.clientY - startY);
-    if (!boxShown && (dx > 5 || dy > 5)) { boxShown = true; box.style.display = 'block'; markUserTouched(); } // 真正开始拖了 = 用户接管视图（2026-08-24）
+    if (!boxShown && (dx > 5 || dy > 5)) { boxShown = true; box.style.display = 'block'; }
     if (!boxShown) return;
     const x = Math.min(startX, ev.clientX), y = Math.min(startY, ev.clientY);
     const r1 = {
@@ -2130,7 +2124,7 @@ function joinLineFormat(text, fmt) {
 //   onInput    每次输入的额外处理（如备注的空内容光标修复）
 //   newline    false = 该编辑框不支持换行（链接编辑用：Cmd+Enter 被吞、粘贴的换行转空格）。默认支持
 //   keys       { shiftEnter, tab, escape } 各键确认后的额外动作（finish 已先执行）
-//   onFinish(prevW)  收尾：读编辑框文本、写数据、emitUpdate/render；prevW = 编辑期间最后的树宽，render 后按增量补偿
+//   onFinish()  收尾：读编辑框文本、写数据、emitUpdate/render（单坐标系下无需任何位置补偿）
 // }
 // 2026-08-28：webkit contenteditable 对中文标点走 composition 上屏，输入法自身的智能配对
 // 不触发（备忘录走 NSTextView 文本系统才配对）→ 双击引号变 ""（全左）、微信输入法预测的 】不上屏。
@@ -2258,15 +2252,17 @@ function mirrorProxyToTitle() {
   if (!el || !r.node) return;
   const node = r.node;
   const v = typeProxy.value;
-  // 与 startEdit 同款三件事：保留前缀图标（minor/now）；整行格式拆属性显示纯文字；树宽变化同步补偿 flex 推移
+  // 与 startEdit 同款两件事：保留前缀图标（minor/now）；整行格式拆属性显示纯文字。
+  // 单坐标系（2026-09-13）：文本替换改卡片宽度只推内容、不动相机——旧版的树宽补偿
+  //（panX += Δ/2）在新坐标系下反而每敲一个字母就平移整棵树 = 组字期画面抖的根源，已删。
   const icos = Array.prototype.filter.call(el.children,
     ch => ch.classList && (ch.classList.contains('minor-ico') || ch.classList.contains('now-ico')));
   const fmt = splitLineFormat(node.title);
-  const w0 = treeEl.offsetWidth;
   el.textContent = v || (fmt ? fmt.inner : (node.title || ''));
   icos.forEach(ic => el.insertBefore(ic, el.firstChild));
-  const w1 = treeEl.offsetWidth;
-  if (w1 !== w0) { panX += (w1 - w0) / 2; applyTreeTransform(); drawEdges(); }
+  // 重画判据是「卡片宽度」而不是「树总宽」（2026-09-13 修）：卡片变宽会把它自己的子节点整列挤走，
+  // 而树总宽未必跟着变（该卡不在最宽的那条链上）→ 原来那种写法会漏掉重画，表现为「字在动、线不动」。
+  redrawEdgesNextFrame();
   // proxy 跟着卡片挪（树宽变化 flex 会推卡片），IME 候选框不脱节
   const cardEl = el.closest ? el.closest('.card') : null;
   if (cardEl) {
@@ -2407,28 +2403,28 @@ function editSession(el, opts) {
   if (card) card.draggable = false;
   // 登记活跃编辑会话：点画布空白时据此主动结束编辑（2026-08-24 修：之前只认 editingTitleEl，备注/链接编辑点空白不刷新）
   state.editingEl = el;
-  markUserTouched(); // 用户开始编辑 = 接管视图，停止打开时的自动重居中（防编辑中树宽变化触发 re-center 把视图拽走，2026-08-24）
-  // 锚定（2026-08-24 重做）：用「树宽增量」补偿 flex 居中带来的漂移，不再用屏幕左缘。
-  //   原因：屏幕左缘锚定会把用户的手动滚动也"纠正"回去 → "拖回中间，一写又跑到边边"。
-  //   机制：#canvas 是 flex 居中，树宽变 Δ → 树被往左推 Δ/2（layout 空间）→ panX 补 +Δ/2 即可抵消，
-  //         和 viewMap 滚动完全解耦（滚动不改树宽，不触发补偿；用户想滚哪滚哪）。
-  //   注：transform 是 scale(zoom) translate(panX)，panX 是 layout 单位，所以这里不除 zoom。
-  let prevW = treeEl.offsetWidth;
+  // 单坐标系（2026-09-13）：编辑引起的卡片/树尺寸变化不再产生任何相机位移（无 flex 居中可推），
+  // 编辑期间只需实时重画曲线 + 贴边时把卡片拉回视口，无需任何布局冻结/宽度补偿。
   let composing = false;       // IME 组字中（2026-08-26 修：组字期间冻结祖先 transform/滚动补偿，否则会打断中文引号等成对符号的配对）
   let pendingFlush = false;
+  let composeRaf = 0;          // 组字中的「补画连线」帧合并（2026-09-13）
   const sug = opts.suggest ? createLinkSuggest(el) : null; // [[ 文件建议（标题/链接编辑开，备注不开）
-  freezeTreeLayout(); // 2026-08-28 三修：钉住树布局，编辑中宽高变化零位移（见函数头注释）
   const flushInput = () => {
-    prevW = treeEl.offsetWidth; // 只记账（供 onFinish 的 anchorByWidth 做 render 前基准）；布局已冻结，宽度变化不产生位移，无需补偿
     drawEdges(); // 曲线实时跟上
-    if (card) ensureCardVisible(card); // 超出视口右边缘 → 画布往左滚跟随光标（贴边才有；画布中央不触发、纹丝不动）
+    if (card) ensureCardVisible(card); // 超出视口右边缘 → 画布往左移跟随光标（贴边才有；画布中央不触发、纹丝不动）
     if (opts.onInput) opts.onInput();
   };
+  // 组字中的补画（2026-09-13 修）：组字期间标题已在变宽 → 子节点整列被挤走，而这里原本整块跳过，
+  // 表现为「字在动、线留在原地，选字（compositionend）后才跳一下」。只补画连线，不做视口跟随
+  //（改滚动会打断输入法候选框 → 中文标点配对/吞键的老 bug），其余动作仍等 compositionend 统一补。
+  const composeRedrawEdges = () => {
+    if (composeRaf) return;
+    composeRaf = requestAnimationFrame(() => { composeRaf = 0; if (composing) drawEdges(); });
+  };
   const onInput = () => {
-    if (composing) { pendingFlush = true; return; } // 组字中：跳过，compositionend 后统一补
+    if (composing) { pendingFlush = true; composeRedrawEdges(); return; } // 组字中：连线实时跟上，其余动作等 compositionend 补
     if (sug) sug.update(); // [[ 建议跟随光标（触发/过滤/关闭）
-    // 2026-08-28：freeze 布局后树宽变化零位移，flushInput 不再补偿（只 drawEdges+ensureCardVisible），
-    // 故走 rAF 不会抖动；同步反而会强制 layout 打断 IME 配对（引号 ""→""、微信输入法吞 】）。
+    // 走 rAF 合并：同步强制 layout 会打断 IME 配对（引号 ""→""、微信输入法吞 】）
     requestAnimationFrame(flushInput);
   };
   el.addEventListener('input', onInput);
@@ -2436,7 +2432,6 @@ function editSession(el, opts) {
   const onCompStart = () => { composing = true; };
   const onCompEnd = () => {
     composing = false;
-    // 2026-08-28：走 rAF（freeze 布局后位移已零，rAF 不抖；同步强制 layout 会对 IME 有干扰，无必要）。
     if (pendingFlush) { pendingFlush = false; requestAnimationFrame(flushInput); }
     tryAutoPair(el); // composition 上屏中文标点后自己补配对（见 tryAutoPair 注释）
     if (sug) sug.update(); // 组字上屏（可能带出 [[）后补一次建议检测
@@ -2466,16 +2461,16 @@ function editSession(el, opts) {
     activeSuggest = null;
     el.contentEditable = 'false';
     state.editingEl = null; // 清活跃会话登记（2026-08-24）
+    if (composeRaf) { cancelAnimationFrame(composeRaf); composeRaf = 0; } // 组字中退出编辑：撤销待执行的补画（2026-09-13）
     el.removeEventListener('input', onInput);
     el.removeEventListener('compositionstart', onCompStart);
     el.removeEventListener('compositionend', onCompEnd);
     el.removeEventListener('paste', onPaste);
     el.onkeydown = null; el.onblur = null;
     if (card) card.draggable = true; // 恢复卡片拖拽
-    const anchorBefore = unfreezeTreeLayout(card || el); // 2026-08-28：恢复 flex 居中 + 取锚点冻结时视觉位置，交给 onFinish 的 render 后对齐
     // 焦点移出编辑框：让 Cmd+Z 立即走全局撤销（2026-08-22 修：焦点残留导致快捷键被编辑框拦截）
     try { if (document.activeElement) document.activeElement.blur(); } catch (_) {}
-    opts.onFinish(prevW, anchorBefore); // 传当前树宽，onFinish 在 render 后按增量补偿
+    opts.onFinish();
     flushPendingIncoming(); // 编辑结束：应用编辑期间被延迟的 sync/外部变更（2026-08-27 B9）
     // 2026-08-28 快速编辑替换：编辑结束后若仍选中该节点，重新 armed（用户可继续敲键替换）
     if (state.selectedId && !state.multiSelected.size && !state.editingEl && !state.historyMode) armProxy(state.selectedId);
@@ -2558,58 +2553,14 @@ function selectAllInEdit(el) {
   r.selectNodeContents(el);
   s.addRange(r);
 }
-// render 重建 DOM 后按「树宽增量」补偿 flex 居中漂移 + 把编辑节点拉回视口（2026-08-24 重做，原 anchorNodeLeft 改名）
-// prevW = render 前的树宽；render 后树宽变了 Δ → panX 补 Δ/2 抵消 flex 推移；再 ensureCardVisible 拉回视口
-// anchorBefore（编辑结束路径传）：render 前锚点卡片的视觉位置；render 后按「卡片视觉位置不变」一次 panX/panY 对齐
-// （÷zoom，同步）—— 涵盖冻结→居中 + render 宽度/相对位置变化全部位移，比 flex 补偿准（修回车后画布往右移）
-function anchorByWidth(prevW, id, anchorBefore) {
-  if (anchorBefore && id) {
-    const el = document.querySelector('.node-row[data-id="' + id + '"] .card');
-    if (el) {
-      const a = el.getBoundingClientRect();
-      const dx = anchorBefore.left - a.left, dy = anchorBefore.top - a.top;
-      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) { panX += dx / zoom; panY += dy / zoom; applyTreeTransform(); }
-    }
-    drawEdges();
-    if (el) ensureCardVisible(el);
-    return;
-  }
-  const w = treeEl.offsetWidth;
-  if (w !== prevW) { panX += (w - prevW) / 2; applyTreeTransform(); }
-  drawEdges();
-  if (id) { const el = document.querySelector('.node-row[data-id="' + id + '"] .card'); if (el) ensureCardVisible(el); }
-}
-// ===== 编辑期间钉住树布局（2026-08-28 三修，方案重做）=====
-// 动态补偿方案（输入后测树宽、panX 补 Δ/2）已弃用——实测仍抖：
-// 画布是 flex 居中，树宽一变浏览器排版必然先推移、再补偿总有缝隙。
-// 根治：进编辑时把树钉在当前 layout 位置（canvas 改 flex-start + treeEl margin=当前 offset），
-// 编辑中树宽/树高随便变都不产生任何布局位移 → 零补偿零抖动；出编辑恢复 flex 居中，
-// 用「锚点元素视觉位置不变」一次 panX 对齐（全程同步，无中间帧）。
-function freezeTreeLayout() {
-  if (canvasEl.style.justifyContent === 'flex-start') return; // 已冻结
-  treeEl.style.marginLeft = treeEl.offsetLeft + 'px';
-  treeEl.style.marginTop = treeEl.offsetTop + 'px';
-  canvasEl.style.justifyContent = 'flex-start';
-  canvasEl.style.alignItems = 'flex-start';
-}
-function unfreezeTreeLayout(anchorEl) {
-  if (canvasEl.style.justifyContent !== 'flex-start') return null; // 未冻结
-  const b = anchorEl ? anchorEl.getBoundingClientRect() : null; // 锚点在冻结状态下的视觉位置
-  canvasEl.style.justifyContent = '';
-  canvasEl.style.alignItems = '';
-  treeEl.style.marginLeft = '';
-  treeEl.style.marginTop = '';
-  // 不在此处对齐：紧接着 onFinish 的 render/innerHTML 会让编辑卡片「相对 treeEl 的位置」也变
-  // （格式符号转效果、图标出现/消失等），flex 居中补不到这一层 → 回车后画布「往右移一下」且时有时无。
-  // 返回锚点位置，交给 anchorByWidth 在 render 之后一次对齐到位。
-  return b;
-}
-// 把卡片拉回视口：右缘超出 → 往右滚；左缘超出 → 往左滚（屏幕坐标，viewMap 是滚动容器未变形）
+// 把卡片拉回视口：右缘超出 → 画布往左移；左缘超出 → 往右移（屏幕差 ÷ zoom 转世界单位）
 function ensureCardVisible(card) {
   const cr = card.getBoundingClientRect();
   const vr = viewMap.getBoundingClientRect();
-  if (cr.right > vr.right - 16) viewMap.scrollLeft += (cr.right - vr.right + 16);
-  else if (cr.left < vr.left + 16) viewMap.scrollLeft -= (vr.left + 16 - cr.left);
+  let dx = 0;
+  if (cr.right > vr.right - 16) dx = cr.right - vr.right + 16;
+  else if (cr.left < vr.left + 16) dx = -(vr.left + 16 - cr.left);
+  if (dx) { panX -= dx / (zoom || 1); applyTreeTransform(); drawEdges(); }
 }
 function startEdit(node, titleEl, pos, cursorEnd) {
   if (state.historyMode) return; // 历史页只读：禁止进入编辑
@@ -2621,7 +2572,6 @@ function startEdit(node, titleEl, pos, cursorEnd) {
   titleEditStartTs = Date.now(); // 记录进编辑时刻，供 dblclick 判断是否"双击前已在编辑"（2026-08-25 修：避免刚进编辑的同一双击被误判为"编辑时双击=全选"）
   const fmt = splitLineFormat(node.title);
   titleEl.classList.remove('editing-bold', 'editing-strike');
-  const preEditW = treeEl.offsetWidth; // 2026-08-28 修（进编辑瞬间画布挪动）：文本替换（**/~~ 符号转纯文字）可能改树宽，先抓宽，替换后立刻补偿
   // 保留前缀图标（minor-ico / now-ico）：编辑中图标不消失、标题起点不左移，
   // 双击坐标→光标的映射才准（对齐备注竖条的丝滑体验，2026-08-27 定）。
   // 机制：先抓图标 DOM 引用（textContent 赋值清空后引用仍有效），设完纯文字再插回最前。
@@ -2635,12 +2585,9 @@ function startEdit(node, titleEl, pos, cursorEnd) {
     titleEl.textContent = node.title;
   }
   prefixIcos.forEach(ico => titleEl.insertBefore(ico, titleEl.firstChild));
-  // 2026-08-28 三修：进编辑的文本替换（**/~~ 转纯文字）改树宽 → flex 居中推移 δ/2。
-  // 此处仍处于冻结之前（editSession 里才 freeze）→ 需同步补偿锚定；冻结后（输入中）就零位移了。
-  {
-    const wNow = treeEl.offsetWidth;
-    if (wNow !== preEditW) { panX += (wNow - preEditW) / 2; applyTreeTransform(); drawEdges(); }
-  }
+  // 单坐标系（2026-09-13）：进编辑的文本替换（**/~~ 转纯文字）只改卡片宽度、不动相机，
+  // 旧的树宽补偿（panX += Δ/2）在新坐标系下本身就是位移源，已删；只需重画连线跟上。
+  redrawEdgesNextFrame(); // 文本替换改的是「卡片宽度」，树总宽未必变 → 无条件跟上（2026-09-13 修）
   // 记录进入编辑时的纯文字（保留首尾空格，不 trim）——用户没改就不保存（防误清空丢字）
   // 2026-08-26 改：取消"清空/纯空格=取消新建"，改为允许空/空格节点保留；故对比与保存都用未 trim 的原始文本
   // 2026-08-30 换行：改用 editableText（\n 原样保留，多行标题编辑后原样对比）
@@ -2659,7 +2606,7 @@ function startEdit(node, titleEl, pos, cursorEnd) {
         titleEl.textContent = originalRaw; // 已有节点：还原原文（不保存）。布局冻结中，还原改宽度零位移
       }
     },
-    onFinish: (prevW, anchorBefore) => {
+    onFinish: () => {
       state.editingTitleId = null; state.editingTitleEl = null; // 清编辑态标记（2026-08-22）
       if (!findNode(state.tree, node.id)) return; // 节点已在 ESC 取消流程中被删除 → 直接收尾，勿重复处理
       // 2026-08-30 换行：editableText 保 \n；首尾空行收掉（中间空行保留 = 段落间距，落盘走空续行）
@@ -2668,10 +2615,8 @@ function startEdit(node, titleEl, pos, cursorEnd) {
         // 没改（含直接回车确认"新节点"）→ 保持节点，回退到渲染态；不再视为刚新建
         state.justCreated.delete(node.id);
         titleEl.classList.remove('editing-bold', 'editing-strike');
-        // 编辑态→渲染态宽度可能变（符号转效果）→ 按树宽增量补偿 flex 漂移（2026-08-24）
-        const pw = treeEl.offsetWidth;
         titleEl.innerHTML = cardTitleInner(node); // 2026-08-26 修：还原时一并带回 Minor 置灰小箭头（之前用 renderInline 会丢图标）
-        anchorByWidth(pw, node.id, anchorBefore); // 2026-08-28：用锚点对齐，覆盖 innerHTML 后卡片相对 treeEl 位置变化
+        drawEdges(); // 宽度变化 → 曲线跟上（单坐标系下相机不动，无需位置补偿）
         return; // 不 emitUpdate / render
       }
       // 用户改了：整行格式套回 Markdown 语法；字面模式原样保存（保留首尾空格，不 trim）
@@ -2683,17 +2628,14 @@ function startEdit(node, titleEl, pos, cursorEnd) {
       titleEl.classList.remove('editing-bold', 'editing-strike');
       emitUpdate(); // 写回文件
       render();
-      anchorByWidth(prevW, node.id, anchorBefore); // 2026-08-28：用锚点对齐，覆盖 render 后卡片相对 treeEl 位置变化
     }
   });
 }
 function startEditNote(node, noteEl, pos) {
   // 不再 hideNodeMenu：写备注也是选中态，下方菜单保留（2026-08-22 与标题编辑统一）
   disarmProxy(); // 进真编辑态，proxy 让位
-  const w0 = treeEl.offsetWidth; // 2026-08-28：文本替换发生在 freeze 之前（editSession 里才冻结）→ 改树宽会 flex 推移，同步补偿
   noteEl.textContent = node.note || '';
-  const w1 = treeEl.offsetWidth;
-  if (w1 !== w0) { panX += (w1 - w0) / 2; applyTreeTransform(); drawEdges(); }
+  redrawEdgesNextFrame(); // 进编辑的文本替换改的是「卡片宽度」→ 曲线跟上（2026-09-13 修）
   editSession(noteEl, {
     pos, // 双击进编辑：光标插到双击的鼠标位置（2026-08-27 定，修"光标总跑到最后"）
     cursorEnd: !pos, // 键盘入口（Cmd+Enter 等）无坐标 → 光标放末尾接着旧文字写
@@ -2716,13 +2658,12 @@ function startEditNote(node, noteEl, pos) {
       tab: () => addChild(),
       escape: () => { noteEl.textContent = node.note || ''; }
     },
-    onFinish: (prevW, anchorBefore) => {
+    onFinish: () => {
       // 2026-08-30 换行：editableText 保 \n（多行备注落盘 = 多个 `> ` 行）；trim 收首尾空白（含首尾空行）
       const nn = editableText(noteEl).trim();
       if (nn !== node.note) { pushUndo(); node.note = nn; emitUpdate(); }
       if (state.editingNoteId === node.id) state.editingNoteId = null; // 编辑结束：空备注行随后消失（2026-08-21 定）
       render(); // 无论改没改都 render：清掉「编辑中的空备注行」
-      anchorByWidth(prevW, node.id, anchorBefore); // 2026-08-28：用锚点对齐，覆盖 render 后卡片相对 treeEl 位置变化
     }
   });
 }
@@ -2735,10 +2676,8 @@ function startEditLink(node, linkEl) {
   const ul = parseUrlLink(node.link);
   // 文件/URL 链接编辑时显示裸内容（不带 [[ ]]），更直观；节点链接显示 [[标题|ID]] 原文
   const shown = fl ? fl.path : (ul ? ul.url : node.link);
-  const w0 = treeEl.offsetWidth; // 2026-08-28：文本替换发生在 freeze 之前 → 改树宽会 flex 推移，同步补偿（与 startEdit 同款）
   linkEl.textContent = shown;
-  const w1 = treeEl.offsetWidth;
-  if (w1 !== w0) { panX += (w1 - w0) / 2; applyTreeTransform(); drawEdges(); }
+  redrawEdgesNextFrame(); // 进编辑的文本替换改的是「卡片宽度」→ 曲线跟上（2026-09-13 修）
   const reset = () => { linkEl.textContent = shown; };
   editSession(linkEl, {
     suggest: true, // 链接编辑敲 [[ 弹文件建议（2026-08-29）
@@ -2746,7 +2685,7 @@ function startEditLink(node, linkEl) {
     keys: {
       escape: reset // 2026-08-24 修：Esc=放弃，恢复显示
     },
-    onFinish: (prevW, anchorBefore) => {
+    onFinish: () => {
       const raw = editableText(linkEl).replace(/\n+/g, ' ').trim(); // 换行兜底转空格（2026-08-30）
       let nv = node.link;
       if (/^\[\[.+\]\]$/.test(raw) || /^\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\)$/.test(raw)) {
@@ -2762,7 +2701,6 @@ function startEditLink(node, linkEl) {
       if (nv !== node.link) pushUndo();
       node.link = nv;
       emitUpdate(); render();
-      anchorByWidth(prevW, node.id, anchorBefore); // 2026-08-28：补锚点对齐（链接编辑结束原本没补偿，也有「移」bug）
     }
   });
 }
@@ -3073,14 +3011,6 @@ function autoExitShowNowWhenEmpty() {
   // showNow 持续开着但可见集又只按当前根算 → 塌缩/过滤失效一系列连锁问题。语义：当前视图没有就退出。
   if (state.showNow && collectNowNodes(currentRoot()).length === 0) setShowNow(false);
 }
-// 操作期间保持视图不动（2026-08-27 体检精简：deleteNode×2/cancelNewNode 三处同一套手写逻辑收口）：
-// 记下滚动/平移 → fn 内 render → 还原，防 flex 重新居中把画面拽走；markUserTouched 阻止打开期自动重居中覆盖。
-function preserveView(fn) {
-  const sx = viewMap.scrollLeft, sy = viewMap.scrollTop, px = panX, py = panY;
-  markUserTouched();
-  fn();
-  viewMap.scrollLeft = sx; viewMap.scrollTop = sy; panX = px; panY = py; applyTreeTransform();
-}
 // 多选删除/剪切共用：按树深度从深到浅逐个 splice（防 index 错乱）
 function removeNodesDeepFirst(items) {
   items.sort((a, b) => depthOf(state.tree, b.node.id) - depthOf(state.tree, a.node.id));
@@ -3102,12 +3032,11 @@ function deleteNode() {
     let hiddenMinor = 0;
     if (state.hideDone) items.forEach(r => { hiddenMinor += countMinorDescendants(r.node); });
     pushUndo();
-    preserveView(() => {
-      removeNodesDeepFirst(items);
-      state.multiSelected.clear();
-      state.selectedId = null;
-      emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
-    });
+    keepView(items[0].parent); // 锚定母节点：删除后画面随它补，避免大块内容消失后视野里什么都不剩（2026-09-13 反馈）
+    removeNodesDeepFirst(items);
+    state.multiSelected.clear();
+    state.selectedId = null;
+    emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
     autoExitShowNowWhenEmpty(); // 删到无 Now → 自动退出 showNow，避免画面塌缩成只剩 root
     if (hiddenMinor > 0) toastBelow(T('toast.hiddenAlsoDeleted', hiddenMinor), { label: T('common.undo'), fn: () => doUndo() });
     return;
@@ -3117,26 +3046,24 @@ function deleteNode() {
   if (!r || !r.parent) return;
   const hiddenMinor = (state.hideDone && r.node) ? countMinorDescendants(r.node) : 0;
   pushUndo();
-  preserveView(() => {
-    r.parent.children.splice(r.index, 1);
-    state.selectedId = null;
-    emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
-  });
+  keepView(r.parent); // 锚定母节点：删除后画面随它补，避免大块内容消失后视野里什么都不剩（2026-09-13 反馈）
+  r.parent.children.splice(r.index, 1);
+  state.selectedId = null;
+  emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
   autoExitShowNowWhenEmpty(); // 删到无 Now → 自动退出 showNow，避免画面塌缩成只剩 root
   if (hiddenMinor > 0) toastBelow(T('toast.hiddenAlsoDeleted', hiddenMinor), { label: T('common.undo'), fn: () => doUndo() });
 }
 // 取消刚新建的节点：仅作用于 justCreated 标记的节点（误触回车/方向键新建后，ESC 或清空回车取消）
-// 删除后保持视图不动（与 Request 5 删除一致，2026-08-26）
+// 删除后锚定母节点（与 deleteNode 一致，2026-09-13）
 function cancelNewNode(id) {
   const r = findNode(state.tree, id);
   if (!r || !r.parent) return false; // 根节点不可删
   pushUndo();
-  preserveView(() => {
-    r.parent.children.splice(r.index, 1);
-    state.justCreated.delete(id);
-    if (state.selectedId === id) state.selectedId = null;
-    emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
-  });
+  keepView(r.parent); // 与删除同款：锚定母节点（2026-09-13）
+  r.parent.children.splice(r.index, 1);
+  state.justCreated.delete(id);
+  if (state.selectedId === id) state.selectedId = null;
+  emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
   return true;
 }
 // （addRootBranch 已删：more-menu 里没有 add-root 按钮，死代码，2026-08-27 体检清理）
@@ -3268,6 +3195,7 @@ function cutSelectedNode() {
     items.forEach(r => parts.push(serialize(r.node, 0, true).trim()));
     vscode.postMessage({ type: 'copyNode', text: parts.join('\n') });
     pushUndo();
+    keepView(items[0].parent); // 与删除同款：锚定母节点（2026-09-13）
     removeNodesDeepFirst(items); // 按树深度从深到浅删，避免相互影响（与 deleteNode 多选共用）
     state.multiSelected.clear();
     state.selectedId = null;
@@ -3280,6 +3208,7 @@ function cutSelectedNode() {
   if (r.node.id === currentRoot().id) return; // 根不能剪切
   vscode.postMessage({ type: 'copyNode', text: serialize(r.node, 0, true).trim() });
   pushUndo();
+  keepView(r.parent); // 与删除同款：锚定母节点（2026-09-13）
   r.parent.children.splice(r.index, 1);
   state.selectedId = null;
   emitUpdate(); render(); updateToolbar(); updateDefaultPathBtn();
@@ -3751,7 +3680,9 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'foldBarRun') {
-    const fn = foldBarClicks[msg.lvl];
+    // mode：'view' = 画面按层折叠（左键）｜'min' = ①外部能折尽折 + 选中折到第 N 层（右键①/Cmd）｜'keep' = ②外部不变 + 选中折到第 N 层（右键②/Cmd+Option）
+    const table = foldBarRuns[msg.lvl];
+    const fn = table && table[msg.mode || 'view'];
     if (fn) fn();
     return;
   }
@@ -3777,8 +3708,9 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'foldBarHover') {
-    // 状态栏按钮 hover：与原 hover 子菜单同源（highlightLevel / highlightSelLevel）
-    const fn = foldBarHoverFns[msg.lvl];
+    // 状态栏按钮 hover：高亮范围由前端按当前选中状态决定（未选中 = 画面绝对层；选中 = 选中节点内相对层），
+    //   与修饰键无关（2026-09-13：选中后「不按修饰键」与「按 Cmd」做的都是选中子树内的相对层折叠）
+    const fn = foldBarHovers[msg.lvl];
     if (fn) fn();
     return;
   }
@@ -3836,10 +3768,11 @@ window.addEventListener('message', e => {
     // 2026-09-01 修共用 iframe（捷径同 target）时 A 的 view 残留到 B：立即 reset 模块级 view。
     // hasSavedView=true 会被下方 saved 覆盖；false 走 locateCenter。rebuild 新 iframe 本就是 0，无副作用。
     zoom = 1; panX = 0; panY = 0;
-    viewMap.scrollLeft = 0; viewMap.scrollTop = 0;
     applyTreeTransform();
     const saved = (msg.view && typeof msg.view === 'object') ? msg.view : null;
-    const hasSavedView = !!(saved && typeof saved.zoom === 'number');
+    // 2026-09-13 单坐标系：旧存档带 scrollLeft/Top（滚动+平移双坐标，无法换算）→ 视为无记忆，
+    // 按全新打开定位一次；pid/调试开关照旧读（与坐标系无关）。新存档只有 zoom/panX/panY，直接还原。
+    const hasSavedView = !!(saved && typeof saved.zoom === 'number' && typeof saved.scrollLeft !== 'number');
     // 下钻 pid：本次会话有临时态 → 优先还原临时路径；否则（重启/新开）→ 用存储的默认路径（defaultPid），其次快捷方式 drillPid。
     // 之前 bug：drillPid 只取 msg.drillPid（快捷方式消费值），没用 msg.defaultPid → 普通思维导图笔记重启后不回默认路径。
     let drillPid = '';
@@ -3850,6 +3783,10 @@ window.addEventListener('message', e => {
     // 2026-08-30 修"开屏先渲染到别处再移回"：render 前隐藏视图，layoutSettled 定好位再显示
     viewMap.style.opacity = '0';
     // 快捷方式打开：init 里带 drillPid → 直接下钻到该节点；渲染后内容自动居中到视口中央
+    // 过滤开关先于建树写入状态：树只建一遍就带上过滤（2026-09-13）
+    // 原顺序是建完树后再各设置一次 → 等于同一棵树白建两遍，大文件每遍代价可观
+    if (typeof msg.hideDone === 'boolean') setHideDone(msg.hideDone, false, true);
+    if (typeof msg.showNow === 'boolean' && !msg.showNow) setShowNow(false, false, true);
     applyIncoming(msg.text, { filename: msg.filename || '', filePath: msg.filePath || '', drillPid: drillPid, isLink: !!msg.isLink, defaultPid: msg.defaultPid || '' }); // filePath：init 必须透传，否则 state.filePath 空 → 复制 AI 定位路径只剩文件名（2026-09-01 修）
     applyTheme(msg.theme || 'default'); // 主题随 init 下发（2026-08-31）
     state.hideHint = !!msg.hideHint; // 空图新手提示是否隐藏随 init 下发（2026-09-01）
@@ -3858,10 +3795,9 @@ window.addEventListener('message', e => {
     state.licenseSource = msg.licenseSource || 'none'; // 'license'=已购买；'trial'/'none'=未购买 → 右上角"激活 Pro"提示按钮显示条件
     updateProCta();
     state.defaultPid = normPid(msg.defaultPid); // 保存的默认路径 pid（.mmlink=文件内 mmlinkPid / 普通思维导图笔记=workspaceState）
-    // 隐藏完成状态按文件恢复（2026-08-24 P1）：persist=false 不回写，避免 init 时和扩展互相 ping-pong
-    if (typeof msg.hideDone === 'boolean') setHideDone(msg.hideDone, false);
-    // 只显示「当前关注 Now」节点：按文件恢复（2026-08-27），persist=false 不回写
-    if (typeof msg.showNow === 'boolean') setShowNow(msg.showNow, false);
+    // 「隐藏完成」与「只看 Now」的关闭态已在上方建树前预置（persist=false 不回写，避免 init 时
+    // 和扩展互相 ping-pong）；这里只剩「只看 Now」开启态——它需要建树后算可见快照（2026-09-13）
+    if (typeof msg.showNow === 'boolean' && msg.showNow) setShowNow(true, false);
     // 开屏兜底：恢复成「开」但文档根本无 Now 节点 → 自动退出，避免画面塌缩成只剩 root
     // （与删除触同源；autoExit 用 persist=true 会顺手清掉 workspaceState 里坏掉的 showNow:true）
     autoExitShowNowWhenEmpty(); updateNowSideBtn();
@@ -3869,34 +3805,24 @@ window.addEventListener('message', e => {
     debugMode = !!(saved && saved.debugMode);
     const rf0 = document.getElementById('btn-refresh');
     if (rf0) rf0.classList.toggle('hidden', !debugMode);
-    // 恢复 / 默认 视图
+    // 恢复 / 默认 视图：单坐标系下 render 前直接还原即可（无滚动范围依赖，不会被 clamp）
     if (hasSavedView) {
-      // 复用上次：缩放/平移先用 transform 还原，滚动在布局稳定后还原（render 后才算准）
-      zoom = saved.zoom; panX = saved.panX; panY = saved.panY;
+      zoom = saved.zoom; panX = saved.panX || 0; panY = saved.panY || 0;
       applyTreeTransform();
-    } else {
-      // 默认：重置滚动到画布起点，稍后居中
-      viewMap.scrollLeft = 0; viewMap.scrollTop = 0;
     }
-    // 等布局（图片/字体异步加载）真正稳定再定滚动位置，否则 reflow 让还原位置漂移（之前「默认有时偏中心」根因之一）
-    // 2026-08-30 揭幕：render 前 opacity:0，等"首帧布局稳定并定位完"再显示（见 startInitCenter 的 onSettled）
+    // 等布局（图片/字体异步加载）真正稳定再定位/揭幕，否则 reflow 让定位结果漂移
+    // 2026-08-30 揭幕：render 前 opacity:0，等"首帧布局稳定"再显示（见 startInitCenter 的 onSettled）
     const reveal = () => { viewMap.style.opacity = ''; };
     layoutSettled(() => {
       try {
         if (hasSavedView) {
-          // 用保存的滚动还原（不自动居中，尊重上次位置）；先 updateCanvas 确保滚动范围正确
-          updateCanvas();
-          viewMap.scrollLeft = saved.scrollLeft || 0;
-          viewMap.scrollTop = saved.scrollTop || 0;
-          drawEdges();
+          drawEdges(); // 位置已还原，布局稳定后只需重画曲线
         } else {
           // 2026-08-29：开屏智能定位（定位按钮同款），不再整画布居中（大树会飘走）；
           // 带下钻（捷径/默认路径）时 goTo 已定位过一次，这里同款定位幂等不冲突
-          // 2026-09-01：先 updateCanvas 确保画布尺寸是字体 ready 后的，否则 locateCenter 算的 scroll 目标被 clamp → 树跑右下角
-          updateCanvas();
           locateCenter();
         }
-        startInitCenter(hasSavedView, reveal); // 复用则只重画曲线不居中，避免覆盖用户位置
+        startInitCenter(reveal);
         seedPathHistory(state.currentRootPid); // 路径历史栈起点
         updateDefaultPathBtn();
         updateUndoRedo();
@@ -4679,7 +4605,7 @@ function updateUndoRedo() {
 }
 // 隐藏完成（Minor）按钮图标：原方案 eye/eye-off（状态切图标）
 // persist=true 时同步给扩展存 workspaceState（按文件记，下次打开保持）；init 恢复时传 false 不回写（2026-08-24 P1）
-function setHideDone(on, persist) {
+function setHideDone(on, persist, skipRender) {
   state.hideDone = on;
   const b = document.getElementById('btn-hide-done');
   if (b) {
@@ -4689,6 +4615,7 @@ function setHideDone(on, persist) {
     b.dataset.tip = on ? T('tb.showMinor') : T('tb.hideMinor');
   }
   if (persist !== false) vscode.postMessage({ type: 'setHideDone', value: !!on });
+  if (skipRender) return; // 只写状态与按钮图标，不重建树（init 建树前预置过滤开关用）
   if (!state.tree) return; // 树未初始化（自检脚本 / 启动阶段），只更新图标
   keepView(currentRoot()); // 2026-08-24 修：之前误传 currentRoot().id（字符串），keepView 内 node.id=undefined 静默 return，锚定从未生效
   render();
@@ -4699,7 +4626,7 @@ function setHideDone(on, persist) {
 // 数据层展开/折叠（用户 2026-08-27 后续定）：仅真实点击开启（persist 默认 true）时改 node.fold——
 //   展开藏 Now 的所有祖先（让 Now 露出）+ 折叠 Now 的直接子节点（其后整棵子树收起，类点折叠按钮）；
 //   改前 pushUndo 可撤销，emitUpdate 落盘。init 恢复(persist=false)与点关闭时都不碰 node.fold，交回用户手动（"点完按钮后别管，除非再次点击"）。
-function setShowNow(on, persist) {
+function setShowNow(on, persist, skipRender) {
   if (state.historyMode) return; // 历史页只读：禁止切换"只看当前关注"（会持久化偏好 + 改折叠 + resetView，泄露到实时视图导致塌缩）
   // 真实点击开启时，当前视图（currentRoot 范围）一个 Now 节点都没有 → 不开、退出，并提示原因
   //（否则可见集只剩当前根、画面塌缩成单节点，用户看到"点了没反应/节点失效"；2026-08-31 语义）
@@ -4712,6 +4639,8 @@ function setShowNow(on, persist) {
   state.showNow = on;
   nowVisibleSnapshot = (on && state.tree) ? computeNowVisible(currentRoot()) : null; // 「按下那一刻」定格可见集；关闭即清空（2026-08-28）
   if (persist !== false) vscode.postMessage({ type: 'setShowNow', value: !!on });
+  // 只写状态与按钮图标，不重建树（init 建树前预置「关闭态」用）；开启态需建树后算可见快照，不走这里
+  if (skipRender) { updateNowSideBtn(); return; }
   if (!state.tree) { updateNowSideBtn(); return; } // 树未初始化，只更新图标
   // 数据层：仅真实点击开启时展开/折叠（init 恢复与点关闭不触发）
   if (on && persist !== false) {
@@ -4817,34 +4746,62 @@ function updatePathMenuBtns() {
   b.dataset.tip = tipMap[k];
   b.dataset.side = 'right'; // 左侧 toolbar 按钮 → tooltip 向右浮动（避开画布）
 });
-// ===== 折叠体系（2026-09-01 定案：左右两入口，旧 hover 子菜单已删）=====
-// 「折叠 ⇄ 撤回」快照机制（原左下角折叠按钮的逻辑，2026-09-11 起扩展到层级条**所有**数字按钮）：
-//   同一层级按钮再点一次 = 撤回（恢复快照）；换一个层级 = 重新折叠（记新快照）；无限循环。
-//   全部单层语义——只把节点自己的 fold 置 true，绝不动后代 fold（展开后内部折叠状态保持原样）。
-// 选中节点时的折叠用 keepView(selNode) 保持选中节点屏幕位置不动（2026-08-26 位置刷新优化）；
-// 仅无选中的按层折叠仍 resetView() 居中当前根。
-let foldSnapActive = false, foldSnapMap = null, foldSnapLvl = null;
-// 层级条统一入口：lvl = 按钮数字（用于区分"同层再点=撤回"）；apply = 该按钮的纯折叠动作（不含 pushUndo/渲染）
-function foldRunWithUndo(lvl, apply, keepSel) {
-  const sel = hasSingleSelection() ? findNode(state.tree, state.selectedId) : null;
-  if (foldSnapActive && foldSnapMap && foldSnapLvl === lvl) {
-    // 同层再点 = 撤回：恢复快照（完全回到这次折叠前的状态）
-    pushUndo();
-    restoreFoldSnapshot(foldSnapMap);
-    foldSnapActive = false; foldSnapMap = null; foldSnapLvl = null;
-    emitUpdate();
-    if (keepSel && sel) keepView(sel.node); else resetView();
-    render();
+// ===== 折叠体系（2026-09-13 定案 v2：数字按「有没有选中」分派两种作用）=====
+// 数字（Obsidian 状态栏）的作用分两种：
+//   未选中 → 「画面按层折叠到第 N 层」（view）
+//   选中   → 「选中节点折到第 N 层、外部不变」（keep）= 默认左键；按住 Cmd 换成「外部能折尽折 + 选中节点折到第 N 层」（min）
+// 三条通道的等价入口：
+//   view = 未选中时的左键
+//   keep = 选中时的左键 / Cmd + Option + 左键 / 右键第一项
+//   min  = 选中时的 Cmd + 左键 / 右键第二项
+// 全部单层语义——只置节点自己的 fold，绝不动后代 fold（展开后内部折叠状态保持原样）。
+// 2026-09-13 用户定：删除「同一数字再点 = 撤回」快照机制（fold 改动已进撤销栈，回退用 Cmd+Z）。
+// 定位：画面折叠（含无选中）用 resetView() 居中当前根；选中节点类折叠用 keepView(选中节点) 保持屏幕位置。
+let foldBarRuns = {};   // lvl -> { view, min, keep }：三种执行（宿主回 foldBarRun 时按 mode 取用）
+let foldBarHovers = {}; // lvl -> 悬停高亮函数（宿主回 foldBarHover 时按 lvl 取用；高亮范围前端按当前选中状态决定）
+
+// 折叠目标：当前选中的节点（多选优先，按选中顺序；单选取 selectedId）。返回节点数组。
+function foldTargetNodes() {
+  const ids = state.multiSelected.size ? [...state.multiSelected] : (state.selectedId ? [state.selectedId] : []);
+  return ids.map(id => findNode(state.tree, id)).filter(Boolean).map(r => r.node);
+}
+// 折叠目标在当前根子树内的路径数组（不在 currentRoot 子树内的节点跳过，无法参与相对层级折叠）。
+function foldTargetPaths() {
+  const root = currentRoot();
+  if (!root) return [];
+  return foldTargetNodes().map(n => pathTo(root, n.id)).filter(Boolean);
+}
+// 选中子树的最大用户层数（选中节点自身算第 1 层）= 选中类操作的可用上限；多选取最深的那个。
+function foldSelMax(paths) {
+  let max = 0;
+  paths.forEach(p => {
+    let D = 0;
+    (function d(n, dp) { if (dp > D) D = dp; (n.children || []).forEach(c => d(c, dp + 1)); })(p[p.length - 1], 0);
+    if (D + 1 > max) max = D + 1;
+  });
+  return max;
+}
+// 层级条统一入口：mode = 'view'（画面按层）/ 'min'（①外部能折尽折）/ 'keep'（②外部不变）；lvl = 按钮数字
+function foldRun(mode, lvl) {
+  const paths = foldTargetPaths();
+  if (mode !== 'view' && (!paths.length || lvl > foldSelMax(paths))) return; // 选中类操作：无选中/超出选中子树层数 → 不执行（宿主已按 selMax 置灰，这里兜底）
+  const isSelMode = mode !== 'view';
+  pushUndo();
+  foldApply(mode, lvl, paths);
+  emitUpdate();
+  if (isSelMode) keepView(paths[0][paths[0].length - 1]); // 选中节点保持屏幕原位（2026-08-26 位置刷新优化）
+  else { resetView(); return; } // 画面折叠：resetView 自带 render + 居中（2026-09-13：原写法 resetView 后又 render()，同一棵树白建两遍）
+  render(); // render 内会调 updateFoldBar 重发状态
+}
+// 纯折叠动作（不含 pushUndo / 定位 / 渲染）
+function foldApply(mode, lvl, paths) {
+  if (mode === 'view' || !paths.length) {
+    if (lvl === 1) { const r = currentRoot(); if (r && r.children.length) r.fold = true; } // 画面只剩主节点（foldByLevelPure(0) 是空操作，单独处理）
+    else foldByLevelPure(lvl - 1);
     return;
   }
-  // 换层（或首次）= 折叠：记录全树 fold 快照后执行，之后可随时同层撤回
-  pushUndo();
-  foldSnapMap = captureFoldSnapshot();
-  apply();
-  foldSnapActive = true; foldSnapLvl = lvl;
-  emitUpdate();
-  if (keepSel && sel) keepView(sel.node); else resetView();
-  render();
+  if (mode === 'min') foldOffPathSiblings(paths);                  // ① 外部能折尽折（保留所有选中路径链）
+  paths.forEach(p => foldSelSubtreeToLevel(lvl, p[p.length - 1])); // ①/② 选中节点折到第 lvl 层
 }
 // 「进入该节点」按钮（2026-08-30 定）：= 右键「进入当前节点」drillInto，需选中节点才可用
 const btnDrill = document.getElementById('btn-drill');
@@ -4860,9 +4817,10 @@ function highlightLevel(codeDepth) {
   clearLevelHighlight();
   document.querySelectorAll('.node-row[data-depth="' + codeDepth + '"] > .card').forEach(c => c.classList.add('hl-level'));
 }
-// Mode B 专用：高亮选中节点子树内相对第 relDepth 层（relDepth=1=选中的孩子）
-function highlightSelLevel(selNode, relDepth) {
-  clearLevelHighlight();
+// Mode B 专用：高亮选中节点子树内相对第 relDepth 层（relDepth=0=选中节点自身，1=它的孩子）
+// keep=true 时不清除已有高亮（多选：多个选中节点的高亮要同时在场）
+function highlightSelLevel(selNode, relDepth, keep) {
+  if (!keep) clearLevelHighlight();
   const collect = [];
   const walk = (node, d) => {
     if (d === relDepth) collect.push(node);
@@ -4883,14 +4841,7 @@ function pathTo(root, target) {
   }
   return rec(root) ? path : null;
 }
-// 按层折叠（Mode A，无选中）：targetDepth=code depth；d<targetDepth 打开路径，d===targetDepth 只折该层（单层语义，更深层 fold 不动）
-function foldByLevel(targetDepth) {
-  pushUndo();
-  foldByLevelPure(targetDepth);
-  emitUpdate();
-  resetView();
-}
-// 纯折叠动作（不含 pushUndo/渲染）—— 供层级条的「折叠⇄撤回」快照机制调用（foldRunWithUndo）
+// 画面按层折叠（数字左键 / mode='view'）：targetDepth=code depth；d<targetDepth 打开路径，d===targetDepth 只折该层（单层语义，更深层 fold 不动）
 function foldByLevelPure(targetDepth) {
   const root = currentRoot();
   const walk = (node, d) => {
@@ -4902,132 +4853,80 @@ function foldByLevelPure(targetDepth) {
   };
   walk(root, 0);
 }
-// 折偏路径兄弟侧枝（选中节点场景共用）：off-path 兄弟整棵深折（渐进式，2026-08-30），不碰选中节点本身及其子树
-function foldOffPathSiblings(path) {
-  const root = currentRoot();
-  const pathIds = new Set(path.map(n => n.id));
-  const selNode = path[path.length - 1];
+// 外部「能折尽折」（菜单① / Cmd + 左键）：沿所有选中路径——路径链保持展开，链上节点的其它兄弟（有孩子）折起；
+// 不下钻选中节点的子树（它自己的层由 foldSelSubtreeToLevel 处理）。多选时多条路径链一起保留。
+function foldOffPathSiblings(paths) {
+  const pathIds = new Set();
+  const selIds = new Set();
+  paths.forEach(p => { p.forEach(n => pathIds.add(n.id)); selIds.add(p[p.length - 1].id); });
   const walk = (node, d, parentOnPath) => {
     const onPath = pathIds.has(node.id);
-    if (d > 0 && !onPath && parentOnPath && node.children.length) { node.fold = true; return; } // 偏路径兄弟只折本层（还原原"原来那个逻辑"：不深折，打开后不一层层续折）
-    if (node.id !== selNode.id && onPath) node.children.forEach(c => walk(c, d + 1, onPath)); // 只沿路径往下
+    if (d > 0 && !onPath && parentOnPath && node.children.length) { node.fold = true; return; } // 偏路径兄弟只折本层（不深折，打开后不一层层续折）
+    if (onPath && !selIds.has(node.id)) node.children.forEach(c => walk(c, d + 1, onPath));    // 只沿路径往下，且不下钻选中节点
   };
-  walk(root, 0, true);
+  walk(currentRoot(), 0, true);
+  paths.forEach(p => p.forEach(n => { n.fold = false; })); // 路径链整体展开（原本折着的祖先也打开，保证画面真的只剩这几条链）
 }
-// Mode B·点数字 N（相对选中节点）：其它无关极简 + 选中子树按相对层折叠（单层语义，深层 fold 不动）
-function foldSelByLevel(N) {
-  const path = pathTo(currentRoot(), state.selectedId);
-  if (!path) { foldByLevel(1); return; }
-  pushUndo();
-  foldSelByLevelPure(N, path);
-  emitUpdate();
-  keepView(path[path.length - 1]); // 按层级折叠选中子树：选中节点保持原位，不跳中心（2026-08-26 位置刷新优化）
-  render();
-}
-// 纯折叠动作（不含 pushUndo/渲染）—— 供层级条的「折叠⇄撤回」快照机制调用（foldRunWithUndo）
-function foldSelByLevelPure(N, path) {
-  const selNode = path[path.length - 1];
-  foldOffPathSiblings(path);                                  // ① 其它无关极简（off-path 兄弟整棵深折）
-  selNode.fold = false;                                        // 选中节点打开（让相对层可见）
-  const walkSel = (node, d) => {                              // ② 选中子树只折目标层（不深折，还原"原来那个逻辑"）
-    if (d > 0) {
-      if (d < N) node.fold = false;
-      else if (d === N && node.children.length) node.fold = true; // 只折相对第 N 层，更深层保持原状
-    }
-    node.children.forEach(c => walkSel(c, d + 1));
+// 选中子树折到第 lvl 层（用户层：1 = 只留选中节点自身，它的孩子收起）
+// 单层语义：只置目标层节点的 fold，更深层折叠状态原样不动；目标层是叶子就不写 fold（无孩子可折）。
+function foldSelSubtreeToLevel(lvl, selNode) {
+  const target = lvl - 1; // 用户层 → code depth（d=0 即选中节点自身 = 用户第 1 层）
+  const walk = (node, d) => {
+    if (d > target) return;                       // 更深的层不碰，也不用再往下走
+    if (d === target) { if (node.children.length) node.fold = true; }
+    else node.fold = false;                       // 上层展开，露出目标层
+    node.children.forEach(c => walk(c, d + 1));
   };
-  walkSel(selNode, 0);
-}
-// ===== 左下角折叠按钮的「折叠 ⇄ 撤回」辅助（2026-09-01 定案）=====
-// 记录当前根子树全部节点的 fold 状态（快照）；撤回时原样恢复。
-function captureFoldSnapshot() {
-  const map = new Map();
-  (function walk(n) { if (!n) return; map.set(n.id, !!n.fold); (n.children || []).forEach(walk); })(currentRoot());
-  return map;
-}
-function restoreFoldSnapshot(map) {
-  (function walk(n) { if (!n) return; if (map.has(n.id)) n.fold = map.get(n.id); (n.children || []).forEach(walk); })(currentRoot());
-}
-// 最小折叠：除「当前根 → 选中节点」路径链外全部收起；选中节点自身收起（只剩路径链 + 它自己）。
-// 2026-09-01 修「逐级折叠」bug：全部单层语义——每个节点只置自己的 fold，绝不动后代 fold。
-//   旧版旁支和选中节点都调 foldDeep 把全部后代 fold=true（历史遗留的渐进式深折没删干净，
-//   只在其它入口改了单层），展开时每层都是折的 = 逐级折叠；现在展开后里面折叠状态保持原样。
-// 注意：只改 fold 状态，不碰其它状态；撤回由快照完成。
-function foldMinimalKeepPath(path) {
-  const pathIds = new Set(path.map(n => n.id));
-  const selNode = path[path.length - 1];
-  const descend = (node) => {
-    if (node === selNode) return; // 选中节点自身已 fold，其子树折叠态保持原样，不再下钻（否则会把直接子层误折→展开变逐级）
-    (node.children || []).forEach(c => {
-      if (pathIds.has(c.id)) { c.fold = false; descend(c); } // 路径链保持展开
-      else c.fold = true;                                    // 旁支只折自身（内部折叠状态保持原样）
-    });
-  };
-  descend(currentRoot());
-  selNode.fold = true; // 选中节点只折自身：展开后子层还是原来的折叠状态
+  walk(selNode, 0);
 }
 // ===== 右下角常驻折叠层级条（2026-08-30 定）→ 2026-08-30 v2：搬进 Obsidian 官方状态栏 =====
 // 不再在 iframe 内画悬浮条（和原生状态栏并排很丑）；前端只算层级状态 postMessage 给宿主，
 // 宿主用 addStatusBarItem 渲染进原生状态栏，点击发回前端执行折叠。
-// 2026-09-01 定案：左右两入口方案定死，旧 hover 子菜单（buildFoldMenu/bindFoldHover/fold-menu）已删除。
-let foldBarClicks = {};   // lvl -> () => 折叠执行（host 回 foldBarRun 时按 lvl 取用）
-let foldBarHoverFns = {};  // lvl -> () => hover 高亮（host 回 foldBarHover 时按 lvl 取用）
+// 2026-09-13 定案（v2）：数字的作用看有没有选中 —— 未选中 = 画面按层折叠（view）；选中 = 折选中节点、外部不变（keep），
+//   按住 Cmd 则换成「外部能折尽折 + 折选中节点」（min）。右键菜单是这两条的等价入口（宿主侧触发，回 mode 参数）。
 function updateFoldBar() {
   if (state.historyMode) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; }
-  // ---- 层级参数（Mode A/B 分支）----
-  // 2026-09-11 用户定：两个模式都从 1 开始、上限按整棵树最深层级（展示 1-5+，不随选中子树缩小）；
-  //   未选中点 1 = 折叠到只剩主节点（foldByLevelPure(0)）；选中点 1 = 只剩选中路径（foldMinimalKeepPath）；
-  //   label 恒为数字（不再交替 ↩，再点一次即撤销）；hasSel 随状态发宿主做未选中降透明度。
-  let startLvl, maxLvl, clickFn, hoverFn, titleFn;
-  const selPath = hasSingleSelection() ? pathTo(currentRoot(), state.selectedId) : null;
-  // 整棵树最深 code depth（两个模式的上限都用它）
+  const root = currentRoot();
+  if (!root) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; } // 2026-08-30 防御：树未初始化/解析异常时 root 为 null
+  // 数字范围 = 整棵树最深层级（1..treeMax+1）—— 固定不随选中变化；单主节点也显示「1」
   let treeMax = 0;
-  (function d(n, dp) { if (!n) return; if (dp > treeMax) treeMax = dp; (n.children || []).forEach(c => d(c, dp + 1)); })(currentRoot(), 0);
-  if (selPath) {
-    const selNode = selPath[selPath.length - 1];
-    // Mode B（选中态）：所有数字都是「折叠 ⇄ 撤回」循环（同层再点 = 撤回，换层 = 重新折叠）。
-    //   1 = 只剩选中路径（原左下按钮功能）；2.. = 选中子树按相对层折叠。
-    //   上限 = 选中子树的层数（D+1）—— 2026-09-11 用户澄清：数字数量随选中变化，
-    //   选中浅节点（如倒数第二个）只显示 1-2，不显示用不到的后面数字。
-    //   文案统一「从此节点起，折叠到第 X 层级」（1 与其它一致，不提示撤回——用户自己点会发现）
-    let D = 0;
-    (function d(n, dp) { if (dp > D) D = dp; n.children.forEach(c => d(c, dp + 1)); })(selNode, 0);
-    startLvl = 1; maxLvl = D + 1;
-    clickFn = (lvl) => foldRunWithUndo(lvl, () => {
-      if (lvl === 1) foldMinimalKeepPath(selPath);
-      else foldSelByLevelPure(lvl - 1, selPath);
-    }, true);
-    hoverFn = (lvl) => lvl === 1 ? highlightSelLevel(selNode, 0) : highlightSelLevel(selNode, lvl - 1);
-    titleFn = (lvl) => T('fold.selBelow', lvl);
-  } else {
-    const root = currentRoot();
-    if (!root) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; } // 2026-08-30 防御：树未初始化/解析异常时 root 为 null
-    // Mode A（未选中）：所有数字同为「折叠 ⇄ 撤回」循环；1 = 折叠到只剩主节点
-    //   （2026-09-11 修：原走 foldByLevelPure(0) 是空操作——其 walk 里 if(d>0) 把根排除，
-    //     主节点 fold 从未被置 → 第一层还在；改为直接给主节点自身置 fold）
-    //   2026-09-11 用户澄清：**单主节点也要显示「1」**（数几层出几个数字，不再隐藏）
-    startLvl = 1; maxLvl = treeMax + 1;
-    clickFn = (lvl) => foldRunWithUndo(lvl, () => {
-      if (lvl === 1) {
-        const root = currentRoot();
-        if (root && root.children.length) root.fold = true; // 主节点自身收起 = 画面只剩主节点（快照可撤回）
-      } else {
-        foldByLevelPure(lvl - 1);
-      }
-    }, false);
-    hoverFn = (lvl) => highlightLevel(lvl - 1);
-    titleFn = (lvl) => T('fold.level', lvl);
-  }
-  // ---- 组状态发宿主：每个 lvl 带 label/title，宿主按 lvl 回 foldBarRun 时前端按 lvl 取执行函数 ----
+  (function d(n, dp) { if (!n) return; if (dp > treeMax) treeMax = dp; (n.children || []).forEach(c => d(c, dp + 1)); })(root, 0);
+  // 选中类操作的可用上限 selMax（用户层）：选中节点自身算第 1 层，多选取最深的那个；
+  // 未选中 = 0 → 数字走「画面按层折叠」（不受限）；选中时数字改折选中节点，超出 selMax 的一律置灰。
+  const selPaths = foldTargetPaths();
+  const selMax = foldSelMax(selPaths);
+  // ---- 组状态发宿主：每个 lvl 带悬浮提示文案 + 三种执行 / 一种 hover；宿主按「选中 + 修饰键」选用 ----
+  // 文案（2026-09-13 用户定，宿主 refreshFoldTips 按当前状态选用）：
+  //   title     未选中节点        →「折叠到第 X 层级」
+  //   titleKeep 选中（不按修饰键）→「选中节点」折叠到第 X 层级（同时外部保持不变）（选中后的默认左键行为）
+  //   titleMin  选中 + 按住 Cmd   →「选中节点」折叠到第 X 层级（同时外部折叠到最简）」
+  //   置灰按钮显示 state.noMore「暂不可用」（宿主换成该文案）
   const levels = [];
-  foldBarClicks = {};
-  foldBarHoverFns = {};
-  for (let lvl = startLvl; lvl <= maxLvl; lvl++) {
-    levels.push({ lvl, label: String(lvl), title: titleFn(lvl) }); // label 恒为数字（用户 2026-09-11：点 1 后不要出现 ↩，再点即撤销）
-    foldBarClicks[lvl] = () => clickFn(lvl);
-    foldBarHoverFns[lvl] = () => hoverFn(lvl);
+  foldBarRuns = {};
+  foldBarHovers = {};
+  for (let lvl = 1; lvl <= treeMax + 1; lvl++) {
+    levels.push({
+      lvl,
+      label: String(lvl), // label 恒为数字（用户 2026-09-11：点 1 后不要出现 ↩）
+      title: T('fold.level', lvl),
+      titleKeep: T('fold.levelKeep', lvl),
+      titleMin: T('fold.levelMin', lvl),
+      menuKeep: T('fold.menuKeep', lvl), // 右键第一项（= 选中后的默认左键行为）
+      menuMin: T('fold.menuMin', lvl),   // 右键第二项（= Cmd 快捷键）
+    });
+    foldBarRuns[lvl] = {
+      view: () => foldRun('view', lvl), // 未选中时的左键：画面按层折叠
+      min: () => foldRun('min', lvl),   // ① 外部能折尽折 + 选中节点折到第 lvl 层
+      keep: () => foldRun('keep', lvl), // ② 外部不变 + 选中节点折到第 lvl 层（选中后的默认左键）
+    };
+    // 悬停高亮跟着该数字「实际会做什么」走：未选中 = 画面绝对第 lvl 层；选中 = 选中节点内相对第 lvl 层
+    // （2026-09-13：不再按修饰键分叉 —— 选中后「不按修饰键」与「按 Cmd」的高亮范围一致，都是选中子树内的相对层）
+    foldBarHovers[lvl] = () => {
+      if (!selPaths.length) { highlightLevel(lvl - 1); return; } // 没选中 → 与左键的 view 一致
+      selPaths.forEach((p, i) => highlightSelLevel(p[p.length - 1], lvl - 1, i > 0)); // 多选全部一起高亮
+    };
   }
-  vscode.postMessage({ type: 'foldBarState', levels, hidden: false, hasSel: !!selPath });
+  vscode.postMessage({ type: 'foldBarState', levels, hidden: false, selMax, noMore: T('fold.noMore') });
 }
 
 // ===== 定位按钮（2026-08-28 重做）：主节点 + Now1/2/… + 选中节点 的按钮序列，循环定位 =====
@@ -5093,7 +4992,7 @@ function locateToItem(item, keepDim, autoBrightMs) {
 // 区别仅在于 click 会置 locateHoverFixed=true（固化，移出才恢复），hover 不会。
 // 阶段1：hover 主按钮 → 子菜单弹出，当前状态对应项加粗，画布不动
 // 阶段2：hover 子菜单项 → 该节点到画面中央 + 其它全暗；点击 = 固化；移出 = 未点击则回原位
-let locateSavedScroll = null; // hover 子菜单前的滚动位置（移出未点击时还原）
+let locateSavedScroll = null; // hover 子菜单前的视图位置 {zoom, panX, panY}（移出未点击时还原）
 let locateHoverFixed = false;  // 本次 hover 是否已点击固化（true=不移回）
 let locateFirstClickDone = false;  // 本次 hover 会话是否已发生过「确认点击」（区分主按钮首次点击）
 let locateConfirmedItemId = null;  // 已确认节点 id（鼠标移出时滚回此节点，避免被后续 hover 预览带偏）
@@ -5126,7 +5025,7 @@ function activateLocate(item) {
 // hover 子菜单项：预览到中央 + 全暗其它（复用 activateLocate；点击固化后仍可 hover 预览，不做守卫拦截）
 function highlightLocateItem(item) {
   if (locateSavedScroll === null) {
-    locateSavedScroll = { left: viewMap.scrollLeft, top: viewMap.scrollTop, zoom, panX, panY };
+    locateSavedScroll = { zoom, panX, panY };
   }
   activateLocate(item);
 }
@@ -5460,7 +5359,7 @@ function updateNowMenuBold() {
       updateNowMenuBoldAt(predIdx);
       // 主按钮 hover 即进入定位态（预测），画面滚到该节点
       if (locateSavedScroll === null) {
-        locateSavedScroll = { left: viewMap.scrollLeft, top: viewMap.scrollTop, zoom, panX, panY };
+        locateSavedScroll = { zoom, panX, panY };
       }
       activateLocate(items[predIdx]);
     }
@@ -5485,7 +5384,7 @@ function updateNowMenuBold() {
       // 未点击：回原位（进菜单前的位置）；smooth 全程开，动画结束后由 onDone 关掉
       locateSmoothOn = true;
       const s = locateSavedScroll;
-      animateScrollTo(s.left, s.top, s.zoom, s.panX, s.panY, () => { locateSmoothOn = false; });
+      animateScrollTo(s.panX, s.panY, s.zoom, () => { locateSmoothOn = false; });
     } else {
       locateSmoothOn = false;
     }
