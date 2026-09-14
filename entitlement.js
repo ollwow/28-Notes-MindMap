@@ -1,63 +1,33 @@
-// license.js —— 28-Notes 许可证验证模块（纯函数，不依赖 obsidian / DOM）
-//
-// 设计要点（2026-09-02 定，机制现状与改动守则见 激活机制报告.md）：
-//   1. 非对称验签：这里只放公钥，用户拿到全部代码也造不出有效激活码（对称密钥方案做不到这点）
-//   2. 每次启动重验，不缓存「已激活」布尔值 → 手改 data.json 无效，状态永远由「码本身是否有效」决定
-//   3. 每个码内嵌 lid（唯一许可证号）→ 以后上线服务器可直接按 lid 回溯激活次数，历史码无需换发
-//   4. 不做代码混淆：非对称方案下客户端没有秘密可藏，混淆只增加维护成本
-//
-// 运行环境：main.js 用「fs 读源码 + new Function」装载（Obsidian require 不认相对路径）；
-//           test.mjs 可直接 require（Node 22 有全局 crypto.subtle）。
+// entitlement.js —— 授权验证模块
+// 纯函数：不依赖 obsidian / DOM / 文件系统，可由单测直接 require。
+// 改动守则见项目文档（不随包发布）。
 'use strict';
 
 // ===== 常量 =====
 
-// 产品标识：别的产品的激活码在本插件无效（payload 里也有一份，两边都对上才算通过）
 const LICENSE_PRODUCT_ID = '28-notes';
-
-// 码格式版本：以后升级 payload 结构时靠它分流，老码继续按老规则验
 const LICENSE_FORMAT_VERSION = 1;
-
-// 展示用前缀（给用户看的形态：28N-XXXXXX-XXXXXX-…）；归一化时会先剥掉
 const LICENSE_CODE_PREFIX = '28N';
-
-// 激活回执前缀（用户可把回执发给作者，用于多设备/换设备时的设备计数）
 const LICENSE_RECEIPT_PREFIX = '28R';
-
-// 免费试用天数（首次安装自动开始，无需激活码）
 const TRIAL_DAYS = 14;
-
-// 签名算法：ECDSA P-256 + SHA-256。选它而不是 RSA 是因为签名只有 64 字节（base64url 86 字符），
-// RSA-2048 要 344 字符，整个激活码会长到 540+ 字符，微信发码/用户复制都难受。
-// 两者安全性对本地验证场景都够用。
 const LICENSE_ALG = { name: 'ECDSA', namedCurve: 'P-256', hash: 'SHA-256' };
 
-// 公钥（SPKI DER 的 base64）。只能验签、不能签发，公开无害。
-// ⚠️ 私钥在作者本机 ~/.28notes-license/private.pem，绝不能进仓库 / 进发布包。
-// ⚠️ 轮换密钥对 = 废掉所有已发出的码（用户手里的码全部失效），只在极端情况做；
-//    日常处理滥用请用下面的 REVOKED_LICENSE_IDS 按 lid 拉黑。
+// 公钥（SPKI DER 的 base64）：只能验签、不能签发，公开无风险。
 const LICENSE_PUBLIC_KEY_B64 =
   'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEH2mJCwXuY6CxEBgLgsQpV/slEWOZuETNQuqrDT/bUbfRAqHu2mXerWNNiQ2ry+uSmnRG1INgPIDED710vhca4w==';
 
-// 吊销名单（按 lid）。发现某个码被公开传播/退款/滥用 → 把它的 lid 加进来 → 发新版本 →
-// 该码在用户更新插件后失效。注意：依赖用户更新才生效，这是本地方案的固有上限。
-// 单个码拉黑优先用这里，不要动密钥对（动密钥会误伤所有付费用户）。
+// 名单里的码一律不通过（随版本发布生效；单个码的问题用这里处理，不要动密钥对）
 const REVOKED_LICENSE_IDS = [
-  // 例：'K7F3QM2X', // 2026-09-02 作废（原因：退款/滥用）
 ];
 
-// ===== 付费功能门控表 =====
+// ===== 功能登记表 =====
 //
-// 全插件的免费/付费边界只在这一张表登记：
-//   locked: true → 未激活时拦该功能（试用期内放行；拦法 = 按钮悬浮变 ticket + 点击进激活弹窗）
-//   freeCap: N   → 免费用户最多用 N 个/次（可选，不配 = 不限量；locked 为 false 时才有意义）
-//   name         → 给用户看的功能名（Pro 详情页 / 设置页展示用）
+// locked: true → 未授权时拦截该功能（试用期内放行）
+// freeCap: N   → 免费可用 N 次（不配 = 不限量）
+// name         → 给用户看的功能名（详情页 / 设置页展示）
 //
-// ⚠️ 实际拦截不在此读表：
-//   - iframe 内按钮统一走 applyProGate（实时读 state.isPro，随 init/licenseUpdate 下发），见 mindmap-app.js
-//   - host 侧右下角折叠数字用 licenseState.active 拦截，见 main.js mkFoldStatusBtn
-// 本表 = 付费边界登记处 + Pro 详情页文案来源。要加/减 Pro 功能：先想清楚是否真要锁，
-// 改这张表，再去对应按钮接 applyProGate。
+// 拦截动作不读本表：iframe 侧走 applyProGate（实时读 state.isPro），
+// host 侧读 licenseState.active。本表 = 登记处 + 展示文案来源。
 const PRO_LOCKS = {
   basicEdit:       { locked: false, name: '基础编辑（增删节点、撤销重做、下钻）' },
   pathLink:        { locked: false, name: '路径链接（上一/下一/保存默认路径）' },
@@ -65,13 +35,13 @@ const PRO_LOCKS = {
   minorHide:       { locked: true,  name: 'Minor（隐藏完成）按钮' },
   fold:            { locked: true,  name: '折叠层级（左侧折叠按钮 + 右下角高级折叠数字）' },
   saveShortcut:    { locked: true,  name: '保存为捷径（右键菜单）' },
-  history:         { locked: false, name: '历史记录与版本快照', note: '存储成本型功能，是常见的 Pro 卖点' },
-  premiumThemes:   { locked: false, name: '进阶主题（飞书蓝线/粉线/Obsidian/MindNode）', note: '基础灰线主题保持免费' },
-  noteStyle:       { locked: false, name: '备注区颜色与字号自定义', note: '设置页已接好接入点，改 true 即上锁' },
-  aiPath:          { locked: true,  name: '复制 AI 定位路径', note: '把当前节点/路径作为上下文发给 AI' },
+  history:         { locked: false, name: '历史记录与版本快照' },
+  premiumThemes:   { locked: false, name: '进阶主题（飞书蓝线/粉线/Obsidian/MindNode）' },
+  noteStyle:       { locked: false, name: '备注区颜色与字号自定义' },
+  aiPath:          { locked: true,  name: '复制 AI 定位路径' },
 };
 
-// 功能当前是否可用（isPro = 已激活或仍在试用期）。
+// 功能当前是否可用（isPro = 已授权或仍在试用期）。
 // 表里没登记 / 没上锁的一律放行：宁可漏放，也不误伤用户现有功能。
 function canUseFeature(featureId, isPro) {
   const rule = PRO_LOCKS[featureId];
@@ -86,21 +56,20 @@ function freeCapOf(featureId) {
   return rule.freeCap;
 }
 
-// 免费用户已用 count 次后，再用一次是否还放行
+// 已用 count 次后，再用一次是否还放行
 function underFreeCap(featureId, count, isPro) {
   return isPro === true || count < freeCapOf(featureId);
 }
 
 // ===== 工具：base64url / 字节 =====
 
-// base64url 编码（浏览器/Node 通用，不依赖 Buffer）
 function toBase64Url(bytes) {
   let bin = '';
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// base64url 解码（宽松：同时接受标准 base64 的 +/ 与填充 =，用户从不同地方粘贴的形态都能吃下）
+// 宽松解码：标准 base64 的 +/ 与填充 = 也接受（用户从不同地方粘贴的形态都能吃下）
 function fromBase64Url(str) {
   const norm = String(str).replace(/-/g, '+').replace(/_/g, '/');
   const padded = norm + '='.repeat((4 - (norm.length % 4)) % 4);
@@ -120,12 +89,8 @@ async function digestHex(text) {
 
 // ===== 激活码归一化 =====
 //
-// ⚠️ 两个坑：
-//  1. 不能统一大小写！base64 大小写敏感（十六进制形态的码能转大写，我们这种不能）。
-//  2. 只能删空白，不能删横线！base64url 字符集里本来就含 '-' 和 '_'（替代标准 base64 的 + /），
-//     所以分组展示必须用【空格】而不是横线——用横线的话归一化时连码本身的字符一起删了，
-//     签名会从 64 字节变成 62 字节，永远验不过（2026-09-02 实踩）。
-// 做法：去所有空白 → 剥 28N 前缀（含后面的分隔符）→ 剩下的原样保留。
+// 只删空白：base64url 字符集自带 '-' 和 '_'，转大写或删横线都会毁码；
+// 分组展示必须用空格，不能用横线。剥掉 28N 前缀后原样保留。
 function normalizeLicenseCode(raw) {
   const s = String(raw == null ? '' : raw).replace(/\s+/g, '');
   const upper = s.toUpperCase();
@@ -136,12 +101,8 @@ function normalizeLicenseCode(raw) {
 
 // ===== 验签（核心）=====
 //
-// 返回 { valid, reason, payload }
-// reason 是给 i18n 用的键后缀：license.err.<reason>
-// opts: { now?: Date, extraRevoked?: string[], publicKey?: string }
-//   ├ now / extraRevoked：测试用（模拟过期、模拟拉黑）
-//   └ publicKey：仅测试用——注入临时密钥对的公钥，这样自动化测试不需要真私钥
-//     就能跑完整流程（真私钥绝不能进仓库，测试里也不能出现真激活码，否则发布包=白嫖）
+// 返回 { valid, reason, payload }；reason 用于 i18n 键 license.err.<reason>。
+// opts（仅测试注入用）：{ now?: Date, extraRevoked?: string[], publicKey?: string }
 async function verifyLicenseCode(raw, opts) {
   const options = opts || {};
   const revoked = options.extraRevoked ? REVOKED_LICENSE_IDS.concat(options.extraRevoked) : REVOKED_LICENSE_IDS;
@@ -161,8 +122,7 @@ async function verifyLicenseCode(raw, opts) {
     return { valid: false, reason: 'format' };
   }
 
-  // 1) 吊销名单优先于验签：被拉黑的码无论签名多正确都不放行
-  //    （先解析 payload 拿 lid；解析失败就等下面验签那步一并报错）
+  // 1) 名单优先于验签：拉黑的码无论签名多正确都不放行
   let payload = null;
   try {
     payload = JSON.parse(new TextDecoder().decode(payloadBytes));
@@ -190,10 +150,10 @@ async function verifyLicenseCode(raw, opts) {
   }
   if (!ok) return { valid: false, reason: 'signature' };
 
-  // 3) 产品对得上（防止别的产品/测试码混进来）。p 是紧凑字段名，product 是早期长名，两个都认。
+  // 3) 产品标识必须匹配（p 是紧凑名，product 是早期长名，两个都认）
   if ((payload.p || payload.product) !== LICENSE_PRODUCT_ID) return { valid: false, reason: 'product' };
 
-  // 4) 有效期（买断制签很远的时间；订阅制签真实到期日，同一套逻辑）
+  // 4) 有效期（exp 为 Unix 秒或 ISO 字符串，不填即不过期）
   const exp = parseExpiry(payload.exp);
   if (exp !== null) {
     const now = options.now ? options.now.getTime() : Date.now();
@@ -209,7 +169,6 @@ async function verifyLicenseCode(raw, opts) {
   };
 }
 
-// 到期时间解析：支持 Unix 秒（紧凑格式，当前签发脚本用这个）和 ISO 字符串（可读，调试时方便手搓）
 function parseExpiry(raw) {
   if (raw === undefined || raw === null || raw === '') return null;
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw * 1000; // 秒 → 毫秒
@@ -220,7 +179,6 @@ function parseExpiry(raw) {
 
 // ===== 设备标识 =====
 //
-// 安装级 UUID：同一台机器同一个 vault 稳定，换 vault / 重装系统会变（这是特性不是 bug）。
 // 读写由调用方注入（main.js 传文件 IO 闭包），本模块保持纯净可测。
 function newDeviceId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -237,24 +195,17 @@ function getOrCreateDeviceId(read, write) {
   return id;
 }
 
-// 激活回执：28R-<lid>-<设备摘要8位>
-// 同一台设备 + 同一个码 → 回执恒定（不含时间），你收到多个回执按「设备摘要」去重就能数出设备数。
-// 它不含任何秘密，作用只是让你在不联网的情况下人工核对「这个码用了几台机器」。
+// 回执：28R-<lid>-<设备摘要8位>。同 lid + 同设备恒定，用于人工核对设备数。
 async function buildReceipt(lid, deviceId) {
   const devHash = (await digestHex(String(lid) + '|' + String(deviceId))).slice(0, 8);
   return LICENSE_RECEIPT_PREFIX + '-' + String(lid || 'UNKNOWN') + '-' + devHash.toUpperCase();
 }
 
-// ===== 14 天免费试用（2026-09-02）=====
+// ===== 14 天试用 =====
 //
-// 试用是「营销钩子」，不是「保险柜」：本地记录的起始时间理论上可被改系统时间/删 data.json 绕过。
-// 这里做一道「防时钟回拨」——记录一个单调递增的 lastSeenAt（每次启动取 max(now, 上次值)），
-// 用户把时间往回拨，剩余试用天数也不会变多（用 lastSeenAt 兜底当前时间）。
-// 回拨绕过试用只影响单个用户多试几天，不产生付费破解，属可接受范围；付费安全靠签名机制保证。
-//
-// 返回 { status, remainingMs, totalMs }
-//   status: 'none'（没开始）| 'active'（试用中）| 'expired'（已结束）
-// days：可选，覆盖默认 TRIAL_DAYS（调试用；正式版固定 14）
+// 返回 { status, remainingMs, totalMs }；status: 'none' | 'active' | 'expired'。
+// days 可选，覆盖默认天数（调试用）。
+// 时钟回拨不影响剩余天数（lastSeenAt 单调递增兜底）。
 function trialStatus(now, trialStartedAt, trialLastSeenAt, days) {
   const d = (typeof days === 'number' && Number.isFinite(days) && days > 0) ? days : TRIAL_DAYS;
   const total = d * 86400000;
@@ -273,16 +224,13 @@ function trialStatus(now, trialStartedAt, trialLastSeenAt, days) {
   return { status: 'active', remainingMs: remaining, totalMs: total };
 }
 
-// ===== 激活尝试限流（防爆破 / 防手滑狂点）=====
-//
-// 内存态（重启 Obsidian 重新计数）。签名本身不可爆破，这个限流只为体验：
-// 失败太多次就锁一会儿，别让用户对着报错狂点。
+// ===== 尝试限流（内存态，重启 Obsidian 重新计数）=====
 function makeAttemptLimiter(opts) {
   const o = opts || {};
   const maxAttempts = o.maxAttempts || 5;
   const lockMs = o.lockMs || 15 * 60 * 1000;
   const windowMs = o.windowMs || 30 * 60 * 1000;
-  let failures = []; // 失败时间戳
+  let failures = [];
 
   return {
     // 返回 { allowed, remainingMs }

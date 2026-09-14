@@ -382,7 +382,7 @@ function renderIcon(name, size = 18) {
 }
 // 更多菜单「加入 28 Notes 微信群」跳转地址（2026-09-07）
 const JOIN_GROUP_URL = 'https://leafmethod.feishu.cn/wiki/J1sAwHu36inRtMkiLnOcN9LonNe?from=from_copylink';
-// ===== Pro 功能卡点（2026-09-04）：体验期结束后，指定按钮悬浮变「待激活」按钮，点击进激活弹窗 =====
+// ===== Pro 功能拦截（2026-09-04）：体验期结束后，指定按钮悬浮变「待激活」按钮，点击进激活弹窗 =====
 // 按钮本身完全不变；仅当未激活（state.isPro=false，等价于试用已结束未激活）时：
 //   - 鼠标悬浮 → 仅图标换成 ticket 并染成 #F09343 橙（不动按钮背景，离屏还原；图标容器：工具栏按钮=自身，右键菜单项=.ctx-ic 只换图标不丢文字）
 //   - 点击 → 拦截原功能，post openPro 让宿主弹激活引导
@@ -423,9 +423,9 @@ function applyProGate(el) {
     if (prevClick) prevClick.call(this, e);
   };
 }
-// 右上角「激活创新 Pro 版」提示按钮（2026-09-04）：只在「未购买」时显示。
-// ⚠️ 判据是 state.licenseSource（有没有买），不是 state.isPro（功能能不能用）：
-//    试用期内 isPro=true（功能全开）但 licenseSource='trial'（没买），按钮仍要显示 —— 它是营销提示，不是功能锁。
+// 右上角「激活创新 Pro 版」提示按钮（2026-09-04）：只在「未授权」时显示。
+// ⚠️ 判据是 state.licenseSource（有没有授权），不是 state.isPro（功能能不能用）：
+//    试用期内 isPro=true（功能全开）但 licenseSource='trial'，按钮仍要显示 —— 它是提示，不是功能锁。
 //    已激活 licenseSource='license' → 隐藏。绑定点击：post openPro 让宿主弹激活引导。
 function updateProCta() {
   const el = document.getElementById('pro-cta');
@@ -2763,7 +2763,7 @@ function ensureNodeMenu() {
       b.addEventListener('mousedown', e => { if (isEditingTitle()) e.preventDefault(); });
     }
     nodeMenu.appendChild(b);
-    if (it.act === 'now' || it.act === 'done') applyProGate(b); // Pro 卡点：Now / Minor 按钮（2026-09-04）
+    if (it.act === 'now' || it.act === 'done') applyProGate(b); // Pro 拦截：Now / Minor 按钮（2026-09-04）
   });
   // 注：nodeMenu 不再放"更多"按钮——左侧 toolbar 的 btn-more 已是三个点入口（2026-08-21 删）
   document.body.appendChild(nodeMenu);
@@ -3333,7 +3333,7 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
     // 让 Agent 直接打开文件并搜索 id:<pid>（节点 ID 写在标题行尾 <!--id:xxx-->）定位到该节点。
     // 文本单行 + 【】外框（AI 按「1. 打开待编辑文档，路径：」「2. 节点 ID：」两步标签解析，空格/换行不影响识别）；
     // 同时懒注入 ai:/aiLocate: 进文件 frontmatter（每文件仅一次，见 main.js ensureAiLocate）。
-    // Pro 卡点（2026-09-04）：未激活 → 悬浮仅图标变 ticket + 橙色、点击进激活弹窗（统一 applyProGate，不再用金色高亮）；isPro 来自 init 消息（试用中=true→不锁，试用结束未激活=false→锁）
+    // Pro 拦截（2026-09-04）：未激活 → 悬浮仅图标变 ticket + 橙色、点击进激活弹窗（统一 applyProGate，不再用金色高亮）；isPro 来自 init 消息（试用中=true→不锁，试用结束未激活=false→锁）
     const aiLocateItem = ctxItem(T('ctx.copyAILocate'), () => {
       if (!node.persistId) {
         node.persistId = genPersistId();
@@ -3346,7 +3346,7 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
       vscode.postMessage({ type: 'ensureAiLocate' });
       toast(T('toast.aiLocateCopied'));
     }, 'astroid', T('ctx.copyAILocateTip'));
-    applyProGate(aiLocateItem); // 统一 Pro 卡点（2026-09-04）：未激活 → 悬浮变 ticket + 点击进激活弹窗
+    applyProGate(aiLocateItem); // 统一 Pro 拦截（2026-09-04）：未激活 → 悬浮变 ticket + 点击进激活弹窗
     ctxMenu.appendChild(aiLocateItem);
     const bookmarkItem = ctxItem(T('ctx.bookmark'), () => {
       // 保存为捷径：在数据文件同目录创建 <名字>.md（frontmatter 28notes: mmlink），点它即打开本文件并下钻到该节点
@@ -3360,7 +3360,7 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
         vscode.postMessage({ type: 'createShortcut', pid: node.persistId, title: node.title || T('common.node'), name: (val || '').trim() });
       });
     }, 'split');
-    applyProGate(bookmarkItem); // 保存为捷径：未激活同样走 Pro 卡点（2026-09-04）
+    applyProGate(bookmarkItem); // 保存为捷径：未激活同样走 Pro 拦截（2026-09-04）
     ctxMenu.appendChild(bookmarkItem);
     // 编辑链接：仅文件/URL 链接（[[file://...]] / [[https://...]]）显示；节点链接 [[标题|ID]] 指向本图节点、由节点系统管理，不在此编辑
     if (parseFileLink(node.link) || parseUrlLink(node.link)) {
@@ -3749,7 +3749,7 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'licenseUpdate') {
-    state.isPro = !!msg.isPro; // 付费状态实时更新（host 的 licenseState 变化后推送；hover/click 实时读它，锁立刻跟变）
+    state.isPro = !!msg.isPro; // 授权状态实时更新（host 的 licenseState 变化后推送；hover/click 实时读它，锁立刻跟变）
     if (typeof msg.licenseSource === 'string') state.licenseSource = msg.licenseSource;
     updateProCta();
     return;
@@ -3792,7 +3792,7 @@ window.addEventListener('message', e => {
     state.hideHint = !!msg.hideHint; // 空图新手提示是否隐藏随 init 下发（2026-09-01）
     state.isLink = !!msg.isLink;
     state.isPro = !!msg.isPro; // 是否 Pro（2026-09-04：= licenseState.active，功能权限；试用期内也为 true → 功能不锁）
-    state.licenseSource = msg.licenseSource || 'none'; // 'license'=已购买；'trial'/'none'=未购买 → 右上角"激活 Pro"提示按钮显示条件
+    state.licenseSource = msg.licenseSource || 'none'; // 'license'=已授权；'trial'/'none'=未授权 → 右上角"激活 Pro"提示按钮显示条件
     updateProCta();
     state.defaultPid = normPid(msg.defaultPid); // 保存的默认路径 pid（.mmlink=文件内 mmlinkPid / 普通思维导图笔记=workspaceState）
     // 「隐藏完成」与「只看 Now」的关闭态已在上方建树前预置（persist=false 不回写，避免 init 时
@@ -5452,7 +5452,7 @@ document.getElementById('btn-locate').onclick = () => {
 // 侧边按钮：切换「只显示当前关注 Now」（无 Now 时 disabled，点不到）
 const btnNowSide = document.getElementById('btn-now-side');
 if (btnNowSide) btnNowSide.onclick = () => { if (!btnNowSide.disabled) setShowNow(!state.showNow); };
-if (btnNowSide) applyProGate(btnNowSide); // Pro 卡点（2026-09-04）：侧边 Now 按钮
+if (btnNowSide) applyProGate(btnNowSide); // Pro 拦截（2026-09-04）：侧边 Now 按钮
 // 初始刷新侧边 Now 按钮态（无 Now→置灰；实际激活态由 init 收到的 msg.showNow 经 setShowNow 应用）
 updateNowSideBtn();
 // 2026-08-30：无 Minor 时按钮加的是 .disabled 类（不用 disabled 属性，为保留 hover tooltip）→ onclick 必须自己拦
@@ -5461,7 +5461,7 @@ document.getElementById('btn-hide-done').onclick = () => {
   if (!b || b.disabled || b.classList.contains('disabled')) return;
   setHideDone(!state.hideDone);
 };
-applyProGate(document.getElementById('btn-hide-done')); // Pro 卡点（2026-09-04）：Minor（隐藏完成）按钮
+applyProGate(document.getElementById('btn-hide-done')); // Pro 拦截（2026-09-04）：Minor（隐藏完成）按钮
 // 2026-08-30 恢复：更多菜单「路径链接」hover 浮出的子菜单 4 项（HTML 见 main.js #default-path-menu）
 // 全部走存在性守卫：元素缺失时静默跳过，绝不 null.onclick 中断初始化（2026-08-30 所有导图打不开的教训）
 (function initPathSubmenu() {
@@ -5592,4 +5592,19 @@ if (btnRefresh) {
 
 wlog('webview 脚本加载完成，发送 ready');
 window.__MM_FLUSH__ = persistNow; // 宿主 rebind 重建 iframe 前同步调用，把当前 view 立即落盘（2026-09-01 修源思维导图切走丢位置）
+
+// 画布里一有操作就上报宿主「用户在用我」（2026-09-14 修「点左侧文件面板空白处 → 再点回画布，右下角层级数字不出现」）：
+// 画布在 iframe 里，鼠标/键盘事件不冒泡到父文档 → Obsidian 不会把本 leaf 置为 active → 不触发 active-leaf-change，
+// 宿主的状态栏就一直停在「切走时隐藏」那一态（切走靠点标签页回来才有事件，数字才回来）。补这条通知让宿主把层级条交还本视图。
+// 节流 500ms：宿主收到即重绘，没必要每次点击都发一条。
+let lastCanvasActiveReport = 0;
+function reportCanvasActive() {
+  const now = Date.now();
+  if (now - lastCanvasActiveReport < 500) return;
+  lastCanvasActiveReport = now;
+  vscode.postMessage({ type: 'foldBarFocus' });
+}
+window.addEventListener('pointerdown', reportCanvasActive, true);
+window.addEventListener('keydown', reportCanvasActive, true);
+
 vscode.postMessage({ type: 'ready' });

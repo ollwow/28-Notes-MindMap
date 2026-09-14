@@ -599,8 +599,8 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .tb:hover:not(:disabled) { background: var(--sel); }
 /* ===== 右上角「激活创新 Pro 版」提示按钮（2026-09-04）=====
    只在「未购买」时显示：试用中 trial / 试用结束未激活 / 模块异常 none → 显示；已激活 license → 隐藏。
-   （注意：这里不能用 state.isPro 判断！isPro=功能是否可用，试用期内 isPro=true 但并未购买，
-     本按钮是营销提示，条件是「有没有买 license」，所以看 licenseSource。见 mindmap-app.js init / licenseUpdate）
+   （注意：这里不能用 state.isPro 判断！isPro=功能是否可用，试用期内 isPro=true 但并未授权，
+     本按钮是提示，条件是「有没有 license」，所以看 licenseSource。见 mindmap-app.js init / licenseUpdate）
    基础样式复用左下角 .tb（圆角/flex居中/cursor/position），这里只覆盖尺寸、配色与定位。 */
 #pro-cta {
   position: fixed;
@@ -1005,7 +1005,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 #view-map.space-pan, #view-map.space-pan * { cursor: grab !important; }
 #view-map.space-panning, #view-map.space-panning * { cursor: grabbing !important; }
 
-/* Pro 卡点统一样式（2026-09-04）：未激活按钮悬浮仅图标变 ticket + 橙色（背景不动，视觉由 mindmap-app.js applyProGate 内联控制，这里只给过渡与指针） */
+/* Pro 拦截统一样式（2026-09-04）：未激活按钮悬浮仅图标变 ticket + 橙色（背景不动，视觉由 mindmap-app.js applyProGate 内联控制，这里只给过渡与指针） */
 .28-pro-gated { cursor: pointer; transition: color .12s ease; }
 
 /* ══════════════════════════════════════════════════════════════════════

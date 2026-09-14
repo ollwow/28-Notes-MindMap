@@ -104,7 +104,7 @@ var I18N = {
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
     'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。<br>添加微信后，你也可咨询加入 28 笔记法插件开发群 / 知识管理交流群。', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
 
-    // ---- 许可证 / 付费激活（2026-09-02 新增）----
+    // ---- 授权（2026-09-02 新增）----
     'license.heading': '许可证', // 设置页许可证区块标题
     'license.active': '已激活', // 状态标签：已激活
     'license.inactive': '未激活', // 状态标签：未激活
@@ -120,7 +120,7 @@ var I18N = {
     'pro.heading': 'Pro 功能', // Pro 详情页/按钮标题
     'pro.shortDesc': '查看 Pro 版包含的全部功能与购买方式', // 设置页入口的描述
     'pro.viewBtn': '查看 Pro 功能详情', // 设置页"打开 Pro 弹窗"按钮
-    'pro.ctaBtn': '激活创新 Pro 版', // 右上角提示按钮文案（未购买时显示，点击进激活弹窗；2026-09-04）
+    'pro.ctaBtn': '激活创新 Pro 版', // 右上角提示按钮文案（未授权时显示，点击进激活弹窗；2026-09-04）
     'pro.desc': '以下功能需要激活 Pro 版才能使用', // 弹窗顶部说明
     'pro.empty': '（暂无 Pro 功能）', // PRO_LOCKS 表全免费时显示
     'license.inputPh': '粘贴激活码（28N 开头）', // 激活码输入框占位文字
@@ -138,7 +138,7 @@ var I18N = {
     'license.ctaTitle': '激活创新 Pro 版', // 未激活时的栏目标题
     'license.ctaDescTrialMd': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。', // 试用中备注（{0}=剩余天数）
     'license.ctaDescExpiredMd': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。', // 试用已结束备注
-    'license.howToActivateBtn': '如何激活 ↗', // 设置页右侧按钮 → 直接弹付费教程弹窗
+    'license.howToActivateBtn': '如何激活 ↗', // 设置页右侧按钮 → 直接弹激活教程弹窗
     'license.activeTitle': '已激活创新 Pro 版', // 已激活时的栏目标题
     'license.activeDescMd': '许可证号：{0}；设备上限：{1}；激活时间：{2}\n更换设备后，请点击右侧「解除绑定」后，再至新设备激活。', // 已激活备注（{0}许可证号 {1}设备上限 {2}激活时间）
     'license.unbindBtn': '解除绑定', // 已激活时右侧按钮（换设备前先解绑）
@@ -149,7 +149,7 @@ var I18N = {
     'debug.stateName': '设置目前激活状态', // 调试项：强制设定本机授权状态
     'debug.stateDesc': '仅影响本机：可直接把试用期设成指定剩余时长，或强制为未激活（已过期）', // 调试项说明
     'license.okCopied': '回执已复制', // 复制回执成功提示
-    'license.proRequired': '这是 Pro 功能，激活后可用。', // 付费功能被拦时的提示
+    'license.proRequired': '这是 Pro 功能，激活后可用。', // 受控功能被拦时的提示
     'license.err.unknown': '激活失败，请检查激活码', // 未归类错误兜底
     'license.err.empty': '请输入激活码', // 空输入
     'license.err.format': '激活码格式不对，请检查是否复制完整', // 拆不出 payload.signature
