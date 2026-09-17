@@ -1,3 +1,4 @@
+
 # 28 Notes MindMap
 
  [English Version Introduction](#english-documentation)
@@ -6,7 +7,7 @@
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
 - 简洁，优雅，易用。
 
-![首图](assets/banner.png)
+<img  alt="banner" src="https://github.com/user-attachments/assets/562ae41a-8c18-4b9b-9a7f-b6ba9b91514a" />
 
 
 ---
