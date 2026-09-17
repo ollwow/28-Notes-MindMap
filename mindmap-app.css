@@ -18,7 +18,7 @@
   --pro-cta-top: 16px;        /* 距窗口顶部距离：调大→下移。默认 16px */
   --pro-cta-right: 16px;      /* 距窗口右侧距离：调大→左移。默认 16px */
   --pro-cta-bg: #ffffff;     /* ⚠️ 已失效（2026-09-11 白玻璃移植）：背景改由下方 --ui-bar-a 等控制 */
-  --pro-cta-color:  #0070f5;   /* 文字颜色 */
+  --pro-cta-color:  #0070f5;   /* 试用提示按钮文字色：默认蓝；粉线主题(applyTheme)下被覆盖为 --accent-pink。单独改按钮色改这里 */
   --pro-cta-fs: 13px;         /* 字号：调大→字更大。默认 13px */
   --pro-cta-px: 14px;         /* 左右内边距：调大→按钮更宽。默认 14px */
   --pro-cta-py: 7px;          /* 上下内边距：调大→按钮更高。默认 7px */
@@ -26,11 +26,25 @@
   --pro-cta-border-w: 1px;    /* ⚠️ 已失效（2026-09-11）：描边改由 --ui-bar-border 控制 */
   --pro-cta-border-c: 0, 0, 0; /* ⚠️ 已失效（2026-09-11）：同上 */
   --pro-cta-border-a: .18;    /* ⚠️ 已失效（2026-09-11）：同上 */
+  /* —— 按钮下方「试用期还剩 N 天」提示小字（2026-09-16）——
+     与按钮是同一个组合：定位随 --pro-cta-top/right 走，整组一起移动；
+     下面 --pro-cta-hint-gap 控制「字相对按钮再往下挪多少」。 */
+  --pro-cta-hint-gap: 6px;     /* 字距按钮下方的距离：调大→字更往下。默认 6px */
+  --pro-cta-hint-fs: 11px;     /* 字号：调大→字更大。默认 11px */
+  --pro-cta-hint-align: center;  /* 字相对按钮的水平对齐：center / right / left（默认 center = 居中） */
+  /* 字色默认跟随按钮（蓝/粉主题自动变）；想单独指定就放开下面这行 —— 删掉/注释掉即回退「跟随主题色」 */
+  --pro-cta-hint-color: #808080;  /* 实验（2026-09-16 用户试）：试用提示小字单独用灰色，不跟随主题。深浅直接改这个值（#666 更深 / #aaa 更浅） */
+  --pro-cta-hint-opacity: 0.8;    /* 小字透明度：1=不透明；调小→更淡。当前 0.8 —— 灰字本身已偏浅，叠上半透明会更轻，觉得太淡就调到 0.9 / 1 */
 
   /* ---- 提示框 tooltip ---- */
   --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
   --tip-top-box-gap: 10px;     /* 底部工具条 tooltip【黑框】与按钮的间距：调大→框更远离按钮。改完重载插件生效 */
   --tip-top-arrow-gap: 5px;   /* 底部工具条 tooltip【小三角】与按钮的间距（独立于黑框）：与 box-gap 同值=三角贴住框底；调大→三角往下脱开；调小→三角藏进框后。改完重载插件生效 */
+  /* ── 左侧提示的水平距离（2026-09-17 加，用户要求可调）──
+     管「添加」面板的一级条目、二级条目（两处都是左侧提示，共用这一套）。
+     只调**左右**距离；上下居中，没有可调项。改完重载插件生效。 */
+  --tip-left-box-gap: 8px;    /* 黑框右侧距按钮的距离：调大→提示整体更往左（远离按钮）*/
+  --tip-left-arrow-gap: 3px;  /* 小三角右侧距按钮的距离（独立于黑框）：与 box-gap 之差 = 框与三角之间留多大缝 */
 
   /* ---- 定位按钮 ---- */
   --locate-autobright-ms: 1500;  /* 主按钮点击推进后，暗态自动全亮的延时（毫秒）：1000=约1秒后背景变亮（心理暗示已选中）；调大→暗得更久、调小→更快亮。改完重载插件生效 */
@@ -127,6 +141,14 @@
   --img-maxw: 45px;           /* 缩略图最大宽 */
   --img-maxh: 32px;           /* 缩略图最大高 */
 
+  /* ---- 缺失图片占位（2026-09-17）：尺寸/配色都做成变量，可自己调 ----
+     默认做成正方形小色块（跟缩略图一个量级），浅灰底 + 虚线边，一眼看出是占位不是真图。 */
+  --img-missing-w: 34px;      /* 占位宽（正方形边长）*/
+  --img-missing-h: 34px;      /* 占位高（正方形边长）*/
+  --img-missing-bg: #f1f2f4;  /* 占位底色（浅灰）*/
+  --img-missing-line: #d8dbe1;/* 占位虚线边色 */
+  --img-missing-fg: #9aa1a9;  /* 占位文字色 */
+
   /* ---- 贝塞尔曲线 ---- */
   --edge: #c5cdd9;            /* 曲线颜色（品牌参考：普通颜色 5A82F5；拖拽颜色 ABC0F9）*/
   --edge-width: 1.5px;        /* 曲线粗细 */
@@ -169,9 +191,17 @@
 
   /* ---- 定位调参（2026-08-25，改完重载插件生效）----
      水平/垂直位置：0 = 最左/最上, 0.5 = 居中, 1 = 最右/最下 */
-  --locate-y: 0.4;            /* 垂直位置（选中/未选中通用，默认居中） */
-  --locate-selected-x: 0.4;   /* 选中节点·水平位置（默认居中） */
-  --locate-first-x: 0.4;     /* 未选中·第一层级(=最前面那个节点=当前根)水平位置（默认画面左 0.4） */
+  --locate-y: 0.4;            /* ⚠️ 别直接改：由下面的定位档位统一写值（要改落点改 --center-*） */
+  --locate-selected-x: 0.4;   /* ⚠️ 同上 */
+  --locate-first-x: 0.4;      /* ⚠️ 同上 */
+
+  /* —— 定位落点（2026-09-16）——
+     · 设置页的档位切换已【暂时隐藏】（用户定：等有用户需求再放出来），当前固定走「画布中央」这一档。
+     · 所以现在真正生效的落点 = 下面 --center-canvas-* 这两个数（改完重载插件生效）；
+       「视觉中央」那两个先留着备用，隐藏期间不生效。
+     x = 水平比例（0=最左 / 1=最右）；y = 垂直比例（0=最上 / 1=最下）。 */
+  --center-canvas-x: 0.4;   --center-canvas-y: 0.4;   /* 当前生效的落点（原「画布中央」档）。想更靠上 → y 调小；更靠左 → x 调小 */
+  --center-visual-x: 0.3;   --center-visual-y: 0.3;   /* 「视觉中央」档落点：暂时用不到，留着备用 */
   --locate-reset-zoom: 1;     /* 定位/下钻返回是否重置缩放：1=重置100%, 0=保留当前缩放。⚠️ 保留「定位后回到 100%」这个效果，不是 bug；想改就改这个值 */
   --locate-reset-pan: 1;      /* 定位/下钻返回是否重置平移：1=重置, 0=保留 */
 
@@ -284,9 +314,8 @@ body {
 }
 #crumb a:hover { background: rgba(0,0,0,.06); }
 #crumb .sep { color: var(--crumb-color); padding: 0 1px; user-select: none; }
-/* ===== 左工具栏刷新按钮（调试开关开时显示，等价 Cmd+R；2026-08-25 从右上角移入一级菜单） ===== */
-#btn-refresh.hidden { display: none; } /* 调试开关控制显隐（默认 hidden） */
-#btn-refresh .icon { color: #a855f7; } /* 调试开关开后出现的刷新钮图标固定紫色，一眼可辨（2026-08-25 定） */
+/* ===== 沙盒：历史界面里把「更多」按钮整个藏掉（2026-09-14；原「刷新按钮」已删除） ===== */
+#more-wrap.hidden { display: none; }
 /* 父卡片垂直居中于子树（2026-08-21 定：单子节点≈水平直线；多子节点均匀上下散开，同飞书） */
 .node-row { display: flex; align-items: center; }
 
@@ -369,6 +398,20 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .card .embed-media { max-width: 260px; max-height: 160px; border-radius: 6px; border: 1px solid var(--line); background: #000; }
 .card audio.embed-media { width: 240px; height: 32px; background: transparent; }
 .card .embed-media.img-missing { min-height: 24px; background: #fafbfc; }
+.card .embed-media.selected { outline: 2px solid var(--accent); } /* 图片、视频同款：点一下选中（粉框），再 Delete / Cmd+X 删除 */
+/* 音频外层容器（2026-09-17）：只有音频用它 —— 音频整个元素就是原生控制条、点它收不到点击，
+   没法像图片/视频那样「点选中 + Delete」，只能靠容器右上角的真按钮删。 */
+.card .embed-item { display: inline-flex; align-self: flex-start; padding: 3px; border-radius: 8px; position: relative; }
+/* 悬停出现的删除按钮（2026-09-17，仅音频） */
+.card .embed-del {
+  position: absolute; top: -7px; right: -7px; z-index: 2;
+  width: 20px; height: 20px; padding: 0; display: none;
+  align-items: center; justify-content: center; line-height: 1;
+  background: #fff; border: 1px solid var(--line); border-radius: 50%;
+  color: #6b7280; cursor: pointer;
+}
+.card .embed-item:hover .embed-del { display: inline-flex; }
+.card .embed-del:hover { color: #e5484d; border-color: #e5484d; }
 .node-row.done .card .title,
 .node-row.done .card .note,
 .node-row.done .card .inline-link,
@@ -423,6 +466,47 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 }
 .node-menu button:hover { background: var(--sel); }
 
+/* 底部菜单最右「更多」的悬浮面板（2026-09-17）：id=#node-more-menu（JS 动态建，挂在 body 上）。
+   ⚠️ 外观**不另做一套**（用户 2026-09-17 抓的：材质/行距/分隔线都跟左下工具栏那个「更多」子菜单不一致）：
+   · 材质（背景/描边/圆角/投影）→ 并入文件末尾「🧊 浮层外观 · 白玻璃」的统一组，跟着 --ui-bar-* 走；
+   · 条目 / 分隔线 → 直接复用 .mm / .mm-sep（JS 里就是这么建的），与 #more-menu 同一个设计。
+   这里只写它独有的「定位 + 排版」。 */
+.node-more-menu {
+  position: fixed; z-index: 80;  /* 高于 .node-menu(70)/.ctx-menu(60)，低于 tooltip(85) */
+  padding: 6px;                  /* 与 #more-menu 一致 */
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 180px;
+  /* ⚠️ 这里**不能写 overflow / max-height**：条目提示是 .mm 的 ::after，会跑到面板外面去，
+     一旦面板有 overflow 就被整块裁掉 —— 这正是"悬浮条目看不到黑色小提示"的根因（2026-09-17 修）。
+     面板现在最多 9 行（约 310px），够短，不需要滚动。 */
+}
+.node-more-menu.hidden { display: none; }
+/* 让条目提示以「被悬浮的那一条」为锚点向上弹（不加这句会以整个面板为锚点、弹到面板上方去） */
+.node-more-menu .mm { position: relative; }
+/* 二级「添加其他内容」面板 / 底部「样式」面板：同一个外观，只是压在其它浮层之上（2026-09-17） */
+.node-more-sub, .node-style-menu { z-index: 81; }
+/* 底部「样式」子菜单：**横排**图标（B / 红圈 / 黄圈），与竖排的条目菜单不同（用户 2026-09-17） */
+.node-style-menu { flex-direction: row; gap: 4px; min-width: 0; }
+.node-style-menu .mm { padding: 6px; }
+/* 点亮**不加主题色、也不加底色**（用户 2026-09-17：不想要变主题色那种效果）。
+   加粗项就"把图标本身画粗"一档（renderIcon 的 stroke-width 是 presentation attribute，
+   CSS 能盖住）——一眼就能看出"现在是加粗的"，跟按下一个真加粗按钮的感觉一致。 */
+.node-style-menu .mm[data-act="bold"].on .icon { stroke-width: 3.2; }
+.node-style-menu button.color-red .icon { fill: none; stroke: #ff4d4f; stroke-width: 2; }
+.node-style-menu button.color-yellow .icon { fill: none; stroke: #faad14; stroke-width: 2; }
+.node-style-menu button.color-red.on .icon { fill: #ff4d4f; stroke: #ff4d4f; }
+.node-style-menu button.color-yellow.on .icon { fill: #faad14; stroke: #faad14; }
+/* 底部「格式」按钮的图标状态（2026-09-17）：图标用 lucide type，**图标自身**反映当前格式 ——
+   加粗 = 图标画粗一档；红 / 黄 = 图标换成对应颜色；两者**可叠加**（既粗又是红的，一眼看清）。
+   用属性选择器把优先级做高，稳压 `.node-menu button.on .icon { stroke: currentColor }`；
+   同时这个按钮不再走 .on（那条会把图标刷成主题色，跟"标红/标黄"的表达冲突）。 */
+.node-menu button[data-act="style"] { opacity: 1; }
+.node-menu button[data-act="style"].nm-fmt-bold .icon { stroke-width: 3.4; }
+.node-menu button[data-act="style"].nm-fmt-red .icon { stroke: #ff4d4f; }
+.node-menu button[data-act="style"].nm-fmt-yellow .icon { stroke: #faad14; }
+/* （2026-09-17 删：试做期的 .node-menu button.nm-trial-hidden —— 用户已确认采用「格式」按钮方案，
+   原来那个隐藏的红/黄独立按钮已从 JS 里彻底删除，不再需要"隐藏保留"这条规则。） */
+
 .card .title { font-size: var(--card-font); font-weight: inherit; outline: none; flex: 1 1 auto; word-break: break-word; white-space: pre-line; } /* pre-line：节点内换行 \n 渲染成换行（2026-08-30） */
 /* 编辑态（标题/备注）：去掉背景框/焦点圈，正常编辑（2026-08-21 定） */
 [contenteditable="true"] { background: transparent; outline: none; }
@@ -458,11 +542,19 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   cursor: pointer;
 }
 .card .img.selected { outline: 2px solid var(--accent); }
+/* 缺失图片的占位（2026-09-17）：文字走 <img> 的 alt（伪元素在替换元素上不渲染，所以以前一直看不见），
+   这里只负责给它一个可见、可点的尺寸 —— 否则宽度趋 0，选中框看不见、也点不中。 */
 .card .img.img-missing {
-  min-height: 24px; text-align: center;
-  color: #c0392b; font-size: 11px; line-height: 24px;
+  /* 2026-09-17 三版：做成**正方形**小色块（一版 96×28 太长、二版 64×24 仍偏长）。
+     文字仍走 alt（伪元素在替换元素上不渲染）；宽度定死，让「图片缺失」自动折成 2 行 2 字。 */
+  width: var(--img-missing-w); min-width: var(--img-missing-w); max-width: var(--img-missing-w);
+  min-height: var(--img-missing-h); max-height: none;
+  padding: 4px 3px; box-sizing: border-box;
+  text-align: center; background: var(--img-missing-bg);
+  border-style: dashed; border-color: var(--img-missing-line);
+  color: var(--img-missing-fg); font-size: 10px; line-height: 1.3;
+  word-break: break-all; overflow: hidden;
 }
-.card .img.img-missing::before { content: var(--img-missing-text, '[图片缺失]'); }
 
 /* 大图预览（双击图片打开） */
 .img-preview {
@@ -500,6 +592,8 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   text-decoration: underline; text-decoration-color: rgba(13,114,255,.35);
 }
 .card .link:hover { color: var(--sel-lv1); }
+/* 无法识别的链接文本：原样展示（不静默丢弃），用弱化样式提示用户此链接格式不正常、需自行修正 */
+.card .link-raw { color: var(--muted, #888); font-style: italic; text-decoration: none; cursor: text; }
 /* 标题/备注里内嵌的链接（本文件节点 [[#pid]] / wikilink [[笔记名]]） */
 .inline-link, .inline-wiki {
   color: var(--link-color); cursor: pointer;
@@ -602,10 +696,17 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
    （注意：这里不能用 state.isPro 判断！isPro=功能是否可用，试用期内 isPro=true 但并未授权，
      本按钮是提示，条件是「有没有 license」，所以看 licenseSource。见 mindmap-app.js init / licenseUpdate）
    基础样式复用左下角 .tb（圆角/flex居中/cursor/position），这里只覆盖尺寸、配色与定位。 */
-#pro-cta {
+/* 组合容器：承载「按钮 + 下方提示字」，整体 fixed 定位（定位随 --pro-cta-top/right，按钮移动它跟着移动） */
+#pro-cta-wrap {
   position: fixed;
   top: var(--pro-cta-top); right: var(--pro-cta-right);
   z-index: 86;                 /* 高于 #left-toolbar(85)，不被左下工具栏遮 */
+  display: flex; flex-direction: column; align-items: flex-end; /* 按钮与提示纵向堆叠、右对齐（水平对齐由 --pro-cta-hint-align 决定） */
+}
+#pro-cta-wrap.hidden { display: none; }
+#pro-cta {
+  position: static;            /* 定位交给 #pro-cta-wrap；自身不再 fixed */
+  z-index: auto;
   width: auto; height: auto;   /* 覆盖 .tb 的 34x34 固定尺寸，改成由 padding 撑开 */
   padding: var(--pro-cta-py) var(--pro-cta-px);
   border-radius: var(--pro-cta-radius);
@@ -623,7 +724,21 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 #pro-cta:hover { filter: brightness(1.08); background: var(--pro-cta-bg); } /* 覆盖 .tb:hover 的选中色，保持自身蓝底 */
 /* 点击反馈（2026-09-07 改）：与底部社群按钮统一为「轻微缩小」，不再用 brightness(.94) 压暗（白色底被压暗会显灰） */
 #pro-cta:active { transform: scale(0.98); }
-#pro-cta.hidden { display: none; }
+/* 按钮下方「试用期还剩 N 天」提示小字（2026-09-16）：纯展示、不在按钮内；位置相对按钮、可自定义 */
+#pro-cta-hint {
+  width: 100%;                                                      /* ⚠️ 关键：让提示字盒子宽度=按钮宽，text-align 才能「相对按钮」对齐（否则盒子=文字宽，text-align 无效） */
+  margin-top: var(--pro-cta-hint-gap, 6px);                         /* 距按钮下方的距离：调大→字更往下 */
+  font-size: var(--pro-cta-hint-fs, 11px);                          /* 字号 */
+  line-height: 1.4;
+  color: var(--pro-cta-hint-color, var(--pro-cta-color));           /* 默认跟随按钮（蓝/粉主题自动变）；想单独改字色设 --pro-cta-hint-color */
+  font-weight: 500;
+  opacity: var(--pro-cta-hint-opacity, 0.8);                          /* 透明度：0=全透明，1=不透明；调小→字变淡 */
+  text-align: var(--pro-cta-hint-align, center);                    /* 相对按钮的水平对齐：center / right / left */
+  white-space: nowrap;
+  pointer-events: none;                                             /* 纯展示，不挡按钮点击 */
+  text-shadow: 0 1px 2px rgba(255,255,255,.65);                     /* 复杂/浅色背景上更可读（不打在按钮上） */
+}
+#pro-cta-hint.hidden { display: none; }
 
 /* 2026-08-30：不用 opacity（会把 hover tooltip 的黑框一起调暗成灰框，所有 tooltip 统一小黑框）
    → 只把图标颜色调灰（SVG 走 currentColor），禁用态照样看得出，但 tooltip 保持纯黑 */
@@ -635,45 +750,10 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .tb.active-hide { color: var(--accent); }
 /* 只显示「当前关注 Now」激活态：sideOn 图标已在 JS 内联紫主灰火花；按钮文字色转紫（Now 紫 #8B5CF6，区别于 hide-done 的 accent） */
 .tb.now-on { color: #8B5CF6; }
-/* 默认路径按钮：路径已变 = 蓝色高亮提示；置灰 = 当前已是默认 */
-.tb.dp-changed { color: var(--accent); }
-/* 默认路径按钮：与 .tb 一致，hover 时也显示蓝色背景（即使处于「已是最默认路径」的置灰态） */
-#btn-default-path:hover { background: var(--sel); }
-/* 默认路径按钮容器 + 悬浮子菜单（hover 主按钮区域浮出，鼠标可移过去点） */
+/* 默认路径按钮容器（dp-wrap 类仍被 more-wrap / now-locate-wrap 使用） */
 .dp-wrap { position: relative; }
-.dp-menu {
-  position: absolute; left: 100%; top: auto; bottom: -1px; margin-left: 6px;
-  z-index: 41; display: none;
-  /* 与「选中节点小菜单」(.node-menu) 一致的浅色主题样式，避免突兀变黑 */
-  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; /* 2026-08-28：去下方空白感（原 padding 6px 较大）+ 减 padding */
-  flex-direction: column; gap: 2px; min-width: 168px;
-  /* 2026-08-28：保留 box-shadow 与「更多」子菜单一致，便于看出「子子菜单」层级关系 */
-  box-shadow: 0 6px 24px rgba(0,0,0,.15);
-  max-height: calc(100vh - 12px); overflow-y: auto; /* 防底部截断兜底 */
-}
-/* 2026-08-30：孙菜单（路径链接 hover 浮出）被 portal 到 body 用 fixed 定位，z-index 必须高于 #left-toolbar(85)，
-   否则父菜单「更多」（在 left-toolbar 内、整体 85）会压在孙菜单(41)上 → 层叠关系反了（子盖孙）。
-   取 86：高于左工具栏 85，低于 tooltip 90，不抢提示框。 */
-#default-path-menu { z-index: 86; }
-.dp-menu::before { /* 透明桥接：填补按钮与菜单间空隙，防止鼠标移动时菜单消失 */
-  content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
-}
-.dp-menu.open { display: flex; }
-.dp-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 10px; border: none; background: transparent; color: var(--text);
-  font-size: 13px; border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit;
-}
-.dp-item:hover:not(:disabled) { background: var(--sel); }
-.dp-item:disabled { color: #b0b4ba; cursor: default; }
-.dp-item:disabled .dp-ic { opacity: .4; }
-/* 2026-08-28：子子菜单（路径项）图标保持黑色/置灰，不变蓝（蓝色已改到「更多」里的「链接」按钮） */
-/* 2026-08-28：更多菜单里「链接」按钮——当前路径 != 默认路径（可操作）时图标变蓝；置灰时随 .mm:disabled 变灰 */
-.mm[data-act="default-path"]:not(:disabled) svg { stroke: var(--accent); }
-.dp-ic { display: inline-flex; width: 16px; height: 16px; }
-.dp-ic svg { width: 16px; height: 16px; }
 /* hover 子菜单时，隐藏主按钮的 tooltip，避免两者文字重叠（之前「乱码」根因） */
-/* 仅作用于真正带子菜单的容器（dp/more/now-locate）；fold 按钮无 hover 子菜单（2026-09-01 子菜单已删），tooltip 正常显示 */
+/* 仅作用于真正带子菜单的容器（more/now-locate）；fold 按钮无 hover 子菜单（2026-09-01 子菜单已删），tooltip 正常显示 */
 #dp-wrap:hover .tb[data-tip]::after,
 #dp-wrap:hover .tb[data-tip]::before,
 #more-wrap:hover .tb[data-tip]::after,
@@ -713,11 +793,12 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 #more-menu::before { /* 透明桥接：防鼠标从 more 按钮移向菜单时消失 */
   content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
 }
-/* 2026-08-28：更多菜单里的「链接」按钮 hover 浮出路径子菜单（复用 dp-menu 样式；子菜单已 portal 到 body，不再依赖此处定位）*/
-.mm-link-wrap { position: relative; }
-.mm-link-wrap > .mm { width: 100%; } /* 2026-08-28：链接按钮不是 more-menu 的直接 flex 子项，需 width:100% 让 hover 蓝色撑满整行 */
 #more-wrap:hover .tb[data-tip]::after,
 #more-wrap:hover .tb[data-tip]::before { display: none; }
+/* 2026-09-15 实验：路径两项可操作时文字+图标变主题色并加粗（与更多按钮斜杠暗示呼应），透明度略降防扎眼；
+   上一/下一保持默认色；置灰态不匹配本规则，自动回落普通字重 */
+#more-menu .mm[data-act="path-default"]:not(:disabled),
+#more-menu .mm[data-act="path-save"]:not(:disabled) { color: var(--accent); opacity: .78; font-weight: 700; }
 
 /* ===== 折叠按钮（2026-09-01 旧 hover 子菜单已删，只剩左下按钮本体 + 右下状态栏层级条）===== */
 /* （2026-09-11 删 #btn-fold .icon 旋转规则 —— 左下角折叠按钮已删，功能迁至右下角层级条「1」） */
@@ -830,8 +911,8 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 [data-side="right"]:hover::before { left: 100%; top: 50%; transform: translate(calc(var(--tip-offset-x) - 5px), -50%); border-right-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 0; }
 [data-side="top"]:hover::after { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * var(--tip-top-box-gap, 10px))); }
 [data-side="top"]:hover::before { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * var(--tip-top-arrow-gap, 10px))); border-top-color: #1f2329; border-bottom: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; } /* 三角与框各自独立可调（2026-09-11 用户定） */
-[data-side="left"]:hover::after { right: 100%; top: 50%; transform: translate(-8px, -50%); }
-[data-side="left"]:hover::before { right: 100%; top: 50%; transform: translate(-2px, -50%); border-left-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 0; }
+[data-side="left"]:hover::after { right: 100%; top: 50%; transform: translate(calc(-1 * var(--tip-left-box-gap, 8px)), -50%); }
+[data-side="left"]:hover::before { right: 100%; top: 50%; transform: translate(calc(-1 * var(--tip-left-arrow-gap, 2px)), -50%); border-left-color: #1f2329; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 0; }
 
 /* ===== 下方节点工具栏（飞书式：黑底椭圆+圆角统一和左 toolbar 一致 10px，选中节点时浮动显示） ===== */
 .node-menu {
@@ -855,10 +936,8 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .node-menu button.on { color: var(--accent); opacity: 1; }
 .node-menu button.on .icon { stroke: currentColor; }
 /* 红色/黄色（2026-08-21 定：默认空心外框，选中实心） */
-.node-menu button.color-red .icon { fill: none; stroke: #ff4d4f; stroke-width: 2; }
-.node-menu button.color-yellow .icon { fill: none; stroke: #faad14; stroke-width: 2; }
-.node-menu button.color-red.on .icon { fill: #ff4d4f; stroke: #ff4d4f; }
-.node-menu button.color-yellow.on .icon { fill: #faad14; stroke: #faad14; }
+/* （2026-09-17 删：原来是底部那排独立的「红/黄」两个圆点按钮用的 .node-menu button.color-red/.color-yellow ——
+   两个按钮已彻底删除，圆点只出现在「格式」横排子菜单里，色值规则见 .node-style-menu 那几条。） */
 
 /* 底部白色 toast（位于 node-menu 上方，样式与黑色菜单一致但为白底；2026-08-26 新增） */
 .toast-below {
@@ -876,71 +955,155 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .toast-below-action:hover { text-decoration: underline; }
 
 /* ════════════════════════════════════════════════════════════
-   历史记录页（2026-08-27）：复用编辑视图（#view-map 原地渲染快照，保留连线/缩放/滚动）+ 右侧时间线侧栏
+   历史只读快照（2026-09-14：列表与操作已搬进 Obsidian 原生右侧栏面板，样式见 styles.css 的 .shin-hist-*）
+   画布这边只剩「原地渲染快照 + 差异标红」——快照复用 #view-map，连线/缩放/滚动全保留
    ════════════════════════════════════════════════════════════ */
-#history-view {
-  position: absolute; top: 0; right: 0; bottom: 0; z-index: 45;
-  display: block;
-}
-#history-view.hidden { display: none; }
-/* 右侧栏 */
-#history-side {
-  position: absolute; top: 0; right: 0; bottom: 0;
-  width: 300px; box-sizing: border-box;
-  border-left: 1px solid var(--border, #e6e8eb);
-  background: #fafbfc;
-  display: flex; flex-direction: column;
-  box-shadow: -4px 0 16px rgba(0,0,0,.06);
-}
-#history-side-head {
-  padding: 12px; border-bottom: 1px solid var(--border, #e6e8eb);
-}
-#history-toolbar { display: flex; flex-direction: column; gap: 6px; }
-.hb-row { display: flex; gap: 6px; }
-.hb-row .hb { flex: 1; justify-content: center; }
-.hb {
-  display: inline-flex; align-items: center; gap: 5px;
-  border: 1px solid var(--border, #e6e8eb); background: #fff;
-  border-radius: 6px; padding: 5px 9px; cursor: pointer;
-  font-size: 12px; color: var(--text, #1f2329);
-}
-.hb:hover { background: #f0f2f5; }
-.hb .icon { width: 15px; height: 15px; }
-/* 「只看差异」未选中=和普通按钮一样灰色；选中=红色边框 + 红字（不填充） */
-.hb.on {
-  color: #e5484d; border-color: #e5484d; background: #fff;
-}
-.hb.on:hover { background: #fff1f0; }
-#history-timeline {
-  flex: 1; overflow-y: auto; padding: 8px 6px;
-}
-.hist-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 10px; border-radius: 8px; cursor: pointer;
-  position: relative;
-}
-.hist-item:hover { background: #eef0f3; }
-.hist-item.active { background: #e3edff; }
-.hist-dot {
-  width: 9px; height: 9px; border-radius: 50%;
-  background: #c4c9d0; flex: 0 0 9px; border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #c4c9d0;
-}
-.hist-item.active .hist-dot { background: #0d72ff; box-shadow: 0 0 0 1px #0d72ff; }
-.hist-meta { min-width: 0; flex: 1; }
-/* 时间: 标签 写在一行（2026-08-27 改） */
-.hist-line {
-  font-size: 12px; color: var(--text, #1f2329);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
 
-/* 历史页差异标红（复用 #tree，卡片在 #tree 内；右键/编辑交互已被 historyMode 守卫拦截） */
-#tree .card.hist-diff {
-  outline: 2px solid #e5484d; outline-offset: 1px;
-  background: #fff1f0;
+:root {
+  --hist-diff-line: #e8a92b;       /* 差异节点框色（黄，2026-09-14 由红改黄：红会跟"粉线版选中框"撞色） */
+  --hist-diff-bg: 255, 236, 153;   /* 差异节点底色（浅黄）——写 R, G, B 三个数 */
+  --hist-diff-bg-a: 0.2;             /* ↑底色的不透明度：1 = 实心；调小 → 越淡；**填 0 = 完全没有底色** */
 }
-#tree .card.hist-diff.lv0,
-#tree .card.hist-diff.is-root { background: #ffd9d6; }
+/* 历史页差异标记 = 直接改【卡片自己的那个边框】（2026-09-14 用户定：不要底色，且框要和选中的框是同一个东西）。
+   与 选中 / 悬停 / 折叠预测 / 定位预测 用的是同一个 border，所以**不可能出两个框、也不会错位**。
+   ⚠️ 不要再改回 outline —— 那是另外画一圈，位置跟边框对不齐（用户报的"错位"），还会和边框叠成双框。
+   优先级天然让位（不用写任何额外的"让位"规则）：
+     · 选中  .node-row.selected > .card.lv0/.lv1/.ln（4 个类）> 这里（2 个类）
+     · 悬停  .card.lv0:hover / .card.ln:hover（3 个类）> 这里
+     · 预测  .card.hl-level / .card.locate-predict（带 !important）直接赢
+   ⇒ 所以这条规则【不能加 #tree、不能加 !important】，否则会把上面三态压住。 */
+.card.hist-diff {
+  border-color: var(--hist-diff-line);
+  /* 底色可调（用户 2026-09-14 定：要能自己调、调到 0 就等于没底色）：见上面 --hist-diff-bg / -bg-a */
+  background: rgba(var(--hist-diff-bg), var(--hist-diff-bg-a));
+}
+/* Minor 节点（.node-row.done）的边框是 `!important` 的虚线，直接改 border-color 压不过它、差异会标不出来。
+   干净做法：不动 border-color，改去覆盖它读取的那个变量 —— 边框就变成【黄色虚线】。
+   悬停 / 选中时它各自读 --minor-hover-color / --minor-sel-color（两个都有默认值）→ 自动让位，无需额外规则。 */
+.node-row.done > .card.hist-diff { --minor-border-color: var(--hist-diff-line); }
+
+/* ────────────────────────────────────────────────────────────
+   画布顶部「历史版本」横幅（2026-09-14 用户定）
+   一整条贯通、浅黄底 —— **刻意不跟主题走**（用户要求"要显眼"），也不用白玻璃浮层那套变量。
+   想调外观只改下面这几个值（横幅的所有可调项都集中在这一处）。
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --hb-h: 38px;               /* 横幅高度（面包屑会按它下移，改这一处就够） */
+  --hb-bg: #fff6d4;           /* 横幅底色（浅黄） */
+  --hb-line: #f2dfa4;         /* 横幅下边线 */
+  --hb-text: #7a5c12;         /* 横幅文字颜色 */
+  --hb-ic-size: 14px;         /* 按钮里小图标的大小 */
+  --hb-back-text: #040404;    /* 左「返回编辑」按钮的文字色（单独一组，想只调它改这里；图标跟着一起变） */
+  --hb-btn-bg: #ffffff;       /* 左右按钮底色 */
+  --hb-btn-line: #e9d49c;     /* 左右按钮描边 */
+  /* 右「设为最新版本」按钮单独一组。⚠️ 默认值与左/中两个按钮【故意完全一致】（用户 2026-09-14 定：
+     给它换底色怎么调都不好看，就统一成普通按钮的样子）。想把它单独区分出来，改这三个值即可。 */
+  --hb-primary-bg: #ffffff;   /* 右侧按钮底色（默认 = --hb-btn-bg） */
+  --hb-primary-text: #7a5c12; /* 右侧按钮文字色（默认 = --hb-text） */
+  --hb-primary-line: #e9d49c; /* 右侧按钮描边（默认 = --hb-btn-line） */
+  /* 横幅下方那枚「说明小按钮」（与当前完全相同 / 只差主节点…）：2026-09-14 用户嫌灰字看不清 →
+     改成小按钮形态；位置在面包屑下面、与横幅留出一段距离。全部可调，改这一处就够。 */
+  --hb-note-top: 14px;        /* 小按钮距横幅底部的距离（往下挪 = 远离顶部；面包屑大约占 30px） */
+  --hb-note-fs: 14px;         /* 字体大小 */
+  --hb-note-py: 3px;          /* 上下内边距（越小按钮越扁） */
+  --hb-note-px: 10px;         /* 左右内边距 */
+  --hb-note-radius: 10px;     /* 圆角 */
+  /* 普通态（淡）：固定说明「黄色节点为和最新版本不同的节点」 */
+  --hb-note-text: #8b7031;    /* 字色（淡） */
+  --hb-note-bg: #fcf8e5;      /* 底色 */
+  --hb-note-line: #dbca9c80;    /* 描边 */
+  /* 特殊态（亮 + .is-strong）：画面只剩主节点、有具体差异要说时。
+     文字色 2026-09-15 用户定：改成偏红（跟普通态区分开）；底色/描边沿用之前那组。 */
+  --hb-note-strong-text: #c0392b;
+  --hb-note-strong-bg: #FEF7D8;
+  --hb-note-strong-line: #dbca9c;
+}
+#hist-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 25;
+  min-height: var(--hb-h); box-sizing: border-box; /* min-height：说明文字换行时横幅自动撑高 */
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 12px;
+  background: var(--hb-bg); border-bottom: 1px solid var(--hb-line);
+  color: var(--hb-text); font-size: 13px;
+}
+#hist-banner.hidden { display: none; }
+/* 中间 = 说明文字（2026-09-15 用户定：「历史版本」「版本名」都拿掉，只留说明）。
+   用 flex:1 夹在左右按钮之间居中——字多时往两边挤并自动换行，**结构上不会压到按钮**；
+   横幅 min-height 允许换行撑高（面包屑下移仍按 --hb-h，换行是极端场景，先接受）。 */
+#hb-title {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 2px 8px;
+  padding: 4px 10px;
+  pointer-events: none;
+  font-weight: 600; letter-spacing: .2px;
+  word-break: break-word;
+}
+/* 说明文字两态：普通态（淡，横幅默认文字色）/ 特殊态（.is-strong：文字换成 --hb-note-strong-text，可调成红色） */
+#hb-note {
+  font-weight: inherit; opacity: .72;
+  word-break: break-word;
+}
+#hb-note.is-strong {
+  opacity: 1;
+  color: var(--hb-note-strong-text); /* ⚠️ 之前漏了这行：特殊态只提了透明度、颜色没换，调 --hb-note-strong-text 一直没效果 */
+}
+#hist-banner .hb-btn {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; line-height: 1.6;
+  background: var(--hb-btn-bg); color: var(--hb-text);
+  border: 1px solid var(--hb-btn-line);
+}
+#hist-banner .hb-btn:hover { filter: brightness(.96); }
+#hist-banner .hb-primary {
+  background: var(--hb-primary-bg); color: var(--hb-primary-text);
+  border-color: var(--hb-primary-line);
+}
+/* ⚠️ 右侧两个按钮必须包成一组（.hb-right）：横幅用 justify-content:space-between，
+   三个按钮各自独立时「中间那个」会被摆到正中间 —— 正好压住绝对居中的标题（2026-09-14 实踩）。
+   包成一组后 = 左一个 + 右一组，不会再挤到中间。以后往右侧加按钮，加进这一组里。 */
+#hist-banner .hb-right { display: flex; align-items: center; gap: 6px; }
+/* 按钮小图标（图标本体由前端 renderIcon 塞进 .hb-ic 里；大小走 --hb-ic-size） */
+#hist-banner .hb-ic { display: inline-flex; align-items: center; margin-right: 4px; }
+#hist-banner .hb-ic .icon { width: var(--hb-ic-size); height: var(--hb-ic-size); }
+/* 左「返回编辑」：文字色可单独调（--hb-back-text；图标用 currentColor，会跟着一起变）。
+   图标左右镜像（scaleX(-1)）：原 log-in 是"进入"箭头，镜像后读作"出去/退出"，跟按钮含义一致。 */
+#hist-banner #hb-back { color: var(--hb-back-text); }
+#hist-banner #hb-back .hb-ic { transform: scaleX(-1); }
+/* 历史态：面包屑（下钻路径）挪到横幅下面 —— 两条不叠，用户下钻时路径照样看得见 */
+body.hist-on #crumb { top: var(--hb-h); }
+/* 历史态：藏掉右上角「激活创新 Pro 版」按钮 —— 它 z-index(86) 比横幅高，不藏会压在横幅按钮上 */
+body.hist-on #pro-cta-wrap { display: none; }
+
+/* 历史态「说明小按钮」（2026-09-14 用户定）：**一枚按钮、两种状态** ——
+     普通态（淡）：固定说明「黄色节点为和最新版本不同的节点」（hist.tipText）
+     特殊态（亮）：画面只剩主节点时，字换成具体差异说明并加 .is-strong（字更深、底偏黄）
+   原来用 toast（几秒就消失，想仔细看都不行）→ 常驻；再早还做过"两枚竖排"，用户嫌不好看 → 合成一枚两态。
+   ⚠️ pointer-events: none 别删 —— 它悬在画布上，不关掉会挡住下面卡片的点击。
+   外观全走上面 --hb-note-* 那组（字体大小 / 内边距 / 圆角 / 两种状态的颜色 / 上下位置都能调）。 */
+/* ⚠️ 下方那枚说明小按钮 2026-09-15 用户定：**先隐藏、先不删**（文字已并入横幅中间的说明），
+   看过效果后再决定去留 —— 想恢复显示，把下面这条 display:none 删掉即可。 */
+#hist-note { display: none; }
+#hist-note {
+  position: fixed; top: calc(var(--hb-h) + var(--hb-note-top)); left: 0; right: 0; z-index: 24;
+  text-align: center; pointer-events: none;
+}
+#hist-note.hidden { display: none; }
+.hist-note-chip {
+  display: inline-block;
+  padding: var(--hb-note-py) var(--hb-note-px);
+  font-size: var(--hb-note-fs); color: var(--hb-note-text);
+  background: var(--hb-note-bg);
+  border: 1px solid var(--hb-note-line);
+  border-radius: var(--hb-note-radius);
+}
+/* 特殊态（有具体差异要说）→ 更醒目：字更深、底偏黄、描边更实（跟横幅同一色系） */
+.hist-note-chip.is-strong {
+  color: var(--hb-note-strong-text);
+  background: var(--hb-note-strong-bg);
+  border-color: var(--hb-note-strong-line);
+}
 
 /* ════════════════════════════════════════════════════════════
    webview 内自建浮层（替代 window.prompt/confirm，2026-08-27）
@@ -955,6 +1118,15 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   width: 340px; max-width: 86vw; box-shadow: 0 8px 32px rgba(0,0,0,.25);
 }
 .wb-dialog-title { font-size: 14px; color: var(--text, #1f2329); line-height: 1.5; margin-bottom: 14px; }
+/* 2026-09-17：「更多」菜单弹窗的说明小字（向用户解释这个入口是什么意思） */
+.wb-dialog-hint { font-size: 12px; line-height: 1.6; color: var(--text-faint, #8a919e); margin: -6px 0 12px; }
+/* 缺失图片弹窗里单独显示「缺的是哪张」的等宽小框（2026-09-17）：文件名可复制 */
+.wb-missing-name {
+  margin: 0 0 14px; padding: 8px 10px; border-radius: 6px;
+  background: #f4f5f7; border: 1px solid var(--border, #e6e8eb);
+  font-size: 12px; color: #6b7076; word-break: break-all; user-select: text;
+}
+.wb-input + .wb-input { margin-top: 8px; } /* 两个输入框（网页链接：显示文字 + 地址）上下不贴 */
 .wb-input {
   width: 100%; box-sizing: border-box; border: 1px solid var(--border, #e6e8eb);
   border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--text, #1f2329);
@@ -966,9 +1138,13 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   border: 1px solid var(--border, #e6e8eb); background: #fff; border-radius: 6px;
   padding: 6px 16px; font-size: 13px; cursor: pointer; color: var(--text, #1f2329);
 }
-.wb-btn:hover { background: #f0f2f5; }
+/* 2026-09-17 修「点完按钮忽然变灰」：原来 .wb-btn:hover 的灰底（优先级 0-2-0）会盖掉 .wb-btn-ok
+   自己的强调色（0-1-0）→ 鼠标停在按钮上/点完后仍悬停时，按钮突变成灰底白字，像被禁用。
+   现在灰底只给「普通」按钮，彩色按钮各自保持自己的色，hover 只做整体加深。 */
+.wb-btn:not(.wb-btn-ok):not(.wb-btn-danger):hover { background: #f0f2f5; }
 .wb-btn-ok { background: var(--accent); color: #fff; border-color: var(--accent); } /* 2026-09-01：跟随主题强调色（粉线版变粉，不再写死蓝） */
-.wb-btn-ok:hover { filter: brightness(0.92); }
+.wb-btn-ok:hover { filter: brightness(0.92); }   /* 悬停：在原色上加深一点（不要变灰） */
+.wb-btn-ok:active { filter: brightness(0.84); }  /* 按下：再深一档，给点击反馈 */
 .wb-btn-danger { background: #e5484d; border-color: #e5484d; }
 .wb-btn-danger:hover { background: #d23c41; }
 
@@ -1153,8 +1329,10 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 
 /* ── 1. 所有浮层共用同一套材质 ── */
 #left-toolbar,
-.dp-menu,
 #more-menu,
+#node-more-menu,
+#node-more-sub,
+#node-style-menu,
 #now-menu,
 .node-menu,
 #pro-cta,
@@ -1182,7 +1360,6 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 /* ── 2. 按钮 / 菜单条目的圆角（与浮层圆角各自独立、不联动）── */
 .tb,
 .node-menu button,
-.dp-item,
 .mm,
 .now-num,
 .ctx-item {
@@ -1244,7 +1421,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 }
 
 /* ── 5. 按钮的「状态变化」过渡（变亮 / 变暗 / 置灰不再瞬切）──
-   工具栏按钮的状态类（.active-hide / .now-on / .dp-changed / .disabled / :disabled）、
+   工具栏按钮的状态类（.active-hide / .now-on / .disabled / :disabled）、
    节点工具条的 .on、各菜单条目 —— 一律只是改 color（或 color + opacity），
    补上过渡后就是平滑的。
    图标由 renderIcon() 生成、stroke/fill 都写死 currentColor → 跟着 color 走，
@@ -1252,7 +1429,6 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    属性一次列全：color / background-color / opacity / border-color / box-shadow / transform。 */
 .tb,
 .node-menu button,
-.dp-item,
 .mm,
 .now-num,
 .ctx-item,

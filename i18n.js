@@ -17,24 +17,20 @@ var I18N = {
     'common.ok': '确定', // 弹窗的「确定」按钮（同上；历史还原的危险确认框也用它）
 
     // ============ 导图画面骨架（iframe 里的静态 HTML；切语言随视图重建刷新）============
-    'frame.refresh': '刷新画面（重新读取文件并重新渲染）', // 顶部刷新按钮 tooltip（当前该按钮隐藏，留作备用）
     'frame.nowSide': '只显示 Now 节点', // 左侧 Now 按钮的初始 tooltip（运行时会被动态文案覆盖，改了可能看不到）
     'frame.mdPlaceholder': '- 一级节点\n  - 子节点', // 文本视图输入框的灰色占位示例（当前文本视图无 UI 入口，备用）
     // ---- 左下角「更多」(三个点)弹层菜单的菜单项 ----
-    'mm.addChild': '子节点', // 菜单项：新建子节点（快捷键 Tab）
-    'mm.addSibling': '同级', // 菜单项：新建同级节点（快捷键 Enter）
-    'mm.delete': '删除', // 菜单项：删除选中节点
+    // （2026-09-17 删：mm.addChild / mm.addSibling / mm.delete —— 那三个节点操作按钮已挪到
+    //   「节点工具条 → 添加 → 添加其他内容」，文案改用 more.addChild / more.addSibling / more.delNode。）
     'mm.undo': '撤销', // 菜单项：撤销（Cmd+Z）
     'mm.redo': '重做', // 菜单项：重做（Cmd+Shift+Z）
-    'mm.pathLink': '路径链接', // 菜单分组标题：下钻路径相关的四个子项（下面四条）
-    'mm.pathBack': '上一路径', // 路径子菜单：回到上一下钻位置
-    'mm.pathFwd': '下一路径', // 路径子菜单：前进到下一下钻位置
+    'mm.pathBack': '返回上一路径', // 更多菜单：回到上一下钻位置
+    'mm.pathFwd': '返回下一路径', // 更多菜单：前进到下一下钻位置
     'mm.pathDefault': '返回默认路径', // 路径子菜单：回到保存的默认下钻位置
-    'mm.pathSave': '更新为当前路径', // 路径子菜单：把当前下钻位置存为默认（普通导图）/ 更新书签指向（书签文件）
-    'mm.debug': '界面调试', // 菜单项：界面调试入口（已隐藏，备用）
-    'mm.history': '历史记录', // 菜单项：打开历史记录页
+    'mm.pathSave': '设当前为默认路径', // 路径子菜单：把当前下钻位置存为默认（普通导图）/ 更新书签指向（书签文件）
+    'mm.history': '历史记录', // 菜单项：打开历史记录面板
     'mm.saveVersion': '保存此版本', // 菜单项：手动命名保存当前版本快照
-    'mm.about': '了解 28 Notes ↗', // 菜单项：跳转 B 站了解插件
+    'mm.guide': '使用指南 ↗', // 菜单项：打开使用指南（飞书文档，与设置页「使用教程」同一个链接）
     'mm.joinGroup': '加入微信群 ↗', // 菜单项：跳转飞书 wiki 进群页（2026-09-07）
     'mm.settings': '设置与 Bug 提报', // 菜单项：打开插件设置页（2026-09-01）
 
@@ -59,6 +55,8 @@ var I18N = {
     'notice.openNoteFail': '打开笔记失败：', // 打开笔记出错时（后接错误）
     'notice.copyFailSnap': '创建副本失败：', // 从历史快照创建副本失败时（后接错误）
     'notice.githubUnset': 'GitHub 链接尚未配置', // 设置页点「↗ GitHub」按钮但链接还没填时
+    'notice.dataAreaGone': '⚠️ 刚删除的是 28 Notes 数据区（图片/历史/AI 契约）：{0} —— 已进废纸篓；误删请立刻放回原路径（仅作者本机提示）', // 数据区顶层目录被删时的告警（2026-09-17）
+    'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
     // ---- 命令面板（Cmd+P）与文件右键菜单里显示的命令名（改完要重载插件才变）----
     'cmd.newMap': '新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图
     'cmd.openAsMarkdown': '查看源文件（28 Notes）', // 命令/文件右键菜单：按纯文本打开（豁免导图视图）
@@ -67,6 +65,7 @@ var I18N = {
     'newMap.name': '未命名思维导图', // 新建导图的默认文件名（重名自动加「 1」「 2」序号）
     'copy.suffix': '-副本', // 「创建副本」的文件名后缀：原文件名 + 这个后缀 + .md
     'snap.beforeRestore': '还原前 · ', // 还原历史版本时自动存的「还原前」快照的命名前缀（后接日期时间）
+    'snap.restoredTo': '还原到 · ', // 还原历史版本后自动存的「还原到」快照的命名前缀（后接来源版本的名字或时间）
     // ---- 文件列表徽章（左侧文件树里文件名右侧的小字）----
     'badge.bookmark': '↗', // 文件列表里书签文件右侧的小字（触发点在 main.js updateBookmarkBadges：拼进文件树徽章 CSS）
     'badge.mindmap': '28 Notes', // 文件列表里导图文件右侧的小字（同上，main.js updateBookmarkBadges）
@@ -84,6 +83,19 @@ var I18N = {
     'settings.themeFeishu': '蓝线', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
     'settings.themeFeishuGray': '灰线', // 主题下拉：飞书灰线
     'settings.themeFeishuPink': '粉线', // 主题下拉：飞书粉线（2026-09-01 新增）
+    // 2026-09-17：媒体分目录（images/video/audio）后，清理范围同步扩大 → 文案由「图片」改「附件」
+    'cleanup.heading': '清理未使用的附件', // 设置页区块标题（2026-09-16）
+    'cleanup.desc': '为适应编辑时撤回操作，删除带图片/视频等附件的节点时，附件本身不会被直接删除，需手动清理。<br> 建议每半年扫描清理一次。',
+    'cleanup.scanBtn': '开始扫描', // 设置页按钮（2026-09-16：名称改由 cleanup.heading 承担「清理未使用的附件」）
+    'cleanup.scanning': '正在扫描…', // 扫描进行中按钮文案
+    'cleanup.none': '没有找到未使用的附件 ✓', // 扫描结果：零孤儿
+    'cleanup.found': '找到 {0} 个未被引用的附件，共 {1}', // 弹窗标题行
+    'cleanup.note': '建议迁移到桌面，然后手动上传至你的云盘，防止以后要用。', // 弹窗备注（用户定稿文案）
+    'cleanup.deleteBtn': '直接删除', // 弹窗按钮一：进系统废纸篓
+    'cleanup.moveBtn': '迁移到桌面', // 弹窗按钮二：迁移到桌面备份文件夹（用户定稿命名）
+    'cleanup.movedOk': '已迁移 {0} 个附件到桌面：{1}', // 迁移成功通知
+    'cleanup.deletedOk': '已删除 {0} 个附件（可在系统废纸篓找回）', // 删除成功通知
+    'cleanup.partialFail': '{0} 个成功，{1} 个失败：{2}', // 部分失败通知
     'settings.badgeStyle': '文件类型徽标', // 文件树徽章样式（2026-08-31）：文本/图标
     'settings.badgeStyleDesc': '指文件列表里，文件名右侧的类型徽标。此设计可避免文件类型混淆。',
     'settings.badgeStyleText': '28 Notes 文字', // 徽章样式下拉：文本（默认）
@@ -97,7 +109,11 @@ var I18N = {
     'settings.hintHide': '隐藏提示', // 界面简化下拉：隐藏
     'settings.tutorial': '使用教程', // 「使用教程」说明的标题（2026-09-01 新增，放在设置页最底部）
     'settings.tutorialBtn': '查看教程 ↗', // 使用教程右侧按钮文案
-    'settings.footnote': '尾注', // 「尾注」节标题
+    'settings.footnote': '更多', // 「更多」节标题（2026-09-16 由「尾注」改名）
+    'settings.centerMode': '画布中央', // 定位基准设置项名称（2026-09-16）
+    'settings.centerModeDesc': '建议设为视觉中央，更符合人眼视觉。', // 设置项说明文字
+    'settings.centerCanvas': '画布中央', // 选项①：视口几何正中心（默认）
+    'settings.centerVisual': '视觉中央', // 选项②：保留自定义落点（＝现在的位置，偏左上）
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
     'settings.sponsor': '赞助开发者', // 赞助项名称
     'settings.sponsorBtn': '好！', // 展开/收起赞助二维码的按钮文字
@@ -121,6 +137,8 @@ var I18N = {
     'pro.shortDesc': '查看 Pro 版包含的全部功能与购买方式', // 设置页入口的描述
     'pro.viewBtn': '查看 Pro 功能详情', // 设置页"打开 Pro 弹窗"按钮
     'pro.ctaBtn': '激活创新 Pro 版', // 右上角提示按钮文案（未授权时显示，点击进激活弹窗；2026-09-04）
+    'pro.ctaHintTrial': '试用期还剩 {0} 天', // 按钮下方小字：试用中剩余天数（{0}=天数；2026-09-16）
+    'pro.ctaHintExpired': '试用期已结束', // 按钮下方小字：试用到期
     'pro.desc': '以下功能需要激活 Pro 版才能使用', // 弹窗顶部说明
     'pro.empty': '（暂无 Pro 功能）', // PRO_LOCKS 表全免费时显示
     'license.inputPh': '粘贴激活码（28N 开头）', // 激活码输入框占位文字
@@ -171,6 +189,7 @@ var I18N = {
     'tip.fold': '点击折叠', // 节点右侧折叠箭头悬停提示（展开态）
     'tip.editNote': '双击编辑备注', // 备注行（灰竖条文字）悬停提示
     'tip.image': '单击选中 · 双击放大 · 右键复制', // 节点里图片的悬停提示
+    'tip.imgMissing': '图片缺失 · 双击重试', // 缺失图片的悬停提示（上方还会拼上文件名）
     'tip.editLinkSuffix': '\n双击编辑链接', // 链接悬停提示的第二行（自动拼在各类链接提示后面，\n = 换行）
     'tip.jump': '点击跳转', // 节点链接（[[#pid]] 指向本图节点）的悬停提示
     'tip.openNote': '点击打开笔记：{0}', // 笔记链接悬停提示（{0}=笔记名）
@@ -184,6 +203,7 @@ var I18N = {
     'tb.foldDefault': '折叠/展开附近节点（需选择节点后操作）（{Mod} + F）', // 折叠按钮的初始 tooltip（进画面未选中时）
     'tb.drill': '进入当前节点（{Mod} + E）', // 「进入该节点」按钮：已选中时
     'tb.drillDefault': '进入当前节点（需选择节点后操作）（{Mod} + E）', // 同按钮初始 tooltip（未选中时）
+    'tb.drillAtRoot': '已在主节点，无需进入', // 选中主节点时：无处可钻，按钮置灰（2026-09-15）
     'tb.selectFirst': '请先选择节点', // 未选中节点时多个按钮的通用兜底提示
     'tb.noMinor': '当前视图没有 Minor 节点', // 当前视图里没有 Minor 节点时，隐藏 Minor 按钮的提示（按钮置灰）
     'tb.showMinor': '显示 Minor 节点（{Mod} + {Alt} + M）', // 隐藏 Minor 按钮：隐藏中（点此显示）
@@ -192,13 +212,9 @@ var I18N = {
     'tb.noNow': '当前视图没有 Now 节点', // 图里没有任何 Now 节点时 Now 按钮的提示（置灰）
     'tb.nowShowAll': '取消只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：开启中（点此恢复显示全部）
     'tb.nowOnly': '只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：关闭中（点此只看 Now）
-    'tb.pathInvalid': '默认路径已失效（绑定节点已不存在）', // 默认路径按钮：存的默认路径指向的节点被删（置灰）
-    'tb.pathIsDefault': '当前已是默认路径', // 默认路径按钮：当前就在默认路径上（置灰）
-    'tb.pathBack': '路径已变，点击返回默认路径', // 默认路径按钮：偏离了默认路径（蓝色可点返回）
     'tb.undo': '撤销（{Mod}+Z）', // 撤销按钮 tooltip
     'tb.redo': '重做（{Mod}+Shift+Z）', // 重做按钮 tooltip
     'tb.locate': '定位到中心节点（{Mod}+P）', // 定位按钮 tooltip（循环定位下钻路径各层）
-    'tb.defaultPath': '默认路径', // 路径链接（斜杠）按钮的默认 tooltip
     'tb.minorToggle': '隐藏/显示次要 Minor 节点（{Alt}+{Mod}+M）', // 隐藏/显示 Minor 按钮初始 tooltip
 
     // ============ 节点工具栏（选中节点时底部弹出的黑色圆条按钮 tooltip）============
@@ -208,6 +224,45 @@ var I18N = {
     'nm.note': '添加备注（Shift + Enter）', // 写备注按钮
     'nm.now': '设为当前关注 Now 节点（{Mod} + N）', // 标记 Now 按钮
     'nm.minor': '设为次要 Minor 节点（{Mod} + M）', // 标记 Minor 按钮
+    // 底部菜单最右「更多」（2026-09-17 加）：悬浮弹出的添加类入口。
+    // 注：该按钮**刻意不挂提示框**（悬浮时会和弹出的子菜单叠在一起，用户 2026-09-17），
+    // 所以原来那条 'nm.more' 文案已删。
+    // 一级菜单（2026-09-17 二次改版：原来 8 项挤在一起看着过载 → 只留 4 项常用 + 一个二级入口）
+    // 三次改版（同日稍后）：节点操作（加子节点/加同级/删除）也收进「添加其他内容」二级里，一级不再单列
+    'more.addChild': '添加子节点',
+    'more.addChildTip': '快捷键：Tab',
+    'more.addSibling': '添加同级节点',
+    'more.addSiblingTip': '快捷键：Enter',
+    'more.delNode': '删除节点',
+    'more.delNodeTip': '快捷键：Delete',
+    // 注：「添加其他内容」与底部「样式」按钮都**有子菜单 → 不挂提示**（会和子菜单叠住），
+    // 所以它们的提示文案/短标签已删；说明文案改挂在子菜单那一项上（见 nm.bold / nm.red / nm.yellow）。
+    'more.addOther': '添加其他内容',
+    'more.addImage': '添加图片',
+    'more.addImageTip': '支持直接粘贴图片', // 用户指定文案
+    'more.addVideo': '添加视频',
+    'more.addVideoTip': '支持主流视频格式',
+    'more.addAudio': '添加音频',
+    'more.addAudioTip': '支持主流音频格式',
+    'more.addVaultAttach': '添加 Obsidian 仓库附件',
+    'more.addVaultAttachTip': '添加后，可引用库里已有的音视频',
+    'more.addVaultAttachHint': '当你在普通笔记粘贴图片 / 视频时，该文件会存入 Obsidian 默认附件文件夹。你可以选择将它的文件名（如 xxx.png）或路径粘进来，思维导图会识别并渲染。（只是建立引用，不会复制文件）',
+    'more.addFileLink': '添加本地文件链接',
+    'more.addFileLinkTip': '添加后，点击即可跳转至本地文件',
+    'more.addFileLinkHint': '请填写完整文件路径，例如 /Users/…/文件.pdf。（你也可在选中节点时（非编辑状态下），直接粘贴地址）',
+    'more.addWiki': '添加双链',
+    'more.addWikiTip': '添加后，可一键跳转至其它页面',
+    'more.addNodeLink': '关联其它节点',
+    'more.addNodeLinkTip': '添加后，可一键跳转至对应节点',
+    'more.addNodeLinkHint': '选中要关联的节点，右键「复制节点链接」，并粘贴至此处即可关联。支持跨思维导图粘贴；支持选中节点后直接粘贴。',
+    'more.addUrlLink': '添加网页链接',
+    'more.addUrlLinkTip': '添加后，可一键打开网页',
+    'more.urlText': '显示文字',
+    'more.urlAddr': '链接地址',
+    // 「添加网页链接」弹窗里的说明——与条目悬浮提示**分开两个键**，方便各自单独改（用户 2026-09-17）
+    'more.addUrlLinkHint': '网址请以 www. / https://www. 开头，否则可能识别异常。显示文字留空时，会直接显示网址。',
+    'more.pickFail': '导入失败：没能读取所选文件',
+    'more.pickPrompt': '选择要导入的文件',
 
     // ============ 操作提示条（画面底部/顶部黑色浮出提示）============
     'toast.hiddenMinor': '已隐藏此 Minor 节点', // 隐藏 Minor 后（带撤销按钮）
@@ -221,11 +276,14 @@ var I18N = {
     'toast.showNowEmpty': '当前视图没有 Now 节点，「只看当前关注」未开启', // 点「只看 Now」但当前视图（当前根范围）没有 now 标记节点（2026-08-31）
     'toast.imgSaveFail': '图片保存失败', // 粘贴图片写盘失败
     'toast.bookmarkRelocated': '原捷径节点已被删除 / 更名，已重定位至主节点', // 打开书签但指向的节点已被删（回退到主节点）
-    'toast.restored': '已还原到该历史版本（还原前的内容也已保存，可随时找回）', // 历史还原成功后
+    'toast.restored': '已还原到该历史版本（已记成一条新版本；还原前的内容也保留着，随时能找回）', // 历史还原成功后
     'toast.copyCreated': '已创建副本：{0}', // 从历史快照创建副本成功（{0}=新文件名）
     'toast.jumpFail': '未找到链接目标（可能已被删除）', // 点节点链接但目标节点已被删
     'toast.histReadonly': '历史页为只读，退出历史页后才能保存当前版本', // 历史页里点「保存此版本」时
+    'toast.histNoEdit': '历史界面只读，不能修改内容', // 历史界面里碰到编辑入口时（如定位菜单二次点击改标题）
     'toast.versionSaved': '已保存当前版本', // 手动命名保存版本成功后
+    'toast.versionDeleted': '已删除该版本', // 删除单条历史版本成功后
+    'toast.versionRenamed': '已重命名该版本', // 重命名单条历史版本成功后
     'toast.aiLocateCopied': '已复制，请在 Agent 里粘贴', // 复制 AI 定位路径 成功后
 
     // ============ 格式警告（打开文件时顶部的黄色警告条）============
@@ -239,6 +297,8 @@ var I18N = {
 
     // ============ 右键菜单（画布里右键节点弹出的菜单）============
     'ctx.copyImage': '复制图片', // 菜单项：复制节点里的图片
+    'ctx.deleteImage': '删除该附件', // 菜单项：把这张图片/视频/音频从节点上移除（2026-09-17 补）
+    'more.pickBadType': '只支持图片 / 视频 / 音频，其它格式已跳过', // 选了不支持的格式时提示
     'ctx.drill': '进入当前节点', // 菜单项：下钻把该节点当主节点
     'ctx.copyLink': '复制节点链接', // 菜单项：复制 [[文件名#pid]] 节点链接
     'ctx.bookmark': '保存为捷径', // 菜单项：为该节点创建书签文件
@@ -261,29 +321,62 @@ var I18N = {
     'locate.selected': '选中节点', // 列表项标签：当前选中节点
     'locate.to': '定位到{0}', // 列表项悬停提示（{0}=目标名，如「定位到主节点」）
 
-    // ============ 历史记录页（左侧时间线 + 弹窗）============
-    'hist.exit': '返回编辑', // 历史页左上工具条：退出历史页按钮
-    'hist.diff': '只看差异', // 历史页左上工具条：只显示与当前不同的节点
-    'hist.restore': '还原此版本', // 历史页左上工具条：把快照覆盖回当前文件
+    // ============ 历史记录（右侧原生面板 + 画布顶部横幅）============
+    // 画布顶部历史横幅（2026-09-14 用户定）：整条贯通、浅黄底 —— 刻意不跟主题走，要一眼看出"现在看的是历史版本"
+    'banner.setLatest': '将此版本设为最新版本', // 横幅右侧按钮：把这一版做成时间线上最新的一版
+    // 常驻说明（横幅下方第一枚小按钮）的四种说法（2026-09-14 用户定稿的文案）：
+    //   完全相同 → sameAsNow；只差主节点 → onlyRootDiff；只差节点数 → onlyCountDiff；
+    //   主节点变了 + 节点数也不同 → rootAndCountDiff（{0} = addNodes / removeNodes 的整句）。
+    // ⚠️ 措辞一律【不能说"下面的内容没有变化"】：比对只按同层位置比节点文字，当前版本"多出来的节点"
+    //    比对不到 —— 所以节点数不同时必须把差数说出来（用户 2026-09-14 指出）。
+    'hist.sameAsNow': '此版本和最新版本相同',
+    'hist.onlyRootDiff': '此版本和最新版本相比，仅主节点不同',
+    'hist.addNodes': '新增 {0} 个节点',      // 最新版比这一版多 N 个
+    'hist.removeNodes': '减少 {0} 个节点',   // 最新版比这一版少 N 个
+    'hist.onlyCountDiff': '最新版在此版本基础上，{0}',              // 内容无差异、只是节点数不同
+    'hist.rootAndCountDiff': '最新版在此版本基础上，修改了主节点，并{0}', // 主节点变了 + 节点数也不同
+    'hist.tipText': '黄色节点为和最新版本不同的节点', // 常驻第二枚小按钮（固定文案）：画布上黄框的含义
+    'hist.aspectTitle': '名字', // 差异项名称：主节点标题（rootChangedAspects 内部用；当前文案不再逐项列出）
+    'hist.aspectNote': '备注', // 差异项名称：备注
+    'hist.aspectLink': '链接', // 差异项名称：链接
+    'hist.aspectImage': '图片', // 差异项名称：图片张数
+    'hist.exit': '返回编辑', // 横幅左侧按钮：退出历史只读态、回到编辑
     'hist.copy': '创建副本', // 历史页左上工具条：把快照存成一个新文件
     'hist.promptTitle': '给这个版本起个名字', // 「保存此版本」弹框标题
     'hist.promptHint': '（可空）', // 「保存此版本」弹框输入框占位提示
-    'hist.confirmRestore': '确定用此历史版本覆盖当前文件？当前内容将被替换。', // 点「还原此版本」后的确认弹窗文字
-    'hist.empty': '暂无历史记录。<br>每次编辑会自动保存版本（每 2 分钟一次），也可点左下角「保存此版本」手动命名存档。', // 没有历史快照时时间线的占位（<br> = 换行）
+    'hist.confirmRestore': '用这一版覆盖当前文件？', // 点「还原此版本」后的确认弹窗文字（⚠️ 弹窗标题走纯文本，别放 <br>）
+    'hist.empty': '还没有历史版本。<br>编辑时会自动存档（内容有变化、且距上一份 ≥20 秒）；也可用画布「更多」菜单里的「保存此版本」手动命名存档。', // 面板/列表没有历史快照时的占位（<br> = 换行）
     'hist.auto': '自动保存', // 自动快照在时间线里的标签（手动命名的显示你起的名字）
     'hist.justNow': '刚刚 · {0}', // 时间线时间：3 分钟内（{0}=时:分）
     'hist.today': '今天', // 时间线时间：当天
     'hist.yesterday': '昨天', // 时间线时间：昨天
     'hist.dateMD': '{0} 月 {1} 日', // 时间线时间：同年（{0}=月 {1}=日）
     'hist.dateYMD': '{0} 年 {1} 月 {2} 日', // 时间线时间：跨年（{0}=年 {1}=月 {2}=日）
+    'hist.rename': '重命名此版本', // 每条记录「⋯」菜单：给这条版本改名
+    'hist.delete': '删除此版本', // 每条记录「⋯」菜单：删掉这条版本
+    'hist.itemMenu': '更多操作', // 每条记录右侧「⋯」按钮的悬停提示
+    'hist.renameTitle': '重命名这个版本', // 重命名弹框标题
+    'hist.renameHint': '（留空 = 记为「自动保存」）', // 重命名弹框输入框占位
+    'hist.confirmDelete': '确定删除这条历史版本？删除后插件内无法找回（文件会移入系统废纸篓）。', // 删除版本确认弹窗
+    // ---- 原生「历史记录」右侧面板（2026-09-14）----
+    'hist.panelTitle': '28 Notes Mind Map 历史记录', // 面板标签名 / tooltip / 面板顶部标题
+    'hist.rules': '保存规则', // 面板顶部右侧小按钮：点开/收起下面的规则说明
+    // 点「保存规则」展开的三行小字（带 <br>，必须走 innerHTML；用 text 会把标签当字面量显示出来）
+    'hist.rulesText': '编辑时会高频保存历史版本，<br>时间较久的版本会自动删减，<br>手动保存 / 重命名的版本不会自动删减。',
+    'hist.noMap': '当前没有打开的思维导图', // 面板空态：没有可跟随的导图（非 28 Notes 文件时列表直接清空，不显示文案）
+    'cmd.openHistory': '打开历史记录面板', // 命令：面板被关掉后的找回入口
+    'notice.panelFail': '打开右侧历史面板失败', // 右侧栏取不到 leaf 时的提示
 
     // ============ 图片预览 / 图片缺失 ============
     'img.prev': '上一张（左键/←）', // 大图预览左翻页按钮悬停提示
     'img.next': '下一张（右键/→）', // 大图预览右翻页按钮悬停提示
-    'img.missing': '[图片缺失]', // 图片加载失败时图片位置显示的占位文字
+    'img.missing': '图片缺失', // 图片加载失败时占位方块里的文字（去掉方括号：占位是正方形小色块，4 字正好折成 2 行）
+    'img.missingTitle': '图片已丢失', // 双击缺失图片弹出的说明框标题
+    'img.missingHint': '这张图在库里找不到了。把它放回库里后，重启 Obsidian 就会恢复显示。', // 说明框正文（撤掉「重新查找」按钮后：直接告诉他怎么救，而不是给个没人会用的重试入口）
 
     // ============ 通用弹窗按钮 ============
     'btn.cancel': '取消', // 弹窗取消按钮（命名框/确认框）
+    'btn.okay': '好的', // 弹窗的单一确认按钮（纯说明框，点一下关掉）
     'btn.ok': '确定' // 弹窗确定按钮
   },
   en: {
@@ -297,23 +390,17 @@ var I18N = {
     'common.cancel': 'Cancel',
     'common.ok': 'OK',
 
-    'frame.refresh': 'Refresh (re-read the file and re-render)',
     'frame.nowSide': 'Show Now nodes only',
     'frame.mdPlaceholder': '- Top-level node\n  - Child node',
-    'mm.addChild': 'Child node',
-    'mm.addSibling': 'Sibling',
-    'mm.delete': 'Delete',
     'mm.undo': 'Undo',
     'mm.redo': 'Redo',
-    'mm.pathLink': 'Path links',
     'mm.pathBack': 'Previous path',
     'mm.pathFwd': 'Next path',
     'mm.pathDefault': 'Back to default path',
     'mm.pathSave': 'Set current as default path',
-    'mm.debug': 'UI debug',
     'mm.history': 'History',
     'mm.saveVersion': 'Save this version',
-    'mm.about': 'About 28 Notes ↗',
+    'mm.guide': 'User guide ↗',
     'mm.joinGroup': 'Join WeChat Group ↗',
     'mm.settings': 'Settings & bug report',
 
@@ -343,6 +430,7 @@ var I18N = {
     'newMap.name': 'Untitled mind map',
     'copy.suffix': ' copy',
     'snap.beforeRestore': 'Before restore · ',
+    'snap.restoredTo': 'Restored to · ',
     'badge.bookmark': '↗',
     'badge.mindmap': 'Mind map',
     'menu.newMindmap': 'New mind map (28 Notes)',
@@ -358,6 +446,21 @@ var I18N = {
     'settings.themeFeishu': 'Blue lines',
     'settings.themeFeishuGray': 'Gray lines',
     'settings.themeFeishuPink': 'Pink lines',
+    // 2026-09-17: media split into images/video/audio → cleanup now covers all three; wording "images" → "attachments"
+    'cleanup.heading': 'Clean up unused attachments',
+    'cleanup.desc': 'To keep your data safe, when you delete a node that contains attachments, the files themselves (images / videos / audio) are never deleted — cleanup is manual.<br> A scan every six months is recommended.',
+    'cleanup.scanBtn': 'Start scan',
+    'cleanup.scanning': 'Scanning…',
+    'cleanup.none': 'No unused attachments found ✓',
+    'cleanup.found': 'Found {0} unreferenced attachments, {1} total',
+    'cleanup.note': 'Tip: move them to the Desktop, then upload to your cloud drive in case you need them later.',
+    'cleanup.deleteBtn': 'Delete',
+    'cleanup.moveBtn': 'Move to Desktop',
+    'cleanup.movedOk': 'Moved {0} attachments to Desktop: {1}',
+    'cleanup.deletedOk': 'Deleted {0} attachments (recoverable from the system trash)',
+    'cleanup.partialFail': '{0} succeeded, {1} failed: {2}',
+    'notice.dataAreaGone': '⚠️ You just deleted the 28 Notes data folder (images / history / AI contract): {0} — it went to the system trash; if unintentional, put it back to the same path now',
+    'notice.aiDocsRestored': 'Rebuilt AI contract file: {0}',
     'settings.badgeStyle': 'File type badge',
     'settings.badgeStyleDesc': 'It refers to the type badge on the right of the file name in the file list. This design avoids confusion between file types.',
     'settings.badgeStyleText': '28 Notes text',
@@ -368,7 +471,11 @@ var I18N = {
     'settings.hintHide': 'Hide hint',
     'settings.tutorial': 'Tutorial',
     'settings.tutorialBtn': 'View tutorial ↗',
-    'settings.footnote': 'Footnote',
+    'settings.footnote': 'More',
+    'settings.centerMode': 'Canvas center',
+    'settings.centerModeDesc': 'Tip: choose Visual center — it fits natural eye movement better.',
+    'settings.centerCanvas': 'Canvas center',
+    'settings.centerVisual': 'Visual center',
     'settings.qrMissing': '(QR code image not found)',
     'settings.sponsor': 'Sponsor the developer',
     'settings.sponsorBtn': 'Sure!',
@@ -392,6 +499,8 @@ var I18N = {
     'pro.shortDesc': 'See all Pro features and how to buy',
     'pro.viewBtn': 'View Pro features',
     'pro.ctaBtn': 'Activate Pro',
+    'pro.ctaHintTrial': 'Trial: {0} days left', // button-below hint: trial remaining days
+    'pro.ctaHintExpired': 'Trial ended', // button-below hint: trial expired
     'pro.desc': 'These features require Pro activation',
     'pro.empty': '(No Pro features yet)',
     'license.inputPh': 'Paste your activation code (starts with 28N)',
@@ -442,6 +551,7 @@ var I18N = {
     'tip.fold': 'Click to fold',
     'tip.editNote': 'Double-click to edit the note',
     'tip.image': 'Click to select · double-click to zoom · right-click to copy',
+    'tip.imgMissing': 'Image missing · double-click to retry',
     'tip.editLinkSuffix': '\nDouble-click to edit the link',
     'tip.jump': 'Click to jump',
     'tip.openNote': 'Click to open the note: {0}',
@@ -454,6 +564,7 @@ var I18N = {
     'tb.foldDefault': 'Fold/unfold nearby nodes (select a node first) ({Mod}+F)',
     'tb.drill': 'Enter the current node ({Mod} + E)',
     'tb.drillDefault': 'Enter the current node (select a node first) ({Mod} + E)',
+    'tb.drillAtRoot': 'Already at the main node',
     'tb.selectFirst': 'Select a node first',
     'tb.noMinor': 'No Minor nodes in the current view',
     'tb.showMinor': 'Show Minor nodes ({Mod} + {Alt} + M)',
@@ -462,21 +573,50 @@ var I18N = {
     'tb.noNow': 'No Now nodes in the current view',
     'tb.nowShowAll': 'Stop showing Now nodes only ({Mod} + {Alt} + N)',
     'tb.nowOnly': 'Show Now nodes only ({Mod} + {Alt} + N)',
-    'tb.pathInvalid': 'The default path is broken (its node no longer exists)',
-    'tb.pathIsDefault': 'You are on the default path',
-    'tb.pathBack': 'Path has changed — click to return to the default path',
     'tb.undo': 'Undo ({Mod}+Z)',
     'tb.redo': 'Redo ({Mod}+Shift+Z)',
     'tb.locate': 'Locate the central node ({Mod}+P)',
-    'tb.defaultPath': 'Default path',
     'tb.minorToggle': 'Hide/show Minor nodes ({Alt}+{Mod}+M)',
 
-    'nm.bold': 'Bold the node ({Mod}+B)',
-    'nm.red': 'Mark red ({Mod}+R)',
-    'nm.yellow': 'Mark yellow ({Mod}+Y)',
-    'nm.note': 'Add a note (Shift+Enter)',
-    'nm.now': 'Mark as Now ({Mod}+N)',
-    'nm.minor': 'Mark as Minor ({Mod}+M)',
+    'nm.bold': 'Bold the node ({Mod} + B)',
+    'nm.red': 'Mark red ({Mod} + R)',
+    'nm.yellow': 'Mark yellow ({Mod} + Y)',
+    'nm.note': 'Add a note (Shift + Enter)',
+    'nm.now': 'Mark as Now node ({Mod} + N)',
+    'nm.minor': 'Mark as Minor node ({Mod} + M)',
+    // Bottom bar "More" menu (2026-09-17): hover panel with add-entries.
+    // Note: this button intentionally has NO tooltip (it would overlap the panel), so 'nm.more' was removed.
+    'more.addChild': 'Add child node',
+    'more.addChildTip': 'Shortcut: Tab',
+    'more.addSibling': 'Add sibling node',
+    'more.addSiblingTip': 'Shortcut: Enter',
+    'more.delNode': 'Delete node',
+    'more.delNodeTip': 'Shortcut: Delete',
+    'more.addOther': 'More options',
+    'more.addImage': 'Add image',
+    'more.addImageTip': 'You can paste an image directly',
+    'more.addVideo': 'Add video',
+    'more.addVideoTip': 'Supports common video formats',
+    'more.addAudio': 'Add audio',
+    'more.addAudioTip': 'Supports common audio formats',
+    'more.addVaultAttach': 'Add attachment from vault',
+    'more.addVaultAttachTip': 'Reference images / videos already in your vault',
+    'more.addVaultAttachHint': 'When you paste an image / video into a normal note, Obsidian saves the file into its default attachment folder. Paste its file name (e.g. xxx.png) or path here and the mind map will find and render it. (This only creates a reference — the file is not copied.)',
+    'more.addFileLink': 'Add local file link',
+    'more.addFileLinkTip': 'Click it later to open the local file',
+    'more.addFileLinkHint': 'Enter a file path, e.g. /Users/…/file.pdf. (You can also select a node while not editing and paste the path directly.)',
+    'more.addWiki': 'Add wiki link',
+    'more.addWikiTip': 'Click it later to jump to that page',
+    'more.addNodeLink': 'Link another node',
+    'more.addNodeLinkTip': 'Click it later to jump to that node',
+    'more.addNodeLinkHint': 'Select the target node in the other mind map, right-click "Copy node link", then paste it here. Works across mind maps; you can also select a node and paste directly.',
+    'more.addUrlLink': 'Add web link',
+    'more.addUrlLinkTip': 'Enter a display text and a URL. The URL should start with www. / https://, otherwise it may not be recognized.',
+    'more.urlText': 'Display text',
+    'more.urlAddr': 'URL',
+    'more.addUrlLinkHint': 'Top: the display text. Bottom: the URL (starting with www. / https://). If the display text is left empty, the URL is shown instead.',
+    'more.pickFail': 'Import failed: could not read the selected file',
+    'more.pickPrompt': 'Choose file(s) to import',
 
     'toast.hiddenMinor': 'Minor node hidden',
     'toast.hiddenNow': 'Now node hidden',
@@ -489,11 +629,14 @@ var I18N = {
     'toast.showNowEmpty': 'No Now nodes in the current view — "Focus on Now" not enabled',
     'toast.imgSaveFail': 'Failed to save the image',
     'toast.bookmarkRelocated': 'The shortcut node has been deleted or renamed — relocated to the central node',
-    'toast.restored': 'Restored to this version (the content before the restore has been saved too, and can be recovered anytime)',
+    'toast.restored': 'Restored to this version (it is saved as a new version; the content before the restore is kept too)',
     'toast.copyCreated': 'Copy created: {0}',
     'toast.jumpFail': 'Link target not found (it may have been deleted)',
     'toast.histReadonly': 'The history page is read-only — exit it before saving the current version',
+    'toast.histNoEdit': 'The history view is read-only; content cannot be edited here',
     'toast.versionSaved': 'Current version saved',
+    'toast.versionDeleted': 'Version deleted',
+    'toast.versionRenamed': 'Version renamed',
     'toast.aiLocateCopied': 'Copied — paste it into your AI agent',
 
     'warn.root': 'Line {0}: unrecognized (the first line should be the central topic `- Central topic`); kept as-is',
@@ -505,6 +648,8 @@ var I18N = {
     'warn.boxPrefix': '⚠ Formatting issues: ',
 
     'ctx.copyImage': 'Copy image',
+    'ctx.deleteImage': 'Remove attachment',
+    'more.pickBadType': 'Only image / video / audio files are supported; other formats were skipped',
     'ctx.drill': 'Enter the current node',
     'ctx.copyLink': 'Copy node link',
     'ctx.bookmark': 'Save as shortcut',
@@ -525,26 +670,51 @@ var I18N = {
     'locate.selected': 'Selected node',
     'locate.to': 'Locate {0}',
 
+    'banner.setLatest': 'Set this version as latest',
+    'hist.sameAsNow': 'This version is identical to the latest version',
+    'hist.onlyRootDiff': 'Compared with the latest version, this one differs only in the root node',
+    'hist.addNodes': 'added {0} node(s)',
+    'hist.removeNodes': 'removed {0} node(s)',
+    'hist.onlyCountDiff': 'The latest version {0} on top of this one',
+    'hist.rootAndCountDiff': 'The latest version modifies the root node and {0} on top of this one',
+    'hist.tipText': 'Yellow nodes differ from the latest version',
+    'hist.aspectTitle': 'title',
+    'hist.aspectNote': 'note',
+    'hist.aspectLink': 'link',
+    'hist.aspectImage': 'images',
     'hist.exit': 'Back to editing',
-    'hist.diff': 'Show differences only',
-    'hist.restore': 'Restore this version',
     'hist.copy': 'Create a copy',
     'hist.promptTitle': 'Name this version',
     'hist.promptHint': '(Optional)',
-    'hist.confirmRestore': 'Overwrite the current file with this version? The current content will be replaced.',
-    'hist.empty': 'No history yet.<br>A version is saved automatically as you edit (every 2 minutes). You can also click "Save this version" at the bottom-left to save a named one.',
+    'hist.confirmRestore': 'Overwrite the current file with this version? ',
+    'hist.empty': 'No history yet.<br>A version is saved automatically as you edit (only when the content changed and at least 20s after the previous one). You can also use "Save this version" in the canvas "More" menu to save a named one.',
     'hist.auto': 'Auto save',
     'hist.justNow': 'Just now · {0}',
     'hist.today': 'Today',
     'hist.yesterday': 'Yesterday',
     'hist.dateMD': '{0}/{1}',
     'hist.dateYMD': '{1}/{2}/{0}',
+    'hist.rename': 'Rename this version',
+    'hist.delete': 'Delete this version',
+    'hist.itemMenu': 'More actions',
+    'hist.renameTitle': 'Rename this version',
+    'hist.renameHint': '(Empty = "Auto save")',
+    'hist.confirmDelete': 'Delete this version? It cannot be recovered from the plugin (the file goes to the system trash).',
+    'hist.panelTitle': '28 Notes Mind Map History',
+    'hist.rules': 'Save rules',
+    'hist.rulesText': 'Versions are saved frequently while editing.<br>Old versions are thinned out automatically.<br>Manually saved / renamed versions are never thinned out.',
+    'hist.noMap': 'No mind map is open',
+    'cmd.openHistory': 'Open history panel',
+    'notice.panelFail': 'Failed to open the right sidebar history panel',
 
     'img.prev': 'Previous (left click / ←)',
     'img.next': 'Next (right click / →)',
-    'img.missing': '[Image missing]',
+    'img.missing': 'Missing',
+    'img.missingTitle': 'Image not found',
+    'img.missingHint': 'This image can no longer be found in the vault. Put the file back, then restart Obsidian to show it again.',
 
     'btn.cancel': 'Cancel',
+    'btn.okay': 'OK',
     'btn.ok': 'OK'
   }
 };

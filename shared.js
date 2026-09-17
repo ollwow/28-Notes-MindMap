@@ -61,8 +61,45 @@ function uniqueAttachmentName(name) {
   return stem + '-' + Math.random().toString(36).slice(2, 6) + ext;
 }
 
+// ===== 附件清理（2026-09-16「清理未使用的图片」）=====
+// 附件目录（相对 vault 根）：插件唯一的二进制写入点（savePastedImage），清理只针对它
+const ATTACH_DIR = '28Notes-Files/images';
+
+// 生成一个附件名在正文里所有可能的形态（用于 includes 匹配）：
+// 引用写法十几种（wiki 嵌入 / markdown 链接 / 快照 json / 裸文件名），枚举语法必然漏——
+// 反过来做：只认「文件名字符串在文本里出现过一次」就算被引用。保守方向 = 宁可多保留。
+// 变体覆盖：原名 / URL 解码（%20→空格）/ 编码（空格→%20）/ 路径剥除 / 大小写（比对统一转小写，macFS 不分大小写）
+function attachmentLookupVariants(name) {
+  const clean = String(name || '').trim();
+  if (!clean) return [];
+  const base = clean.slice(clean.lastIndexOf('/') + 1); // 引用可能带路径前缀，取文件名
+  const out = new Set();
+  const push = (v) => { if (v) out.add(String(v).toLowerCase()); };
+  push(base);
+  try { push(decodeURIComponent(base)); } catch (_) {}
+  push(encodeURI(base));
+  push(base.replace(/%20/g, ' '));
+  push(base.replace(/ /g, '%20'));
+  return Array.from(out);
+}
+
+// 孤儿判定（纯函数，可单测）：候选附件名逐个去全库文本（已合并为单串）里找，
+// 任何形态出现过 = 被引用保留；所有形态都没出现 = 真孤儿。
+// 硬性要求：宁可漏删一千，不可误删一张——匹配一律往「多保留」方向偏。
+function findOrphanAttachmentNames(candidates, bigText) {
+  const big = ('\n' + String(bigText || '') + '\n').toLowerCase(); // 全文转小写：与变体的小写比对口径一致（macFS 不分大小写）
+  const orphans = [];
+  (candidates || []).forEach((name) => {
+    const variants = attachmentLookupVariants(name);
+    const used = variants.some((v) => big.indexOf(v) !== -1);
+    if (!used) orphans.push(name);
+  });
+  return orphans;
+}
+
 module.exports = {
   splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText,
   SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE,
   buildMmlinkText, sanitizeAttachmentName, uniqueAttachmentName,
+  ATTACH_DIR, attachmentLookupVariants, findOrphanAttachmentNames,
 };

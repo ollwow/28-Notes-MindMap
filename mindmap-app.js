@@ -7,7 +7,7 @@
 // 宿主 → 前端走 iframe contentWindow.postMessage（下方 window message 监听不变）。
 const vscodeApi = (typeof window !== 'undefined' && window.__MM_HOST__) || { postMessage() {} };
 function wlog(t) { try { vscodeApi.postMessage({ type: 'log', text: String(t) }); } catch (_) {} }
-try { document.documentElement.style.setProperty('--img-missing-text', "'" + T('img.missing') + "'"); } catch (_) {} // 图片缺失占位文案（CSS content 随语言切换）
+//（原 --img-missing-text 已于 2026-09-17 移除：缺失占位改用 <img> 的 alt 文本 —— 伪元素在替换元素上不渲染）
 function showError(msg) {
   const box = document.getElementById('error-box');
   if (box) { box.textContent = '⚠ ' + msg; box.className = ''; }
@@ -94,11 +94,10 @@ const state = { tree: null, selectedId: null, dragId: null, dragIds: null, view:
   historyMode: false,
   historyText: '',           // 当前正在查看的快照原始文本
   historyTree: null,         // 解析后的快照树
-  historyList: [],           // 快照列表（timestamp, name）
-  historyCurrentTs: 0,       // 当前查看的快照时间戳
+  historyCurrentTs: 0,       // 当前查看的快照时间戳（0 = 不在只读态）
+  historyNote: '',           // 横幅下方的常驻提示（「与当前完全相同 / 只差主节点…」；空 = 不显示。2026-09-14 由 toast 改常驻）
   historyDiffIds: new Set(), // 与当前文档有差异的节点 id
   nowLocateIndex: 0,         // 当前定位的 Now 序号（定位按钮循环/悬浮菜单用；正常模式必初始化，否则 locateCenter 取模得 NaN 报错，2026-08-27 修）
-  historyShowDiffOnly: false, // 是否只看差异
   liveTree: null            // 进入历史页前的真实文档树（差异比对基线 + 关闭时还原），历史页期间 state.tree 指向快照树
 };
 
@@ -327,6 +326,8 @@ const ICONS = {
   'bug': '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 20v-9m2-4a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4zm.12-3.12L16 2"/><path d="M21 21a4 4 0 0 0-3.81-4M21 5a4 4 0 0 1-3.55 3.97M22 13h-4M3 21a4 4 0 0 1 3.81-4M3 5a4 4 0 0 0 3.55 3.97M6 13H2M8 2l1.88 1.88M9 7.13V6a3 3 0 1 1 6 0v1.13"/></g>',
   'text-initial': '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5h6m-6 7h6M3 19h18M3 12l3.553-7.724a.5.5 0 0 1 .894 0L11 12m-7.08-2h6.16"/>',
   'log-in': '<path d="m10 17l5-5l-5-5m5 5H3m12-9h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>',
+  // 历史横幅「创建副本」（2026-09-14 定）：lucide bookmark —— 沿用原来面板那个按钮的图标
+  'bookmark': '<path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/>',
   'link': '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   // 保存为捷径（2026-09-01 定）：lucide split
   'split': '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>',
@@ -345,31 +346,42 @@ const ICONS = {
   'frame-broken': '<path d="M22 2L2 22"/><path d="M21.5 16.5L16.5 21.5"/><path d="M16.5 16.5L21.5 21.5"/>',
   // 历史记录（2026-08-27）：时钟回绕，表示"回到过去某个版本"
   'history': '<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/>',
-  // iconify mingcute:bilibili-line（2026-08-30：「了解插件」菜单图标）
-  'bilibili-line': '<path fill="currentColor" d="M7.832 3.445a1 1 0 0 0-1.664 1.11L7 4zm10 1.11a1 1 0 0 0-1.664-1.11L17 4zM10 12a1 1 0 1 0-2 0zm-2 2a1 1 0 1 0 2 0zm8-2a1 1 0 1 0-2 0zm-2 2a1 1 0 1 0 2 0zM6 7v1h12V6H6zm15 3h-1v7h2v-7zm-3 10v-1H6v2h12zM3 17h1v-7H2v7zM7 4l-.832.555l2 3L9 7l.832-.555l-2-3zm10 0l-.832-.555l-2 3L15 7l.832.555l2-3zm-8 8H8v2h2v-2zm6 0h-1v2h2v-2zm-9 8v-1a2 2 0 0 1-2-2H2a4 4 0 0 0 4 4zm15-3h-1a2 2 0 0 1-2 2v2a4 4 0 0 0 4-4zM18 7v1a2 2 0 0 1 2 2h2a4 4 0 0 0-4-4zM6 7V6a4 4 0 0 0-4 4h2a2 2 0 0 1 2-2z"/>',
+  // （2026-09-17 删：iconify mingcute:bilibili-line —— 原来「了解插件」菜单项用的图标；
+  //   该项已改成「使用指南」并用 lucide sprout，这个图标没人引用了。）
   // 设置（2026-09-01）：齿轮，lucide「settings」——「设置与 bug 提报」菜单图标
   'settings': '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   // 底部「加入微信群」临时 CTA 图标（lucide message-circle）
   'message-circle': '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
-  // 侧边 Ribbon「新建思维导图」按钮图标（Frame.svg 内联）；2026-08-30 定：节点链接复用此图标。
-  // 原 SVG 外层包了 <g clip-path="url(#clip0_2018_5)">，但该 clipPath 在 iframe 内未定义会导致环不可见，此处去掉包裹、保留三路径。
-  'frame': '<path fill="currentColor" d="M22.5927 12.0147C22.5927 14.7781 20.3465 17.0243 17.5822 17.0243C16.9523 17.0243 16.3492 16.9076 15.7959 16.6896C16.3153 16.4964 16.7913 16.215 17.2092 15.8661C17.3318 15.8789 17.4563 15.885 17.5822 15.885C19.7207 15.885 21.4534 14.1523 21.4534 12.0147C21.4534 9.87707 19.7207 8.14348 17.5822 8.14348C17.457 8.14348 17.3332 8.14943 17.2114 8.16221C16.793 7.81182 16.3162 7.52923 15.7959 7.33536C16.3492 7.11699 16.9523 7 17.5822 7C20.3465 7 22.5927 9.25128 22.5927 12.0147Z"/><path fill="currentColor" d="M14.0096 17.0243C16.773 17.0243 19.0192 14.7781 19.0192 12.0147C19.0192 9.25128 16.773 7 14.0096 7C11.2462 7 9 9.25128 9 12.0147C9 14.7781 11.2462 17.0243 14.0096 17.0243ZM14.0096 15.885C11.872 15.885 10.1393 14.1523 10.1393 12.0147C10.1393 9.87707 11.872 8.14348 14.0096 8.14348C16.1472 8.14348 17.8808 9.87707 17.8808 12.0147C17.8808 14.1523 16.1472 15.885 14.0096 15.885Z"/><path fill="currentColor" d="M2 11.35C1.64101 11.35 1.35 11.641 1.35 12C1.35 12.359 1.64101 12.65 2 12.65L2 12L2 11.35ZM2 12L2 12.65L10 12.65L10 12L10 11.35L2 11.35L2 12Z"/>',
+  // 侧边 Ribbon「新建思维导图」按钮图标（2026-09-17 统一：与宿主 RIBBON_ICON_SVG 同源，节点链接复用此图标）。
+  // 直接三 path 平铺（currentColor 跟主题）；clipPath 是 24×24 满幅 no-op，已去。
+  'frame': '<path fill="currentColor" d="M13.3188 17.2902C10.5293 17.2902 8.26735 15.0216 8.26735 12.2387C8.26735 9.44915 10.5293 7.18719 13.3188 7.18719C14.0047 7.18719 14.6641 7.32568 15.2643 7.57627C15.8446 7.32568 16.4909 7.18719 17.1701 7.18719C19.953 7.18719 22.215 9.44915 22.215 12.2387C22.215 15.0216 19.953 17.2902 17.1701 17.2902C16.4909 17.2902 15.8446 17.1517 15.2643 16.9011C14.6641 17.1517 14.0047 17.2902 13.3188 17.2902ZM18.3703 12.2387C18.3703 13.6301 17.8032 14.8897 16.8931 15.7998C16.9855 15.813 17.0712 15.813 17.1701 15.813C19.1419 15.813 20.7444 14.2105 20.7444 12.2387C20.7444 10.2603 19.1419 8.66439 17.1701 8.66439C17.0778 8.66439 16.9855 8.66439 16.8931 8.67098C17.8032 9.58763 18.3703 10.8472 18.3703 12.2387ZM13.3188 15.813C15.2906 15.813 16.8931 14.2105 16.8931 12.2387C16.8931 10.2603 15.2906 8.66439 13.3188 8.66439C11.3405 8.66439 9.74455 10.2603 9.74455 12.2387C9.74455 14.2105 11.3405 15.813 13.3188 15.813Z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2.00391 12.4L6.00388 12.4151"/><path fill="currentColor" d="M4 11.4076C3.44772 11.4076 3 11.8553 3 12.4076C3 12.9599 3.44772 13.4076 4 13.4076V12.4076V11.4076ZM8 13.4076H9V11.4076H8V12.4076V13.4076ZM4 12.4076V13.4076H8V12.4076V11.4076H4V12.4076Z"/>',
   // 链接前缀图标（2026-08-30）：按 lucide 规范，均为描边式（默认 fill:none），无需写进 ICON_SET
   //   globe=网页链接 | folder-closed=外部文件链接 | brackets=Obsidian 双链 [[ ]] | file-input=双链备选（未启用）
   //   frame=侧边 Ribbon「新建思维导图」按钮图标（Frame.svg 内联）；2026-08-30 定：节点链接复用此图标，见 ICON_SET 标 fill
   'globe': '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  // 「格式」按钮的图标（lucide type）：字形本身会随加粗/红/黄变（见 .nm-fmt-* 那几条 CSS）
+  'type': '<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>',
+  'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+  // 「使用指南」菜单项图标（lucide sprout，2026-09-17 由 B 站图标改过来）
+  'sprout': '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>',
   'file': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
   'folder-closed': '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/>',
   'file-input': '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/>',
   // lucide:brackets（2026-08-30 定：Obsidian 双链 [[ ]] 图标，替换原 file-input）
   'brackets': '<path d="M16 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-3"/><path d="M8 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/>',
+  // 节点底部「更多」菜单图标（2026-09-17 加，均为 lucide 描边式）：
+  //   image=添加图片 | play=添加视频 | audio-lines=添加音频 | folders=添加仓库内附件
+  'image': '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  'square-play': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"/>',
+  'audio-lines': '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
+  'file-plus-corner': '<path d="M11.35 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M14 19h6"/><path d="M17 16v6"/>',
   'square-arrow-right-enter': '<path d="m10 16 4-4-4-4"/><path d="M3 12h11"/><path d="M3 8V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3"/>',
 };
 // 非默认(24x24 描边)图标的渲染参数：vb=viewBox，fill=true 表示填充式（iconify fluent/codicon/mdi/reicon 多为填充）
 const ICON_SET = {
   'bug': { vb: '0 0 24 24', fill: false },
   'text-initial': { vb: '0 0 24 24', fill: false },
-  'bilibili-line': { vb: '0 0 24 24', fill: true },
   'frame': { vb: '0 0 24 24', fill: true }, // 侧边 Ribbon 按钮图标（Frame.svg 内联，节点链接复用）
 };
 function renderIcon(name, size = 18) {
@@ -382,6 +394,8 @@ function renderIcon(name, size = 18) {
 }
 // 更多菜单「加入 28 Notes 微信群」跳转地址（2026-09-07）
 const JOIN_GROUP_URL = 'https://leafmethod.feishu.cn/wiki/J1sAwHu36inRtMkiLnOcN9LonNe?from=from_copylink';
+// 使用指南：与设置页「使用教程」同一个飞书文档（2026-09-17 把它从"了解 28 Notes（B 站）"改成使用指南）
+const GUIDE_URL = 'https://leafmethod.feishu.cn/wiki/P8OKwquTSiqBknkuXZsc31cxnxc?from=from_copylink';
 // ===== Pro 功能拦截（2026-09-04）：体验期结束后，指定按钮悬浮变「待激活」按钮，点击进激活弹窗 =====
 // 按钮本身完全不变；仅当未激活（state.isPro=false，等价于试用已结束未激活）时：
 //   - 鼠标悬浮 → 仅图标换成 ticket 并染成 #F09343 橙（不动按钮背景，离屏还原；图标容器：工具栏按钮=自身，右键菜单项=.ctx-ic 只换图标不丢文字）
@@ -428,10 +442,28 @@ function applyProGate(el) {
 //    试用期内 isPro=true（功能全开）但 licenseSource='trial'，按钮仍要显示 —— 它是提示，不是功能锁。
 //    已激活 licenseSource='license' → 隐藏。绑定点击：post openPro 让宿主弹激活引导。
 function updateProCta() {
+  const wrap = document.getElementById('pro-cta-wrap');
+  const hint = document.getElementById('pro-cta-hint');
+  if (!wrap) return;
+  // 已授权 → 整个组合（按钮 + 提示行）隐藏
+  wrap.classList.toggle('hidden', state.licenseSource === 'license');
+  // 提示行：仅「试用」状态显示；已授权 / 异常(none) 均不显示
+  if (hint) {
+    if (state.licenseSource === 'trial') {
+      if (state.trialRemainingMs > 0) {
+        const days = Math.max(1, Math.ceil(state.trialRemainingMs / 86400000));
+        hint.textContent = T('pro.ctaHintTrial', days); // 「试用期还剩 N 天」
+      } else {
+        hint.textContent = T('pro.ctaHintExpired'); // 「试用期已结束」
+      }
+      hint.classList.remove('hidden');
+    } else {
+      hint.textContent = '';
+      hint.classList.add('hidden');
+    }
+  }
   const el = document.getElementById('pro-cta');
-  if (!el) return;
-  el.classList.toggle('hidden', state.licenseSource === 'license');
-  if (!el._proCtaBound) {
+  if (el && !el._proCtaBound) {
     el._proCtaBound = true;
     el.addEventListener('click', () => { vscode.postMessage({ type: 'openPro' }); });
   }
@@ -523,8 +555,8 @@ function parse(text) {
     if (/^[-*+]\s/.test(s)) return null;                 // 列表项 = 子节点
     if (s.startsWith('>')) return lastAttach === 'note' ? 'note' : null; // 备注行：仅接在备注行后算续行
     if (s.startsWith('!')) return null;                 // 图片/嵌入
-    if (/^(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))$/.test(s.trim())) return null; // 整行链接 = 附件
-    if (/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))\*\*$/.test(s.trim())) return null; // 加粗整行链接
+    if (/^(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))$/.test(s.trim())) return null; // 整行链接 = 附件
+    if (/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))\*\*$/.test(s.trim())) return null; // 加粗整行链接
     return lastAttach === 'note' ? 'note' : 'title';    // 纯文字：备注后归备注，其余归标题
   };
   for (let i = 0; i < lines.length; i++) {
@@ -583,7 +615,7 @@ function parse(text) {
       const bM = t.match(/^\*\*(.+)\*\*$/);
       if (bM) { bold = true; t = bM[1]; }
       // 整行链接 = 链接节点：v2 支持 wikilink [[...]] 与标准 Markdown 链接 [显示名](url/file:///path) 两种
-      const linkM = t.match(/^(\[\[(.+)\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))$/);
+      const linkM = t.match(/^(\[\[(.+)\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))$/);
       const node = {
         id: genId(),
         title: linkM ? '' : t,
@@ -644,8 +676,8 @@ function parse(text) {
         continue;
       }
       // 子行链接：v2 wikilink [[...]] 或标准 Markdown 链接 [显示名](目标)；支持 ** 加粗包裹；Minor 走行尾注释不在此剥
-      const subLinkM = t.match(/^(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))$/);
-      const subLinkBold = t.match(/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))\*\*$/);
+      const subLinkM = t.match(/^(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))$/);
+      const subLinkBold = t.match(/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))\*\*$/);
       if (subLinkM || subLinkBold) {
         lastNode.link = (subLinkM ? subLinkM[1] : subLinkBold[1]);
         if (subLinkBold) lastNode.bold = true;
@@ -715,8 +747,8 @@ function needsTitleEsc(line) {
   if (!t) return false;                                                                              // 空行不用转义
   if (/^[-*+]\s/.test(t)) return true;                                                               // 列表符号（会被当成子节点）
   if (/^[>!\\]/.test(t)) return true;                                                                // 备注 / 图片嵌入 / 转义符本身
-  if (/^(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))$/.test(t)) return true;          // 整行链接 = 附件链接
-  if (/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\))\*\*$/.test(t)) return true;  // 加粗包裹的整行链接
+  if (/^(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))$/.test(t)) return true;          // 整行链接 = 附件链接
+  if (/^\*\*(\[\[.*\]\]|\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\))\*\*$/.test(t)) return true;  // 加粗包裹的整行链接
   return false;
 }
 // ============ 序列化（输出：第一行根 + Tab 缩进子节点） ============
@@ -827,15 +859,45 @@ function findPath(root, targetId, trail) {
   }
   return null;
 }
-function goTo(id) {
+function goTo(id, opts = {}) {
   // 2026-08-30：主动跳转（下钻/返回默认路径/路径历史）后，作废「定位子菜单 hover 预览」的回退位置。
   // 否则：hover 过定位子菜单项 → 移开 → 350ms 延迟里点节点下钻 → 回退动画在下钻之后才补上，画面被拉回原位 = 漂移。
   locateSavedScroll = null;
+  // keep 模式（2026-09-15 定稿）：跳转后保持画面状态——内容换、镜头不动。锚点节点 = 跳转后
+  // 要「原地站住」的那个节点，渲染前先记它卡片的屏幕位置（视口比例）+ 当前缩放：
+  //  · 'root'（面包屑 / 返回默认路径）：锚点 = 当前主节点，跳转后新根摆回它的位置；
+  //  · 'target'（下钻）：锚点 = 被点的那股节点——下钻后它成为新根，摆回它下钻前的位置。
+  let kept = null;
+  if (opts.keep) {
+    let anchorEl = null;
+    if (opts.keep === 'target') {
+      let r = findNode(state.tree, id);
+      if (!r) r = findNodeByPersistId(state.tree, id);
+      const anchorId = r && r.node ? r.node.id : id;
+      anchorEl = document.querySelector('.node-row[data-id="' + anchorId + '"] .card');
+    } else {
+      const oldRoot = currentRoot();
+      anchorEl = oldRoot && document.querySelector('.node-row[data-id="' + oldRoot.id + '"] .card');
+    }
+    if (anchorEl) {
+      const vr = viewMap.getBoundingClientRect();
+      const r2 = anchorEl.getBoundingClientRect();
+      kept = { x: (r2.left + r2.width / 2 - vr.left) / vr.width, y: (r2.top + r2.height / 2 - vr.top) / vr.height, zoom: zoom };
+    }
+  }
   if (!id || id === state.tree.id) { state.currentRootId = null; state.currentRootPid = ''; }
   else {
     // id 可能是 node id，也可能是 persistId（returnToDefault / 路径历史栈存的是 pid，重 parse 后内存 id 会变）
     let r = findNode(state.tree, id);
     if (!r) r = findNodeByPersistId(state.tree, id);
+    // 下钻即发 ID（2026-09-15）：路径历史/默认路径都按 persistId 认节点，无 ID 节点只能记空串、
+    // 上一/下一路径会退化成「回主节点」。下钻时顺手分配（与「更新为当前路径」同一套做法），
+    // 保证历史对任何节点都可精确还原。
+    if (r && r.node && !r.node.persistId) {
+      r.node.persistId = genPersistId();
+      pushUndo();
+      emitUpdate();
+    }
     state.currentRootId = r ? r.node.id : id;
     state.currentRootPid = (r && r.node && r.node.persistId) || '';
   }
@@ -852,11 +914,23 @@ function goTo(id) {
   // goTo 会清 selectedId → 走 locateCenter 的无选中分支会把根放 --locate-first-x（默认 0.25），
   // 主节点偏左（2026-09-13 反馈）。这里显式按「主节点 = 当前关注」定位。
   const rootCard = document.querySelector('.node-row[data-id="' + currentRoot().id + '"] .card');
-  if (rootCard) placeCardAtViewport(rootCard, cfgNum('--locate-selected-x', 0.5));
+  if (opts.keep && kept && rootCard) {
+    // keep 模式落位：新根摆回旧根刚才的屏幕位置（kept = 视口比例），缩放不变；直接落位不做动画——
+    // 根没动、只有内容换，再动画反而会滑。screen = zoom*(world+pan) → pan = 屏幕点/zoom - world。
+    zoom = kept.zoom;
+    const vr = viewMap.getBoundingClientRect();
+    const c = worldCenter(rootCard);
+    panX = kept.x * vr.width / zoom - c.x;
+    panY = kept.y * vr.height / zoom - c.y;
+    applyTreeTransform(); drawEdges();
+  } else if (rootCard) placeCardAtViewport(rootCard, cfgNum('--locate-selected-x', 0.5));
   else locateCenter(); // 极端兜底：根卡片不在（空树/时序）→ 走通用智能定位
   persistNow();
 }
-function drillInto(id) { goTo(id); }
+// 沙盒化（2026-09-14 用户定）：历史界面里可以下钻/返回。它改动的 currentRootId / 路径栈 / 视口
+// 全部由 sandboxRestore 在退出时整组还原，且持久化已被 persistNow 挡住 —— 带不出沙盒。
+// 下钻（2026-09-15 定稿）：被点的那股节点 = 锚点，下钻后原地站住（缩放不变），不再跳到关注位。
+function drillInto(id) { goTo(id, { keep: 'target' }); }
 function renderCrumb() {
   const crumb = document.getElementById('crumb');
   const rootId = state.currentRootId || state.tree.id;
@@ -872,7 +946,7 @@ function renderCrumb() {
     }
     const a = document.createElement('a');
     a.textContent = n.title;
-    a.onclick = () => goTo(n.id);
+    a.onclick = () => goTo(n.id, { keep: 'root' }); // 面包屑跳转保持画面状态（锚点=旧主节点，2026-09-15）
     crumb.appendChild(a);
   });
   crumb.classList.remove('hidden');
@@ -909,8 +983,8 @@ function applyText(t) {
   render(); updateToolbar(); updateUndoRedo(); updateDefaultPathBtn();
   emitUpdate();
 }
-function doUndo() { if (!undoStack.length) return; redoStack.push(snapshot()); applyText(undoStack.pop()); }
-function doRedo() { if (!redoStack.length) return; undoStack.push(snapshot()); applyText(redoStack.pop()); }
+function doUndo() { if (state.historyMode) return; if (!undoStack.length) return; redoStack.push(snapshot()); applyText(undoStack.pop()); }
+function doRedo() { if (state.historyMode) return; if (!redoStack.length) return; undoStack.push(snapshot()); applyText(redoStack.pop()); }
 
 // ============ 渲染（垂直树） ============
 function render() {
@@ -942,6 +1016,9 @@ function render() {
   else hideNodeMenu();
   updateNowSideBtn(); // 刷新侧边 Now 按钮的置灰/图标态
   updateFoldBar(); // 2026-08-30：右下角常驻折叠层级条跟随树结构/层级数刷新（折叠操作后层数变化）
+  // 历史只读态：render 会重建整棵 DOM，差异标红必须在这里补回来。否则任何一次"只调 render"的
+  // 重渲染（折叠条按层折叠、缩放等）都会把红框冲没 —— 原先只有 renderHistoryTree 贴红，漏在这。
+  if (state.historyMode) applyHistoryDiffClasses();
   applyPendingKeepView(); // 2026-09-13：keepView 的锚定补偿在 render 末尾同步应用（一次绘制即最终画面）
   requestAnimationFrame(drawEdges);
 }
@@ -1048,7 +1125,7 @@ function applyTheme(t) {
   const r = document.documentElement;
   // 先清掉所有主题相关 inline 变量（避免切主题时残留上一主题）
   ['--edge','--accent','--sel','--root-bg','--sel-root','--sel-lv1','--sel-ln','--hover-border','--hover-border-root',
-   '--drag-edge','--drag-edge-alpha','--l1-bg','--fold-border','--fold-color',
+   '--drag-edge','--drag-edge-alpha','--l1-bg','--fold-border','--fold-color','--pro-cta-color',
    '--sib-predict','--sib-predict-ln','--sib-predict-root']
     .forEach(k => r.style.removeProperty(k));
   if (t === 'feishu') {
@@ -1074,6 +1151,8 @@ function applyTheme(t) {
     r.style.setProperty('--l1-bg', 'var(--l1-bg-pink)');       // 预测父节点底
     r.style.setProperty('--fold-border', 'var(--fold-border-pink)'); // 折叠钮边框
     r.style.setProperty('--fold-color', 'var(--fold-color-pink)');   // 折叠图标/数字色
+    // 右上角「激活 Pro」试用提示按钮文字色：默认蓝，粉线版跟随主题转粉
+    r.style.setProperty('--pro-cta-color', 'var(--accent-pink)');
     // 同级预测节点边框（2026-09-01）：复用粉线版选中边框色（分根/一级/普通）
     r.style.setProperty('--sib-predict', 'var(--sib-predict-pink)');
     r.style.setProperty('--sib-predict-ln', 'var(--sib-predict-ln-pink)');
@@ -1250,11 +1329,15 @@ function buildCard(node, depth, done) {
     foldTag.title = folded ? T('tip.unfold') : T('tip.fold');
     foldTag.onclick = e => {
       e.stopPropagation();
-      if (state.historyMode) { node.fold = !node.fold; renderHistoryTree(); return; } // 历史页只读：只翻快照视图（保持当前平移，不跳回实时导图）
-      // 单坐标系（2026-09-13）：折叠只增删该卡下方的子树，卡片自身与其上内容布局不动、相机不动 → 画面天然不跳，无需锚定补偿
-      // keepView 锚定本节点：布局里父节点垂直居中于其子树，折叠/展开改子树高度会把本节点推走
-      //（2026-09-13 实测：展开后被点节点跑到下面）→ 锚定它自己，其余内容随布局变
-      pushUndo(); node.fold = !node.fold; keepView(node); emitUpdate(); render();
+      // 折叠：历史态与编辑态走【同一条】路（2026-09-14 修 —— 原来给历史态单开一个早返回分支、漏了 keepView，
+      // 表现为"点了折叠按钮，原来点的那张卡跑掉/画面不定住"）。历史态唯一该少的就是「写回」：
+      // 不 pushUndo（撤销栈不该被沙盒污染）、不 emitUpdate（守卫本来也拦着）。
+      if (!state.historyMode) pushUndo();
+      node.fold = !node.fold;
+      keepView(node); // 锚定本次点的这张卡：折叠会改布局把它顶走，记下坐标由 render 末尾补偿
+      if (state.historyMode) { renderHistoryTree(); return; }
+      emitUpdate();
+      render();
     };
     card.appendChild(foldTag);
   }
@@ -1282,11 +1365,12 @@ function buildCard(node, depth, done) {
       img.className = 'img';
       img.dataset.path = p;
       img.alt = '';
-      img.title = T('tip.image');
+      // 2026-09-17：悬停提示里带上文件名 —— 图缺失时用户能知道缺的是哪张（原来只写「双击放大」）
+      img.title = p + '\n' + T('tip.image');
       reqImg(p, img);
       // 图片异步加载完 → 树 reflow → 节点坐标变，重画曲线防错位（2026-08-25 修：覆盖打开/切页后图片晚于 render 到达的情况）
-      img.onload = () => scheduleEdges();
-      img.onerror = () => scheduleEdges();
+      img.onload = () => { img.classList.remove('img-missing'); delete img.dataset.missing; img.alt = ''; scheduleEdges(); };
+      img.onerror = () => { markImgMissing(img, p); scheduleEdges(); };
       img.onclick = e => {
         e.stopPropagation();
         selectNode(node.id);
@@ -1294,8 +1378,13 @@ function buildCard(node, depth, done) {
         img.classList.add('selected');
         state.selectedImg = { nodeId: node.id, path: p }; // 选中图片：Cmd+C/X 复制/剪切图片
       };
-      img.ondblclick = e => { e.stopPropagation(); openImagePreview(p); };
-      img.oncontextmenu = e => { e.stopPropagation(); buildCtxMenu(e.clientX, e.clientY, node, 'image', p); };
+      // 双击：正常图 → 大图预览；缺失图 → 弹说明框（写明缺的是哪张 + 可点「重新查找」）
+      img.ondblclick = e => {
+        e.stopPropagation();
+        if (isImgMissing(img)) { showMissingImgInfo(p); return; }
+        openImagePreview(p);
+      };
+      img.oncontextmenu = e => { e.stopPropagation(); e.preventDefault(); if (!state.historyMode) buildCtxMenu(e.clientX, e.clientY, node, 'image', p); }; // 历史态：连原生图片菜单也不弹
       imgs.appendChild(img);
     });
     card.appendChild(imgs);
@@ -1336,6 +1425,15 @@ function buildCard(node, depth, done) {
         } else {
           const ul = parseUrlLink(node.link);
           if (ul) mkLink('link-url', ul.display, T('tip.openUrl', ul.url), () => openUrl(ul.url), 'globe');
+          else { // 无法识别的链接文本：原样展示，不静默丢弃（用户可见自己写的内容自行修正）
+            const span = document.createElement('span');
+            span.className = 'link link-raw';
+            span.textContent = node.link;
+            span.title = T('tip.editLinkSuffix');
+            span.onclick = e => { e.stopPropagation(); startEditLink(node, span); };
+            span.ondblclick = e => { e.stopPropagation(); startEditLink(node, span); };
+            card.appendChild(span);
+          }
         }
       }
     }
@@ -1356,7 +1454,38 @@ function buildCard(node, depth, done) {
       media.onload = () => scheduleEdges();
       media.onloadedmetadata = () => scheduleEdges();
       media.onerror = () => { media.classList.add('img-missing'); scheduleEdges(); };
-      box.appendChild(media);
+      if (isAudio) {
+        // 音频：整个元素就是原生控制条，点它收不到点击（被控件吞掉）→ 点选中那套对它无效，
+        // 只能在外面包一层、右上角挂一个真按钮来删。（2026-09-17 定：只有音频这样）
+        const wrap = document.createElement('div');
+        wrap.className = 'embed-item';
+        wrap.dataset.path = p;
+        wrap.appendChild(media);
+        const del = document.createElement('button');
+        del.className = 'embed-del';
+        del.title = T('ctx.deleteImage');
+        del.innerHTML = renderIcon('trash-2', 14);
+        del.onclick = e => {
+          e.stopPropagation(); e.preventDefault();
+          if (state.historyMode) return;
+          state.selectedImg = { nodeId: node.id, path: p };
+          removeSelectedImage(false);
+        };
+        wrap.appendChild(del);
+        box.appendChild(wrap);
+      } else {
+        // 视频：与图片完全同款 —— 点一下选中（粉框）+ Delete / Cmd+X 删除
+        //（视频有大片「画面」不属于控件，点得中，所以这套对它有效）
+        media.onclick = e => {
+          e.stopPropagation();
+          selectNode(node.id);
+          document.querySelectorAll('.card .embed-media').forEach(m => m.classList.remove('selected'));
+          media.classList.add('selected');
+          state.selectedImg = { nodeId: node.id, path: p };
+        };
+        media.oncontextmenu = e => { e.stopPropagation(); e.preventDefault(); if (!state.historyMode) buildCtxMenu(e.clientX, e.clientY, node, 'image', p); };
+        box.appendChild(media);
+      }
     });
     card.appendChild(box);
   }
@@ -1517,13 +1646,13 @@ let savedViewKey = ''; // 本视图的存储 key（main.js sendInit 下发 viewK
 function readView() {
   return {
     zoom: zoom, panX: panX, panY: panY,
-    currentRootPid: state.currentRootPid || '',
-    debugMode: !!debugMode
+    currentRootPid: state.currentRootPid || ''
   };
 }
 // 离散事件（下钻/折叠/居中/重置/切调试）立即写，不吃去抖定时器（否则最后一个离散操作会被吃掉）
 function persistNow() {
   if (!booted) return;
+  if (state.historyMode) return; // 沙盒：历史界面里的一切视图变更都不落盘、不进宿主内存（退出由 sandboxRestore 整组还原）
   vscode.postMessage({ type: 'setView', viewKey: savedViewKey, value: readView() });
 }
 // 连续事件（滚动/缩放拖拽）去抖：比之前 300ms 更跟手，且和 persistNow 分两套定时器，互不吃掉对方
@@ -1535,14 +1664,19 @@ function schedulePersist() {
   const key = savedViewKey;
   const view = readView();
   _persistTimer = setTimeout(() => {
-    if (!booted) return;
+    if (!booted || state.historyMode) return; // 沙盒里同样不落盘（与 persistNow 一致）
     vscode.postMessage({ type: 'setView', viewKey: key, value: view });
   }, 150);
 }
 // 等布局真正稳定再定位：图片 decode + 字体就绪 + 双 rAF。
 // 否则异步加载让树 reflow → 定位算在旧尺寸上 → 画面偏移。
 function layoutSettled(cb) {
-  const imgs = Array.prototype.slice.call(document.querySelectorAll('#tree img'));
+  // 2026-09-17 修「只要有一张图缺失，每次打开就慢两三秒」：
+  // 缺失图（宿主回 null 后我们只标 .img-missing、**从不设 src**）永远不会触发 load/error，
+  // 留在 pending 里 → 计数永远不归零 → 每次都等满兜底时间。这里把已判定缺失的图排除在外。
+  // （正常图仍照等：渲染时 src 还没到，等宿主回执 + 图片解码。）
+  const imgs = Array.prototype.slice.call(document.querySelectorAll('#tree img'))
+    .filter(im => !im.classList.contains('img-missing'));
   let pending = imgs.length + 1; // +1 等字体 ready
   let settled = false;
   const fire = () => { if (settled) return; settled = true; requestAnimationFrame(() => requestAnimationFrame(cb)); };
@@ -1551,6 +1685,9 @@ function layoutSettled(cb) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(onOne);
   else onOne(); // 无 fonts API（老环境）：直接当作字体就绪
   setTimeout(fire, 2000); // 兜底：坏图/字体 API 卡住也不阻塞还原
+  // 注：刻意**不缩短**这个兜底 —— 正常路径靠 load/error 收口，缺失图现在也会主动补一次 error
+  // （见 imgUriRes 处理），所以「有图缺失」不再拖满兜底；缩短反而可能让开屏定位在图片还没加载完
+  // 时就结算，把定位算歪。
 }
 // 整树居中（兜底定位：无卡片可定位时用）。单坐标系下画布无限，居中 = 解 pan 使树中心落在视口中心：
 // screen = zoom*(world+pan) → pan = viewport/(2*zoom) - treeSize/2
@@ -1580,6 +1717,20 @@ function cfgBool(name, def) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   if (v === '') return def;
   return v === '1' || v === 'true';
+}
+// 「画布中央」定位基准（2026-09-16 设置项「更多 → 画布中央」，下拉二选一）：
+//  · canvas 画布中央（默认）= 落点读 app.css :root 的 --center-canvas-x/y；
+//  · visual 视觉中央         = 落点读 app.css :root 的 --center-visual-x/y。
+// 两档的落点都在 app.css :root 里、挨着放，各自可自由调（互不影响）；选中哪档就把该档 x/y 覆写进下面三个变量。
+// 好处：所有定位入口（定位按钮 / 下钻·返回 / 重置 / 开屏归位 / 定位子菜单预览）都只读这三个变量 → 改一处即全局生效，无需逐个改代码。
+function applyCenterMode(mode) {
+  const m = (mode === 'visual') ? 'visual' : 'canvas';
+  const r = document.documentElement;
+  const x = cfgNum('--center-' + m + '-x', 0.4);
+  const y = cfgNum('--center-' + m + '-y', 0.4);
+  r.style.setProperty('--locate-selected-x', String(x));
+  r.style.setProperty('--locate-first-x', String(x));
+  r.style.setProperty('--locate-y', String(y));
 }
 // 智能定位（定位按钮 / 下钻·返回后自动调用）：
 // - 选中节点或编辑中 → 该节点居中（水平=--locate-selected-x）
@@ -1639,6 +1790,15 @@ function animateScrollTo(targetPanX, targetPanY, targetZoom, onDone) {
   };
   scrollAnimRAF = requestAnimationFrame(step);
 }
+// 停掉正在跑的视口位移动画（归位 / 定位用）。两处调用，原因都是"别让它继续改 pan/zoom 把用户的位置带跑"：
+//  · 换历史快照时：不停 → 首次归位的动画会继续滑到目标位置，用户想"保持视角"就失效；
+//  · 退出历史界面时：不停 → 动画会在退出后继续写 pan/zoom，把刚还原好的编辑态视角又带偏。
+// 停 = 停在当前插值位置（动画每帧都在更新 zoom/panX/panY，就是用户此刻看到的位置）。
+// 这里不主动 applyTreeTransform：紧跟着的 render() / sandboxRestore() 会用当前值落位。
+function stopViewAnim() {
+  if (scrollAnimRAF) { cancelAnimationFrame(scrollAnimRAF); scrollAnimRAF = null; }
+  if (scrollAnimFallback) { clearTimeout(scrollAnimFallback); scrollAnimFallback = null; }
+}
 // 卡片中心的世界坐标（#tree 内布局坐标，不含 pan/zoom）：offset 链累加，不读屏幕矩形 → 与当前相机无关、无时序问题
 function worldCenter(el) {
   let x = 0, y = 0, n = el;
@@ -1661,7 +1821,7 @@ function locateCenter(forceIdx) {
     if (el) { placeCardAtViewport(el, selX); return; }
   }
   // 未选中：有 Now 节点 → 按 nowLocateIndex 定位（单 Now 直接定位；多个由定位按钮/悬浮菜单循环切换）
-  const nows = collectNowNodes(currentRoot());
+  const nows = collectUsableNows(currentRoot()); // 2026-09-15：被 Minor 埋掉的 Now 不参与定位
   if (nows.length) {
     const idx = (forceIdx != null)
       ? (((forceIdx % nows.length) + nows.length) % nows.length)
@@ -1681,27 +1841,32 @@ function resetView() {
   locateCenter(); // 2026-09-13 改同步：rAF 版会先画一帧「新树 + 旧位置」再开始居中 → 大树上一眼看到跳变；locateCenter 只读几何 + 写 pan/scroll，同步安全
   persistNow();
 }
-// 更新为当前路径：把当前界面（下钻根节点）存为默认路径（持久化，跨重启）
+// 设当前为默认路径：把当前界面（下钻根节点）存为默认路径（持久化，跨重启）。
+// 在主节点（未下钻）时 = 默认是主节点 → 发空 pid，宿主清掉文件头 node 字段
+//（「没写 = 主节点」是规则本身，不给主节点生成/重复记录编号，2026-09-15 定稿）
 function saveAsCurrent() {
   const root = currentRoot();
   if (!root) return;
+  const atTreeRoot = root === state.tree;
   let pid = root.persistId;
-  if (!pid) {
+  if (!atTreeRoot && !pid) {
     pid = genPersistId();
     root.persistId = pid;
     pushUndo();
     emitUpdate();
   }
-  state.defaultPid = pid;        // 立即更新：按钮变置灰（已是默认）
+  state.defaultPid = atTreeRoot ? '' : pid; // 立即更新：按钮变置灰（已是默认）
   updateDefaultPathBtn();
-  vscode.postMessage({ type: 'saveAsCurrent', pid });
+  vscode.postMessage({ type: 'saveAsCurrent', pid: atTreeRoot ? '' : pid });
 }
-// 返回默认路径：下钻回保存的默认节点（空 pid 即回根）
+// 返回默认路径：下钻回保存的默认节点（空 pid 即回根）；keep = 跳转后保持画面状态（2026-09-15）
 function returnToDefault() {
-  goTo(state.defaultPid || null);
+  goTo(state.defaultPid || null, { keep: 'root' });
 }
 // ===== 路径历史栈（上一/下一路径）=====
 // history 存 pid 序列（空串=根）；goTo 每次路径真正变化时调 recordPathHistory
+// 路径历史上限（2026-09-15）：总条数封顶，超出挤最早（等效「回退+前进合计最多 40 步」）。内存态，关页面即清零。
+const PATH_HISTORY_MAX = 40;
 function recordPathHistory() {
   if (state.suppressHistory) return; // back/forward 自身移动时不重复记
   const cur = (state.currentRootPid || '').trim();
@@ -1711,6 +1876,11 @@ function recordPathHistory() {
   state.pathHistory = state.pathHistory.slice(0, state.pathHistoryIndex + 1);
   state.pathHistory.push(cur);
   state.pathHistoryIndex = state.pathHistory.length - 1;
+  if (state.pathHistory.length > PATH_HISTORY_MAX) {
+    const drop = state.pathHistory.length - PATH_HISTORY_MAX;
+    state.pathHistory = state.pathHistory.slice(drop);
+    state.pathHistoryIndex -= drop; // 挤掉头部后指针同步左移，保持指向「当前路径」
+  }
   updatePathMenuBtns();
 }
 // 初始化（首次打开）时把当前路径作为历史起点 seed 一次
@@ -1798,6 +1968,9 @@ document.addEventListener('wheel', (e) => {
     }
     return;
   }
+  // 2026-09-17：浮层内的滚动不归画布管 —— 滚轮监听挂在 document 上，浮层里的 wheel 一样会冒到这儿，
+  // 于是「在 [[ 候选框里滚列表」变成「整个画布平移」，列表自己反而滚不动。候选框/右键菜单/更多面板/弹窗一律放行。
+  if (e.target && e.target.closest && e.target.closest('#link-suggest, .ctx-menu, #node-more-menu, #node-menu, .wb-mask')) return;
   if (!(e.ctrlKey || e.metaKey)) {
     // 2026-09-01 根治斜向滚动顿挫：触控板双指 / 滚轮 = 手动 transform 平移（仿 vue3-mindmap 的 d3.zoom）。
     // 原生 scroll 斜向双轴滚动在主线程逐帧重绘大画布 → 先上再左的顿挫感；transform 平移走 GPU 合成器丝滑。
@@ -1893,6 +2066,10 @@ function refreshSelectionClasses() {
     r.classList.toggle('selected', isSelected(id));
     r.classList.toggle('multi-selected', state.multiSelected.has(id) && state.selectedId !== id); // 类仅作逻辑标记，无视觉
   });
+  // 2026-09-17：附件（图片/视频）的粉框也在这里统一擦掉。
+  // 它由 state.selectedImg 记着；以前只清 state 不擦 DOM，就留下「看着还选中、按 Delete 却没反应」的假选中。
+  // 重新加框由各自的 click 处理器在 selectNode 之后补（顺序上安全，不会被这里误擦）。
+  document.querySelectorAll('.card .img.selected, .card .embed-media.selected').forEach(el => el.classList.remove('selected'));
 }
 // Cmd+点击：把节点加入/移出多选集合（macOS 习惯）；首次加选时把当前单选节点也并入
 function toggleMultiSelect(id) {
@@ -1932,6 +2109,8 @@ function selectRange(id) {
 function selectNode(id) {
   state.multiSelected.clear(); // 单选优先，清多选
   state.selectedId = id;
+  state.selectedImg = null; // 2026-09-17：换选中节点 = 附件选中一并失效（粉框由 refreshSelectionClasses 擦）
+
   updateToolbar();
   refreshSelectionClasses();
   showNodeMenu();
@@ -1947,6 +2126,7 @@ viewMap.addEventListener('click', (e) => {
     hideNodeMenu();
     updateToolbar();
     refreshSelectionClasses(); // 2026-08-28 修：原只移除 .selected，multi-selected 类残留 → 淡蓝外框不消失
+    //（附件粉框的清理已收进 refreshSelectionClasses，2026-09-17：原先两处各管一半 → 出「假选中」）
     disarmProxy(); // 2026-08-28：取消选中即解除 armed
   }
 });
@@ -2055,12 +2235,21 @@ viewMap.addEventListener('mousedown', (e) => {
 });
 function updateToolbar() {
   updateDefaultPathBtn();
+  // 沙盒（2026-09-14 用户定）：历史界面里把「更多」按钮整个藏掉 —— 一次砍掉新增/删除/剪切/粘贴/
+  // 撤销重做/保存版本/设置/提报 bug 这一整批"会改内容"的入口，比逐条加守卫省事也更不容易漏。
+  const mw = document.getElementById('more-wrap');
+  if (mw) mw.classList.toggle('hidden', !!state.historyMode);
+  updateHistoryBanner(); // 顶部历史横幅跟随只读态显隐（进/出历史都要在这里刷）
   updateFoldBar(); // 2026-08-30：右下角常驻折叠层级条跟随选中态刷新（22 处选中变化都会走这里）
   const hasSel = hasSingleSelection();
   // 「进入该节点」按钮：未选中禁用（2026-08-30 定；左折叠按钮已删 2026-09-11，功能在层级条「1」）
+  // 沙盒里照常可用（下钻改了状态也不怕，退出整组还原）
   if (btnDrill) {
-    btnDrill.classList.toggle('disabled', !hasSel);
-    btnDrill.dataset.tip = hasSel ? T('tb.drill') : T('tb.drillDefault'); // 未选中用专用文案（tb.drillDefault，2026-08-30 定稿）
+    // 选中当前视图的主节点（未下钻=全局根；已下钻=下钻根）= 无处可钻，点了等于原地不动 → 置灰（2026-09-15）
+    const rootNow = currentRoot() || state.tree;
+    const selIsRoot = !!rootNow && state.selectedId === rootNow.id;
+    btnDrill.classList.toggle('disabled', !hasSel || selIsRoot);
+    btnDrill.dataset.tip = !hasSel ? T('tb.drillDefault') : (selIsRoot ? T('tb.drillAtRoot') : T('tb.drill'));
   }
   // Minor（隐藏完成）按钮：树里没有任何 Minor 节点 → 置灰（用 .disabled 类非 disabled 属性，hover 仍可出 tooltip）
   // 2026-08-30 定：无 Minor 时 tooltip 改「当前没有 Minor 节点」
@@ -2070,19 +2259,15 @@ function updateToolbar() {
   (function w(n) { if (!n || anyMinor) return; if (nodeIsMinor(n)) { anyMinor = true; return; } (n.children || []).forEach(w); })(currentRoot());
   const hd = document.getElementById('btn-hide-done');
   if (hd) {
-    hd.classList.toggle('disabled', !anyMinor);
+    hd.classList.toggle('disabled', !anyMinor); // 沙盒里照常可用（显示类开关，退出整组还原）
     if (!anyMinor) hd.dataset.tip = T('tb.noMinor');
     else if (state.hideDone) hd.dataset.tip = T('tb.showMinor');
     else hd.dataset.tip = T('tb.hideMinor');
   }
-  const has = !!state.selectedId && state.selectedId !== currentRoot().id;
-  const canDelete = has || state.multiSelected.size > 0; // 多选（框选后 selectedId 为 null）也要能删（2026-08-26 修：原只在单选时启用删除按钮，导致框选后点删除没反应）
   const menu = document.getElementById('more-menu');
   if (!menu) return;
-  const set = (act, dis) => { const b = menu.querySelector('[data-act="' + act + '"]'); if (b) b.disabled = dis; };
-  set('add-child', !state.selectedId);
-  set('add-sibling', !has);
-  set('delete', !canDelete);
+  // 注：add-child / add-sibling / delete 三个按钮已挪到「添加 → 添加其他内容」（2026-09-17 用户定），
+  // 这里不再有需要按选中状态启停的项目（撤销/重做由自己的逻辑管）。
 }
 
 // ===== 所见即所得编辑（2026-08-21 定）：编辑的是「渲染后的样子」而不是 Markdown 字符 =====
@@ -2619,6 +2804,24 @@ function startEdit(node, titleEl, pos, cursorEnd) {
         drawEdges(); // 宽度变化 → 曲线跟上（单坐标系下相机不动，无需位置补偿）
         return; // 不 emitUpdate / render
       }
+      // 2026-09-17：整行就是一个嵌入（![[名]] 或 ![](路径)）→ 不留在标题里，转成节点附件。
+      // 场景：双击节点手敲/粘贴 ![[xxx.png]] 再回车——以前这串会变成"! + 双链"文字、显示不出图。
+      // 只认「整行就是这一个嵌入」；混了别的文字的标题一律不动（不替用户猜意图）。
+      const trimRaw = currentRaw.trim();
+      const embWiki = trimRaw.match(/^!\[\[([^\]]+)\]\]$/);
+      const embMd = embWiki ? null : trimRaw.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+      const embName = ((embWiki ? embWiki[1] : (embMd ? embMd[1] : '')) || '').trim();
+      if (embName && findNode(state.tree, node.id)) {
+        pushUndo();
+        if (isMediaFile(embName)) (node.embeds = node.embeds || []).push(embName);
+        else (node.images = node.images || []).push(embName);
+        node.title = '';
+        state.justCreated.delete(node.id); // 已挂上附件 → 不再是"刚新建的空节点"，别被回退删掉
+        titleEl.classList.remove('editing-bold', 'editing-strike');
+        emitUpdate();
+        render();
+        return;
+      }
       // 用户改了：整行格式套回 Markdown 语法；字面模式原样保存（保留首尾空格，不 trim）
       // 2026-08-28：删空文字（currentRaw 空）→ finalTitle=''，不包格式符号，避免残留 __ / **** 让空节点渲染异常
       const finalTitle = currentRaw ? (fmt ? joinLineFormat(currentRaw, fmt) : currentRaw) : '';
@@ -2672,10 +2875,9 @@ function startEditLink(node, linkEl) {
   linkEl.onclick = e => e.stopPropagation();
   linkEl.ondblclick = e => e.stopPropagation();
   disarmProxy(); // 进真编辑态，proxy 让位
-  const fl = parseFileLink(node.link);
-  const ul = parseUrlLink(node.link);
-  // 文件/URL 链接编辑时显示裸内容（不带 [[ ]]），更直观；节点链接显示 [[标题|ID]] 原文
-  const shown = fl ? fl.path : (ul ? ul.url : node.link);
+  // 2026-09-14：双击编辑展开完整链接字符串（[显示名](url) / [[...]]），用户自行改显示名与地址；
+  // 旧逻辑只填裸地址会丢失显示名，编辑后显示名被压成域名
+  const shown = node.link;
   linkEl.textContent = shown;
   redrawEdgesNextFrame(); // 进编辑的文本替换改的是「卡片宽度」→ 曲线跟上（2026-09-13 修）
   const reset = () => { linkEl.textContent = shown; };
@@ -2688,15 +2890,15 @@ function startEditLink(node, linkEl) {
     onFinish: () => {
       const raw = editableText(linkEl).replace(/\n+/g, ' ').trim(); // 换行兜底转空格（2026-08-30）
       let nv = node.link;
-      if (/^\[\[.+\]\]$/.test(raw) || /^\[[^\]]*\]\((?:https?|ftp|mailto|file):[^)]+\)$/.test(raw)) {
+      if (/^\[\[.+\]\]$/.test(raw) || /^\[[^\]]*\]\((?:(?:https?|ftp|mailto|file):[^)]+|www\.[^)]+)\)$/.test(raw)) {
         nv = raw; // 用户写了完整链接语法（wikilink 或标准 Markdown 链接）→ 原样存
       } else if (raw) {
-        // 裸内容：文件路径 → [文件名](file:///…)；URL → [根域名](url)；其余 → 当 wikilink [[…]]
+        // 裸内容：文件路径 → [文件名](file:///…)；URL → [根域名](url)；其余（语法不完整）→ 原样存，不替用户修正
         const fp = detectFilePath(raw);
         const du = fp ? null : detectUrl(raw);
         if (fp) nv = '[' + (fp.split(/[\\/]/).pop() || fp) + '](file://' + fp + ')';
         else if (du) { const u = /^www\./i.test(du) ? 'https://' + du : du; nv = '[' + urlRootDisplay(u) + '](' + u + ')'; }
-        else nv = '[[' + raw.replace(/^\[\[|\]\]$/g, '') + ']]';
+        else nv = raw; // 语法不完整/无法识别：原样存，不强行转双链（用户自行检查修正）
       }
       if (nv !== node.link) pushUndo();
       node.link = nv;
@@ -2737,35 +2939,53 @@ function ensureNodeMenu() {
   nodeMenu.id = 'node-menu';
   nodeMenu.className = 'node-menu hidden';
   const items = [
-    { act: 'bold', icon: 'bold', tip: T('nm.bold') },
-    { act: 'red', icon: 'circle', tip: T('nm.red'), color: 'red' },
-    { act: 'yellow', icon: 'circle', tip: T('nm.yellow'), color: 'yellow' },
+    // 2026-09-17：原来「加粗 / 红 / 黄」三个独立按钮**正式合并**成一个「格式」按钮（悬浮出横排三项，
+    // 用户已确认采用该方案 → 试做期隐藏的那两个独立按钮已彻底删除，不再是"隐藏保留"）。
+    // 格式按钮：图标用 lucide type；**图标本身**随当前节点的格式变（加粗=画粗、红/黄=换色，可叠加）
+    // 有子菜单 → **不挂提示**（提示会跟横排子菜单叠住，用户 2026-09-17）；说明放在子菜单各项上
+    { act: 'style',  icon: 'type' },
     { act: 'note', icon: 'text-quote', tip: T('nm.note') },
     { act: 'now', icon: 'now', tip: T('nm.now') },
     { act: 'done', icon: 'squircle-dashed', tip: T('nm.minor') },
+    // 2026-09-17：图标由三点改 plus，语义变成"新增东西"；位置按用户要求放回**最右**（最自然）。
+    // 刻意**不挂 data-tip**：悬浮时黑色提示框会和弹出的子菜单叠在一起，很怪（用户 2026-09-17）
+    { act: 'more', icon: 'plus' },
   ];
   items.forEach(it => {
     const b = document.createElement('button');
     if (it.color) b.classList.add('color-' + it.color);
     b.dataset.act = it.act;
-    b.dataset.tip = it.tip;
+    if (it.tip) b.dataset.tip = it.tip; // 没有 tip 的按钮（如「添加」）不挂提示框
     b.dataset.side = 'top'; // 底部 nodeMenu 按钮 → tooltip 向上浮动（用户 2026-08-21）
+    // 悬浮到这排**任意**按钮上 → 先把两个悬浮面板都收掉：
+    // 否则（例如从格式面板移到「备注」）面板还开着、按钮自己的黑色提示框又冒出来，两者叠在一起（用户 2026-09-17）。
+    // ⚠️ 注册顺序必须在下面那两个"悬浮即开面板"**之前**，否则会把自己刚开的那个又关掉。
+    b.addEventListener('mouseenter', () => { hideStyleMenu(); hideMoreMenu(); hideMoreSub(); });
     // Now 按钮用自定义图标（白/蓝随选中节点状态），不走 ICONS 字典
     b.innerHTML = it.act === 'now' ? renderNowIcon('bottom') : renderIcon(it.icon, 18);
     b.onclick = e => {
       e.stopPropagation();
-      // 编辑态点加粗 = 给选中文字插 **（不退出编辑、不 render）；其余按钮仍走节点级（2026-08-22）
-      if (it.act === 'bold' && isEditingTitle()) { wrapSelectionInEdit('**'); return; }
+      // 「添加」/「样式」：点一下也开面板（悬浮已能开，这里是键盘/触屏兜底），不执行节点级动作
+      if (it.act === 'more') { showMoreMenu(b); return; }
+      if (it.act === 'style') { showStyleMenu(b); return; }
       nodeMenuAction(it.act);
     };
-    // 加粗按钮：编辑态下 mousedown 阻止焦点离开编辑框（否则点按钮 = blur = 编辑结束 + 选区丢失，加粗会落到整个节点）（2026-08-22）
-    if (it.act === 'bold') {
+    // 「添加」/「样式」：悬浮即弹面板；留 220ms 宽容期，鼠标从按钮移到面板的间隙不会掉
+    if (it.act === 'more') {
+      b.addEventListener('mouseenter', () => showMoreMenu(b));
+      b.addEventListener('mouseleave', scheduleHideMore);
+    }
+    if (it.act === 'style') {
+      b.addEventListener('mouseenter', () => showStyleMenu(b));
+      b.addEventListener('mouseleave', scheduleHideStyle);
+    }
+    // 样式按钮：编辑态下 mousedown 阻止焦点离开编辑框（否则点按钮 = blur = 编辑结束 + 选区丢失）（2026-08-22）
+    if (it.act === 'style') {
       b.addEventListener('mousedown', e => { if (isEditingTitle()) e.preventDefault(); });
     }
     nodeMenu.appendChild(b);
     if (it.act === 'now' || it.act === 'done') applyProGate(b); // Pro 拦截：Now / Minor 按钮（2026-09-04）
   });
-  // 注：nodeMenu 不再放"更多"按钮——左侧 toolbar 的 btn-more 已是三个点入口（2026-08-21 删）
   document.body.appendChild(nodeMenu);
   return nodeMenu;
 }
@@ -2776,8 +2996,12 @@ function showNodeMenu() {
   if (!state.selectedId && !multi) { m.classList.add('hidden'); return; } // 没有任何选中 → 隐藏
   m.classList.remove('hidden');
   const btns = m.children;
-  // 多选：隐藏备注按钮（不支持给多个节点写同一备注）；其余按钮（加粗/颜色/Minor）保留
-  if (btns[3]) btns[3].style.display = multi ? 'none' : '';
+  // ⚠️ 一律按 data-act 取按钮，**不要按下标**（2026-09-17 改）：
+  // 用户会继续调整这排按钮的顺序（已把「添加」挪到中间），按下标会在每次挪位置时静默错位。
+  const btnOf = act => Array.prototype.find.call(btns, b => b.dataset.act === act);
+  // 多选：隐藏备注按钮（不支持给多个节点写同一备注）；其余按钮（格式/添加/Minor）保留
+  const bNoteBtn = btnOf('note');
+  if (bNoteBtn) bNoteBtn.style.display = multi ? 'none' : '';
   // on 状态反映：仅单选有意义（多选各节点状态不一，按钮保持中性）
   if (!multi) {
     const r = findNode(state.tree, state.selectedId);
@@ -2786,19 +3010,241 @@ function showNodeMenu() {
       const isDone = nodeIsMinor(r.node);
       const isNow = nodeIsNow(r.node);
       const color = r.node.color || '';
-      if (btns[0]) btns[0].classList.toggle('on', isBold);              // bold
-      if (btns[1]) btns[1].classList.toggle('on', color === 'red');      // red
-      if (btns[2]) btns[2].classList.toggle('on', color === 'yellow');   // yellow
-      if (btns[3]) btns[3].classList.toggle('on', !!r.node.note);        // note：有备注时变蓝
-      if (btns[4]) { btns[4].classList.toggle('on', isNow);              // now：已标记 Now 变蓝
-        btns[4].innerHTML = renderNowIcon(isNow ? 'bottomOn' : 'bottom'); }
-      if (btns[5]) btns[5].classList.toggle('on', isDone);               // done
+      const bStyle = btnOf('style');
+      const bNote = btnOf('note'), bNow = btnOf('now'), bDone = btnOf('done');
+      // 「格式」按钮合并了 加粗/红/黄 → 用**图标自身**表达状态（加粗=画粗、红/黄=换色，可叠加）。
+      // 刻意不用 .on（那条会把图标刷成主题色，与"标红/标黄"的表达冲突）。
+      if (bStyle) {
+        bStyle.classList.remove('on');
+        bStyle.classList.toggle('nm-fmt-bold', isBold);
+        bStyle.classList.toggle('nm-fmt-red', color === 'red');
+        bStyle.classList.toggle('nm-fmt-yellow', color === 'yellow');
+      }
+      if (bNote) bNote.classList.toggle('on', !!r.node.note);       // note：有备注时变蓝
+      if (bNow) { bNow.classList.toggle('on', isNow);               // now：已标记 Now 变蓝
+        bNow.innerHTML = renderNowIcon(isNow ? 'bottomOn' : 'bottom'); }
+      if (bDone) bDone.classList.toggle('on', isDone);              // done
     }
   } else {
     for (const b of btns) if (b.dataset.act !== 'note') b.classList.remove('on');
+    // 多选：各节点格式不一 → 格式按钮回到中性（清掉图标上的 加粗/红/黄 状态）
+    const bStyleMulti = btnOf('style');
+    if (bStyleMulti) bStyleMulti.classList.remove('nm-fmt-bold', 'nm-fmt-red', 'nm-fmt-yellow');
   }
 }
-function hideNodeMenu() { if (nodeMenu) nodeMenu.classList.add('hidden'); }
+function hideNodeMenu() {
+  if (nodeMenu) nodeMenu.classList.add('hidden');
+  // 底部工具条一藏，挂在它上面的悬浮面板也要跟着收（否则会孤零零留在屏幕上）
+  hideMoreMenu(); hideMoreSub(); hideStyleMenu();
+}
+
+// ============ 底部菜单最右「添加」按钮：悬浮弹出的添加类入口（2026-09-17）============
+// id 用 node-more-menu，不与左侧工具栏那个 #more-menu（撤销/路径导航）重名。
+// 2026-09-17 二次改版（用户）：按钮由「更多」(三点) 改叫「添加」(plus)；
+// 一级菜单收成 4 项 + 一个「添加其他内容」二级入口，顶上再加节点级操作（加子节点/加同级/删除）。
+let moreMenu = null;
+let moreHideTimer = 0;
+let moreSubMenu = null;
+let moreSubHideTimer = 0;
+// 鼠标离开按钮/面板后**延时多少毫秒**才收起：留一个宽容期，鼠标从按钮移到面板、
+// 或从一级移到二级时穿过间隙不会中途关掉（2026-09-17 用户反馈"移到二级就整个关了" → 220 → 320）
+const NM_HIDE_MS = 320;
+// 悬浮面板定位：默认在锚点**正上方居中**（底部工具条贴屏底，往上弹才不出屏）；上方放不下才翻到下方。
+function placePanelNear(panel, anchor, gap) {
+  const g = gap || 8;
+  const ar = anchor.getBoundingClientRect();
+  const pw = panel.offsetWidth, ph = panel.offsetHeight;
+  let left = ar.left + ar.width / 2 - pw / 2;
+  if (left < 8) left = 8;
+  if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - pw);
+  let top = ar.top - ph - g;
+  if (top < 8) top = ar.bottom + g;
+  panel.style.left = left + 'px';
+  panel.style.top = top + 'px';
+}
+function ensureMoreMenu() {
+  if (moreMenu) return moreMenu;
+  moreMenu = document.createElement('div');
+  moreMenu.id = 'node-more-menu';
+  moreMenu.className = 'node-more-menu hidden';
+  // 条目与分隔线**刻意复用** #more-menu（左下工具栏那个「更多」）的 .mm / .mm-sep ——
+  // 两个子菜单长得一样，不做第二套设计（用户 2026-09-17：统一感）。
+  const items = [
+    // —— 常用添加 ——
+    { act: 'image', icon: 'image',    label: T('more.addImage'),    tip: T('more.addImageTip') },
+    // 「添加网页链接」与「添加双链」互换位置（用户 2026-09-17）
+    { act: 'url',   icon: 'globe',    label: T('more.addUrlLink'),  tip: T('more.addUrlLinkTip') },
+    { act: 'wiki',  icon: 'brackets', label: T('more.addWiki'),     tip: T('more.addWikiTip') },
+    { act: 'node',  icon: 'frame',    label: T('more.addNodeLink'), tip: T('more.addNodeLinkTip') },
+    // —— 其余全部收进这个二级入口（视频/音频/仓库内附件/本地文件链接 + 三项节点操作）。
+    //     **有子菜单的条目不挂提示**（会跟子菜单叠住，用户 2026-09-17）——
+    { act: 'sub', icon: 'more-horizontal', label: T('more.addOther'), sub: true },
+  ];
+  items.forEach(it => {
+    if (it.sep) { const s = document.createElement('div'); s.className = 'mm-sep'; moreMenu.appendChild(s); return; }
+    const b = document.createElement('button');
+    b.className = 'mm';
+    b.dataset.act = it.act;
+    if (it.tip) b.dataset.tip = it.tip;  // 悬浮时的黑色小字提示（沿用现有 tooltip 机制）
+    b.dataset.side = 'left'; // 提示弹到**左侧**：弹上方会盖住上面那几行（用户 2026-09-17）
+    // 二级入口在右侧挂一个小箭头（用 .kbd 那格的样式：小字/半透明），提示"还有一层"
+    b.innerHTML = renderIcon(it.icon, 16) + '<span class="mm-label">' + escapeHtml(it.label) + '</span>'
+      + (it.sub ? '<span class="kbd">' + renderIcon('chevron-right', 14) + '</span>' : '');
+    // 编辑态下 mousedown 不让按钮夺焦：否则点面板 = 编辑框立即失焦 = 编辑结束（照加粗按钮同款处理）
+    b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
+    if (it.sub) {
+      // 二级入口：悬浮即展开右侧面板；点击也展开一次（触屏 / 键盘兜底）
+      b.addEventListener('mouseenter', () => showMoreSub(b));
+      b.addEventListener('mouseleave', scheduleHideSub);
+      b.onclick = e => { e.stopPropagation(); showMoreSub(b); };
+    } else {
+      b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(it.act); };
+    }
+    moreMenu.appendChild(b);
+  });
+  // 鼠标移到面板上就别关（从按钮移到面板有间隙），离开才延时关
+  moreMenu.addEventListener('mouseenter', () => clearTimeout(moreHideTimer));
+  moreMenu.addEventListener('mouseleave', scheduleHideMore);
+  document.body.appendChild(moreMenu);
+  return moreMenu;
+}
+// 二级面板：「添加其他内容」（2026-09-17）。
+// 内容 = 三项节点操作 ＋ 分隔线 ＋ 四项媒体/文件添加。
+// （同日改：原来一级单独一项「添加与删除节点」，用户要求也收进这里 —— 一级只剩 5 行。）
+function ensureMoreSub() {
+  if (moreSubMenu) return moreSubMenu;
+  moreSubMenu = document.createElement('div');
+  moreSubMenu.id = 'node-more-sub';
+  moreSubMenu.className = 'node-more-menu node-more-sub hidden';
+  moreSubMenu.addEventListener('mouseenter', () => { clearTimeout(moreSubHideTimer); clearTimeout(moreHideTimer); }); // 走到二级上 → 一级也别关（原来的 bug：只清了二级自己的计时器，一级照样到点把两个都收掉）
+  moreSubMenu.addEventListener('mouseleave', scheduleHideSub);
+  document.body.appendChild(moreSubMenu);
+  return moreSubMenu;
+}
+let moreSubFilled = false;
+function fillMoreSub() {
+  const s = ensureMoreSub();
+  if (moreSubFilled) return s; // 只建一次（避免鼠标在行内轻微移动时重建闪一下）
+  moreSubFilled = true;
+  const items = [
+    // —— 节点操作（平时很少用，所以放在二级里）——
+    { act: 'addChild',   icon: 'arrow-right-from-line', label: T('more.addChild'),   tip: T('more.addChildTip') },
+    { act: 'addSibling', icon: 'arrow-left-to-line',    label: T('more.addSibling'), tip: T('more.addSiblingTip') },
+    { act: 'delNode',    icon: 'trash-2',               label: T('more.delNode'),    tip: T('more.delNodeTip') },
+    { sep: true }, // 分隔线：上面是"节点操作"，下面是"添加内容"
+    // —— 添加内容（媒体与文件类）——
+    { act: 'video', icon: 'square-play',      label: T('more.addVideo'),       tip: T('more.addVideoTip') },
+    { act: 'audio', icon: 'audio-lines',      label: T('more.addAudio'),       tip: T('more.addAudioTip') },
+    { act: 'vault', icon: 'file-plus-corner', label: T('more.addVaultAttach'), tip: T('more.addVaultAttachTip') },
+    { act: 'file',  icon: 'folder-closed',    label: T('more.addFileLink'),    tip: T('more.addFileLinkTip') },
+  ];
+  items.forEach(it => {
+    if (it.sep) { const sep = document.createElement('div'); sep.className = 'mm-sep'; s.appendChild(sep); return; }
+    const b = document.createElement('button');
+    b.className = 'mm';
+    b.dataset.act = it.act;
+    if (it.tip) b.dataset.tip = it.tip;
+    // 二级与一级统一用同一套"左侧提示"，距离由 :root 的 --tip-left-* 两个变量统一控制（用户 2026-09-17）
+    b.dataset.side = 'left';
+    b.innerHTML = renderIcon(it.icon, 16) + '<span class="mm-label">' + escapeHtml(it.label) + '</span>';
+    b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
+    b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(it.act); };
+    s.appendChild(b);
+  });
+  return s;
+}
+function showMoreSub(row) {
+  if (state.historyMode) return;
+  clearTimeout(moreSubHideTimer); clearTimeout(moreHideTimer); // 二级展开期间一级别关
+  const s = fillMoreSub();
+  s.classList.remove('hidden');
+  const rr = row.getBoundingClientRect();
+  const sw = s.offsetWidth, sh = s.offsetHeight;
+  let left = rr.right - 8;                                    // 贴一级面板右侧（左边叠 8px 做"过桥"，斜着划过去也不会掉）
+  if (left + sw > window.innerWidth - 8) left = Math.max(8, rr.left - sw + 8); // 右边放不下 → 翻到左侧
+  let top = rr.top;                                           // 与该行对齐
+  if (top + sh > window.innerHeight - 8) top = Math.max(8, window.innerHeight - 8 - sh);
+  s.style.left = left + 'px';
+  s.style.top = top + 'px';
+}
+function scheduleHideSub() { clearTimeout(moreSubHideTimer); moreSubHideTimer = setTimeout(hideMoreSub, NM_HIDE_MS); }
+function hideMoreSub() { if (moreSubMenu) moreSubMenu.classList.add('hidden'); }
+function showMoreMenu(anchor) {
+  if (state.historyMode) { hideMoreMenu(); return; } // 历史页只读
+  clearTimeout(moreHideTimer);
+  hideStyleMenu(); // 两个面板不同时开
+  const m = ensureMoreMenu();
+  m.classList.remove('hidden');
+  placePanelNear(m, anchor, 8);
+}
+function scheduleHideMore() { clearTimeout(moreHideTimer); moreHideTimer = setTimeout(() => { hideMoreMenu(); hideMoreSub(); }, NM_HIDE_MS); }
+function hideMoreMenu() { if (moreMenu) moreMenu.classList.add('hidden'); }
+
+// ============ 底部「格式」按钮：悬浮弹出的 加粗 / 红 / 黄（2026-09-17）============
+// 由试做转正（用户 2026-09-17 定稿）：原来那三个独立按钮已彻底删除，不再是"隐藏保留"。
+// 按钮图标用 lucide type、**图标本身**反映状态（加粗=画粗、红/黄=换色）；点完面板不关，移出才收。
+let styleMenu = null;
+let styleHideTimer = 0;
+function ensureStyleMenu() {
+  if (styleMenu) return styleMenu;
+  styleMenu = document.createElement('div');
+  styleMenu.id = 'node-style-menu';
+  styleMenu.className = 'node-more-menu node-style-menu hidden';
+  const items = [
+    // 横排只放图标（B / 红圈 / 黄圈），文字说明交给悬浮提示（用户 2026-09-17）
+    { act: 'bold',   icon: 'bold',   tip: T('nm.bold') },
+    { act: 'red',    icon: 'circle', tip: T('nm.red'),    color: 'red' },
+    { act: 'yellow', icon: 'circle', tip: T('nm.yellow'), color: 'yellow' },
+  ];
+  items.forEach(it => {
+    const b = document.createElement('button');
+    b.className = 'mm';
+    b.dataset.act = it.act;
+    if (it.color) b.classList.add('color-' + it.color);
+    if (it.tip) b.dataset.tip = it.tip;
+    b.dataset.side = 'top'; // 横排只有一行，提示弹上方；不要用 left（会盖住左边那格按钮）
+    b.innerHTML = renderIcon(it.icon, 18);
+    b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
+    b.onclick = e => {
+      e.stopPropagation();
+      // ⚠️ 点击后**不关面板**（用户 2026-09-17：想连着点、看加粗之类生效后的效果）
+      // → 面板一直留着，直到鼠标移出面板（mouseleave）才收。
+      // 加粗：编辑标题时给选中文字插 **（不退出编辑、不 render）——与原来那个加粗按钮完全同款
+      if (it.act === 'bold' && isEditingTitle()) { wrapSelectionInEdit('**'); syncStyleMenuState(); return; }
+      nodeMenuAction(it.act);
+      syncStyleMenuState(); // 动作生效后刷新横排的点亮状态（哪个当前生效）
+    };
+    styleMenu.appendChild(b);
+  });
+  styleMenu.addEventListener('mouseenter', () => clearTimeout(styleHideTimer));
+  styleMenu.addEventListener('mouseleave', scheduleHideStyle);
+  document.body.appendChild(styleMenu);
+  return styleMenu;
+}
+// 刷新横排的点亮状态：当前节点已开启的那一项点亮（横排没文字，只能靠点亮表达"现在生效的是哪个"）
+// 打开面板时调一次；每次点击生效后再调一次（因为面板点击后不关，状态会变）。
+function syncStyleMenuState() {
+  if (!styleMenu) return;
+  const r = state.selectedId ? findNode(state.tree, state.selectedId) : null;
+  const col = r ? (r.node.color || '') : '';
+  const kids = styleMenu.children;
+  const itemOf = act => Array.prototype.find.call(kids, b => b.dataset.act === act);
+  const bBold = itemOf('bold'), bRed = itemOf('red'), bYellow = itemOf('yellow');
+  if (bBold) bBold.classList.toggle('on', !!(r && nodeIsBold(r.node)));
+  if (bRed) bRed.classList.toggle('on', col === 'red');
+  if (bYellow) bYellow.classList.toggle('on', col === 'yellow');
+}
+function showStyleMenu(anchor) {
+  if (state.historyMode) return;
+  clearTimeout(styleHideTimer);
+  hideMoreMenu(); hideMoreSub(); // 两个面板不同时开
+  const m = ensureStyleMenu();
+  m.classList.remove('hidden');
+  syncStyleMenuState();
+  placePanelNear(m, anchor, 8);
+}
+function scheduleHideStyle() { clearTimeout(styleHideTimer); styleHideTimer = setTimeout(hideStyleMenu, NM_HIDE_MS); }
+function hideStyleMenu() { if (styleMenu) styleMenu.classList.add('hidden'); }
 // 是否正在编辑标题：用状态标记（不用 document.activeElement——点加粗按钮那一刻焦点已跳到按钮上，会误判）
 function isEditingTitle() {
   return !!state.editingTitleId;
@@ -3009,7 +3455,9 @@ function autoExitShowNowWhenEmpty() {
   // 「只看 Now」基于当前视图：当前视图（currentRoot 范围）没有 Now 节点 → 自动退出，画面恢复正常显示。
   // 【2026-08-31 反修】此前误改成查全树（state.tree）→ 下钻到无 now 标记的普通节点时该退不退，
   // showNow 持续开着但可见集又只按当前根算 → 塌缩/过滤失效一系列连锁问题。语义：当前视图没有就退出。
-  if (state.showNow && collectNowNodes(currentRoot()).length === 0) setShowNow(false);
+  // 2026-09-15：口径与 computeNowVisible 对齐——被 Minor 链埋掉的 Now 不算（root 存在性防御同源）。
+  const root = currentRoot();
+  if (state.showNow && root && collectUsableNows(root).length === 0) setShowNow(false);
 }
 // 多选删除/剪切共用：按树深度从深到浅逐个 splice（防 index 错乱）
 function removeNodesDeepFirst(items) {
@@ -3090,8 +3538,9 @@ function addFileLinkChild(path) {
   const r = findNode(state.tree, state.selectedId);
   if (!r) return; // 树刚被重建、id 失效的极端时序防崩（2026-08-27 体检修）
   pushUndo();
-  const name = path.split(/[\\/]/).pop() || path;
-  const newNode = makeNode('', '[' + name + '](file://' + path + ')');
+  const norm = path.replace(/[\\/]+$/, ''); // 剥末尾斜杠（文件夹路径末尾有 /）
+  const name = norm.split(/[\\/]/).pop() || norm; // 取末级文件名/目录名（文件夹只留目录名）
+  const newNode = makeNode('', '[' + name + '](file://' + path + ')'); // url 保留原末尾斜杠（文件夹 URL 需要）
   r.node.children.push(newNode);
   r.node.fold = false;
   state.selectedId = newNode.id;
@@ -3122,6 +3571,190 @@ function addImageToNode(relPath) {
   pushUndo();
   r.node.images.push(relPath);
   emitUpdate(); render();
+}
+
+// ============ 「更多」菜单共用的写入通道（2026-09-17 加）============
+// 弹窗会把焦点抢走、结束编辑会话 → 弹窗前先把「在编辑哪个框、光标在第几个字」记下来，
+// 确认后重开编辑会话、把光标放回原处再插字（用户要的「光标在哪就插哪」）。
+let editInsertTarget = null; // { nodeId, where:'title'|'note', offset }
+function captureEditTarget() {
+  editInsertTarget = null;
+  const el = state.editingEl;
+  if (!el || el.contentEditable !== 'true') return;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const r = sel.getRangeAt(0);
+  if (!el.contains(r.startContainer)) return;
+  const pre = document.createRange();
+  pre.selectNodeContents(el);
+  try { pre.setEnd(r.startContainer, r.startOffset); } catch (_) { return; }
+  editInsertTarget = {
+    nodeId: state.selectedId,
+    where: state.editingNoteId === state.selectedId ? 'note' : 'title',
+    offset: pre.toString().length,
+  };
+}
+// 把光标放到 el 内第 offset 个字符处（越界 → 末尾）
+function setCaretAtOffset(el, offset) {
+  const sel = window.getSelection();
+  const r = document.createRange();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+  let acc = 0, hit = null, off = 0, n;
+  while ((n = walker.nextNode())) {
+    const len = n.textContent.length;
+    if (acc + len >= offset) { hit = n; off = offset - acc; break; }
+    acc += len;
+  }
+  if (hit) r.setStart(hit, Math.max(0, Math.min(off, hit.textContent.length)));
+  else { r.selectNodeContents(el); r.collapse(false); }
+  r.collapse(true);
+  sel.removeAllRanges(); sel.addRange(r);
+}
+// 在当前编辑框的光标处插文字（标题 / 备注 / 链接编辑都走 editSession 登记的 state.editingEl）。
+// 插完派发 input：让 [[ 文件建议、曲线重画、内容落盘照常感知（与手工敲字同一条路）。
+// ⚠️ 光标必须落在「文本节点」内：建议器的 update() 要求 startContainer 是文本节点（且 collapsed），
+// 落在元素上（setStartAfter）会被直接判为不匹配 → 建议框不弹。2026-09-17 实修。
+function insertTextAtCursor(text) {
+  const el = state.editingEl;
+  if (!el || el.contentEditable !== 'true') return false;
+  el.focus();
+  const sel = window.getSelection();
+  let range = null;
+  if (sel && sel.rangeCount > 0) {
+    const r0 = sel.getRangeAt(0);
+    if (el.contains(r0.startContainer)) range = r0;
+  }
+  if (!range) { // 光标不在编辑框内（点按钮夺焦）→ 落到末尾，不吞字
+    range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+  }
+  range.deleteContents(); // 有选区时先替掉选区（与加粗按钮一致的直觉）
+  const tn = document.createTextNode(text);
+  range.insertNode(tn);
+  const after = document.createRange();
+  after.setStart(tn, tn.textContent.length); after.collapse(true); // 落在文本节点内（见上方注释）
+  if (sel) { sel.removeAllRanges(); sel.addRange(after); }
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}
+// 写入一段链接文字：编辑态（或弹窗前记下了编辑位置）→ 插到光标处；仅选中态 → 追加到备注（已有备注则空一行）
+function insertLinkText(text) {
+  if (!text) return;
+  const t = editInsertTarget; editInsertTarget = null;
+  if (t) { insertAtCapturedTarget(t, text); return; }
+  if (state.editingEl && state.editingEl.contentEditable === 'true') { insertTextAtCursor(text); return; }
+  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  const r = findNode(state.tree, state.selectedId);
+  if (!r) return;
+  pushUndo();
+  const cur = (r.node.note || '').trim();
+  r.node.note = cur ? cur + '\n\n' + text : text;
+  emitUpdate(); render();
+}
+// 重开编辑会话并把文字插到弹窗前记下的位置（offset 越界则落到末尾）
+function insertAtCapturedTarget(t, text) {
+  const r = findNode(state.tree, t.nodeId);
+  if (!r) { insertLinkText(text); return; }
+  if (t.where === 'note') { if (!r.node.note) r.node.note = ''; state.editingNoteId = t.nodeId; emitUpdate(); render(); }
+  const row = document.querySelector('.node-row[data-id="' + t.nodeId + '"]');
+  const el = row && row.querySelector(t.where === 'note' ? ':scope > .card .note > div' : ':scope > .card .title');
+  if (!el) { insertLinkText(text); return; }
+  if (t.where === 'note') startEditNote(r.node, el); else startEdit(r.node, el, null, true);
+  setTimeout(() => {
+    if (state.editingEl === el) setCaretAtOffset(el, t.offset);
+    insertTextAtCursor(text);
+  }, 0);
+}
+
+// ============ 「更多」菜单：从电脑选图片 / 视频 / 音频（2026-09-17）============
+// 这里只负责「发请求」：真正的弹框、读文件、复制进 vault 全在宿主做。
+// 原因：iframe 里的 <input type=file> 拿到的 File 在 Obsidian 的 Electron 里取不到真实磁盘路径
+//（新版 Electron 已移除 File.path，webUtils 在 iframe 里也不可靠）→ 视频/音频根本读不出来，
+// 所以把「选文件」整个挪到宿主侧（宿主有 Node：macOS 走 osascript choose file 拿真实路径）。
+function pickMedia(kind) {
+  if (state.historyMode) return;
+  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  vscode.postMessage({ type: 'pickFiles', kind: kind, nodeId: state.selectedId });
+}
+// 导入完成：按扩展名分流（与解析器 isMediaFile 同源）→ 图片进 images、音视频进 embeds
+function addMediaNames(names, nodeId) {
+  const list = (names || []).filter(Boolean);
+  if (!list.length) return;
+  const r = findNode(state.tree, nodeId || state.selectedId);
+  if (!r) return;
+  pushUndo();
+  list.forEach(n => { if (isMediaFile(n)) r.node.embeds.push(n); else r.node.images.push(n); });
+  emitUpdate(); render();
+}
+
+// ============ 「更多」菜单动作（2026-09-17）============
+function moreMenuAction(act) {
+  if (state.historyMode) return;
+  // 要弹窗的入口：先记住当前编辑位置（弹窗会抢焦点 → 编辑会话结束 → 事后才知道该插哪）
+  if (act === 'file' || act === 'node' || act === 'url') captureEditTarget();
+  // 图片/视频/音频：弹系统选择器（在宿主侧做，见 pickFiles）
+  if (act === 'image' || act === 'video' || act === 'audio') { pickMedia(act); return; }
+  if (act === 'vault') { addVaultAttachment(); return; }
+  if (act === 'file') { addFileLink(); return; }
+  if (act === 'wiki') { addWikiLink(); return; }
+  if (act === 'node') { addNodeLink(); return; }
+  if (act === 'url') { addUrlLink(); return; }
+  // 节点级操作（与左下「更多」里那三项同一个函数，行为完全一致）
+  if (act === 'addChild') { addChild(); return; }
+  if (act === 'addSibling') { addSibling(); return; }
+  if (act === 'delNode') { deleteNode(); return; }
+}
+// 允许挂到节点上的附件扩展名（与「更多」菜单的选择白名单一致，2026-09-17）
+// 其它格式（.psd / .zip / .pdf / .docx…）一律不收 —— 挂上去也渲染不出来，只会变成「缺失」
+const ATTACH_OK_RE = /\.(png|jpe?g|gif|webp|bmp|tiff?|heic|svg|mp4|mov|webm|mkv|avi|mp3|m4a|wav|aac|flac|ogg)$/i;
+// 添加仓库内附件：引用库里已有的图片/视频（只写 ![[名字]]，不复制文件）
+function addVaultAttachment() {
+  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  showPromptH(T('more.addVaultAttach'), T('more.addVaultAttachHint'), 'xxx.png', v => {
+    const name = (v || '').trim();
+    if (!name) return;
+    if (!ATTACH_OK_RE.test(name)) { toast(T('more.pickBadType'), true); return; } // 只让支持的格式进来
+    addMediaNames([name], state.selectedId);
+  });
+}
+// 添加本地文件链接：拼成 [显示名](file://绝对路径)；位置交给 insertLinkText 分情况处理
+function addFileLink() {
+  showPromptH(T('more.addFileLink'), T('more.addFileLinkHint'), '/Users/…/文件.pdf', v => {
+    const p = (v || '').trim();
+    if (!p) return;
+    const disp = p.split(/[\\/]/).pop() || p;
+    insertLinkText('[' + disp + '](' + 'file://' + p + ')');
+  });
+}
+// 添加双链：非编辑态 → 先进标题编辑、光标到末尾再敲 [[ 触发文件建议；已在编辑态 → 光标处直接插 [[
+function addWikiLink() {
+  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  if (state.editingEl && state.editingEl.contentEditable === 'true') { insertTextAtCursor('[['); return; }
+  const r = findNode(state.tree, state.selectedId);
+  const el = document.querySelector('.node-row[data-id="' + state.selectedId + '"] .title');
+  if (!r || !el) return;
+  startEdit(r.node, el, null, true); // cursorEnd=true → 光标放末尾
+  setTimeout(() => insertTextAtCursor('[['), 0); // 等编辑会话建好再插，才会触发建议弹窗
+}
+// 关联其它节点：粘贴别的思维导图里复制来的 [[文件名#节点ID]]
+function addNodeLink() {
+  showPromptH(T('more.addNodeLink'), T('more.addNodeLinkHint'), '[[文件名#节点ID]]', v => {
+    const t = (v || '').trim();
+    if (!t) return;
+    insertLinkText(t);
+  });
+}
+// 添加网页链接：两字段（显示文字 + 地址）→ [显示名](url)；显示文字留空则用域名兜底
+function addUrlLink() {
+  // 弹窗里的说明用 more.addUrlLinkHint（与条目悬浮提示 more.addUrlLinkTip 分开两个键，可各自单独改；用户 2026-09-17）
+  showPrompt2(T('more.addUrlLink'), T('more.addUrlLinkHint'), T('more.urlText'), T('more.urlAddr'), (text, url) => {
+    const u = (url || '').trim();
+    if (!u) return;
+    const norm = /^www\./i.test(u) ? 'https://' + u : u;
+    const disp = (text || '').trim() || urlRootDisplay(norm);
+    insertLinkText('[' + disp + '](' + norm + ')');
+  });
 }
 
 // 粘贴纯文本 → 按行拆成多个新子节点（外部复制的普通文字）
@@ -3173,6 +3806,7 @@ function removeSelectedImage(copy) {
   if (copy) vscode.postMessage({ type: 'copyImage', text: '![[' + path + ']]' });
   pushUndo();
   r.node.images = (r.node.images || []).filter(p => p !== path);
+  r.node.embeds = (r.node.embeds || []).filter(p => p !== path); // 2026-09-17：视频/音频也走同一条删除路径
   state.selectedImg = null;
   emitUpdate(); render();
 }
@@ -3304,6 +3938,7 @@ function ctxItem(label, fn, icon, tip) {
   return it;
 }
 function buildCtxMenu(x, y, node, mode, imgPath) {
+  if (state.historyMode) return; // 历史界面只读：右键菜单整体屏蔽（节点/图片菜单都从这里走，收口一处）
   hideCtx();
   ctxMenu = document.createElement('div');
   ctxMenu.className = 'ctx-menu';
@@ -3311,6 +3946,12 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
     ctxMenu.appendChild(ctxItem(T('ctx.copyImage'), () => {
       vscode.postMessage({ type: 'copyImage', text: '![[' + imgPath + ']]' });
     }));
+    // 2026-09-17：图片/视频/音频补「删除」（原来只有复制 —— 视频、音频压根没法从节点上删掉）。
+    // 右键不会触发 click，所以要先把 selectedImg 指到这张再走统一删除逻辑。
+    ctxMenu.appendChild(ctxItem(T('ctx.deleteImage'), () => {
+      state.selectedImg = { nodeId: node.id, path: imgPath };
+      removeSelectedImage(false);
+    }, 'trash-2'));
   } else {
     // 进入当前节点（下钻，非当前根节点；2026-08-24 P1：末尾节点也允许进入——之前要 children.length，叶子点不了）
     if (node.id !== currentRoot().id) {
@@ -3383,6 +4024,18 @@ document.addEventListener('contextmenu', e => {
   if (r) buildCtxMenu(e.clientX, e.clientY, r.node);
 });
 document.addEventListener('click', hideCtx);
+// 2026-09-17：点「卡片以外」的任何地方 → 附件（图片/视频）的选中作废、粉框消失。
+// 为什么不放在画布空白那条监听里：那条要求 e.target 精确等于 viewMap/treeEl，
+// 点到别的子元素（连线层等）就不执行 → 粉框残留（用户反复报的「点空白框不消失」）。
+// 挂全局兜底，只认「在不在卡片里」，不依赖点到了哪个具体元素。
+// 点卡片内部时不处理：交给图片/视频自己的 click handler（它在 selectNode 之后重新加框，顺序安全）。
+document.addEventListener('click', e => {
+  if (!state.selectedImg) return;
+  const t = e.target;
+  if (t && t.closest && t.closest('.card')) return;
+  state.selectedImg = null;
+  document.querySelectorAll('.card .img.selected, .card .embed-media.selected').forEach(el => el.classList.remove('selected'));
+});
 document.addEventListener('scroll', hideCtx, true);
 
 // ============ 粘贴：图片 → 存成文件挂到选中节点；[[链接]] → 新建指向子节点 ============
@@ -3398,23 +4051,32 @@ document.addEventListener('paste', e => {
   if (isProxy) e.preventDefault();
   const editing = !isProxy && t && (t.contentEditable === 'true' || t.tagName === 'TEXTAREA' || t.tagName === 'INPUT');
   // 图片（复制/截图后直接粘贴）：优先从 items 找，兜底用 files
-  let imgFile = null;
+  // 2026-09-17 改：原来只取第一张（items 里 break + 兜底 files[0]）→ 桌面多选 3 张只有 1 张进来。
+  // 现在收集全部：有真实磁盘路径的一批交给宿主用 fs 复制（大图、多张都不卡），没有的退化成 dataUrl（老路，图片够用）。
+  const imgFiles = [];
   for (const it of cd.items) {
-    if (it.kind === 'file' && it.type && it.type.startsWith('image/')) { imgFile = it.getAsFile(); break; }
+    if (it.kind === 'file' && it.type && it.type.startsWith('image/')) { const f = it.getAsFile(); if (f) imgFiles.push(f); }
   }
-  if (!imgFile && cd.files && cd.files.length && cd.files[0].type.startsWith('image/')) imgFile = cd.files[0];
-  if (imgFile) {
+  if (!imgFiles.length && cd.files && cd.files.length) {
+    for (const f of cd.files) { if (f.type && f.type.startsWith('image/')) imgFiles.push(f); }
+  }
+  if (imgFiles.length) {
     e.preventDefault();
     if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
     const nodeId = state.selectedId; // 粘贴这一刻就钉住目标节点（存盘有来回，期间改选中也不挂错地方）
-    wlog('检测到图片粘贴：' + imgFile.type + ' 大小=' + imgFile.size);
-    const reader = new FileReader();
-    reader.onload = () => {
-      wlog('图片读取完成，dataUrl 长度=' + String(reader.result).length);
-      vscode.postMessage({ type: 'pasteImg', dataUrl: String(reader.result), nodeId });
-    };
-    reader.onerror = () => wlog('图片读取失败: ' + reader.error);
-    reader.readAsDataURL(imgFile);
+    wlog('检测到图片粘贴：' + imgFiles.length + ' 个');
+    const withPath = imgFiles.filter(f => f.path);
+    const noPath = imgFiles.filter(f => !f.path);
+    if (withPath.length) vscode.postMessage({ type: 'importMedia', paths: withPath.map(f => f.path), nodeId });
+    noPath.forEach(imgFile => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        wlog('图片读取完成，dataUrl 长度=' + String(reader.result).length);
+        vscode.postMessage({ type: 'pasteImg', dataUrl: String(reader.result), nodeId });
+      };
+      reader.onerror = () => wlog('图片读取失败: ' + reader.error);
+      reader.readAsDataURL(imgFile);
+    });
     return;
   }
   // 文本：非编辑态 → 列表行整段作为节点粘贴；否则查图片文本 / [[链接]]（编辑态交给原生）
@@ -3498,11 +4160,11 @@ function switchView() {
 // 画布快捷键（2026-08-30 重映射）：定位 Cmd+P（重复按循环）/ Now Cmd+N / Minor Cmd+M / 隐藏Minor Option+Cmd+M / 只显示Now Option+Cmd+N / 标红 Cmd+R / 标黄 Cmd+Y / 进入当前节点 Cmd+E / 折叠 Cmd+F。均在画布获得焦点时生效（Obsidian 同键位不冲突）。
 document.addEventListener('keydown', (e) => {
   const t = e.target;
-  // 历史页只读：Esc = 退出历史页；其余编辑类快捷键全部吞掉（不改动当前文档）
+  // 历史只读：Esc = 退出（回编辑）；其余编辑类快捷键全部吞掉（不改动当前文档）
   if (state.historyMode) {
-    // 历史页只读：state.tree 此时就是快照树；只放行复制等只读键，编辑类键全部吞掉。
-    // Enter/空格阻止默认行为，防聚焦的历史按钮被隔空激活（误触退出/还原）。
-    if (e.key === 'Escape') { e.preventDefault(); closeHistoryPanel(); return; }
+    // state.tree 此时就是快照树；只放行复制等只读键。
+    // ⚠️ 别把这里"简化"成只在写回文件处拦：撤销栈一样会被污染，退出后 Cmd+Z 会把快照内容写进当前文档（见操作手册 §5）。
+    if (e.key === 'Escape') { e.preventDefault(); exitHistorySnapshot(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelectedNode(); return; } // 复制节点到剪贴板（允许）
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); e.stopPropagation(); return; }
     e.preventDefault(); e.stopPropagation(); // 其余编辑键（Delete/Backspace/Tab/方向/Cmd+B/I/H/K 等）一律拦截
@@ -3586,23 +4248,24 @@ document.addEventListener('keydown', (e) => {
 // ============ 与扩展通信 ============
 function emitUpdate() {
   if (state.historyMode) return; // 历史页只读：任何写回当前文档的操作都被禁止
-  vscode.postMessage({ type: 'update', text: serialize(state.tree) });
-  autoSnapshot(); // 每次变更后尝试自动快照（内部节流）
+  const text = serialize(state.tree);
+  vscode.postMessage({ type: 'update', text: text });
+  autoSnapshot(false, text); // 复用刚算好的文本（别重复序列化整棵树）
 }
-// 自动快照（2026-08-27）：内容真变了才存，且 2 分钟内最多一次，避免快照爆炸。
+// 自动快照（2026-08-27）：内容真变了才存，且 AUTO_SNAP_INTERVAL 内最多一次，避免快照爆炸。
 // 手动命名存档（manualSaveSnapshot）也走这里并标记，保证"手动存完不会立刻又自动存一份相同内容"。
-const AUTO_SNAP_INTERVAL = 2 * 60 * 1000;
+// 2026-09-14 两处调整：①时间窗判断提到序列化之前——窗口内直接返回，不再白算一遍整棵树；
+// ②文本可由 emitUpdate 传入复用。注意 AUTOSNAP 只管"存几个版本"，文件本身每次编辑都已写盘。
+const AUTO_SNAP_INTERVAL = 20 * 1000; // ← 版本颗粒度旋钮：20 秒（原 2 分钟）；改小 = 版本更密、占盘更多
 let lastAutoSnap = 0;
 let lastAutoSnapText = ''; // 上次落盘快照的文本，用于"内容没变就不存"
-function autoSnapshot(force) {
+function autoSnapshot(force, preText) {
   if (state.historyMode) return; // 历史页只读：不自动存快照（避免存下"快照的快照"）
-  const text = serialize(state.tree);
-  if (!force) {
-    if (text === lastAutoSnapText) return;        // 内容没变 → 不存
-    const now = Date.now();
-    if (now - lastAutoSnap < AUTO_SNAP_INTERVAL) return; // 2 分钟内 → 不存
-  }
-  lastAutoSnap = Date.now();
+  const now = Date.now();
+  if (!force && now - lastAutoSnap < AUTO_SNAP_INTERVAL) return; // 时间窗内 → 不存（最便宜的检查放前面）
+  const text = typeof preText === 'string' ? preText : serialize(state.tree);
+  if (!force && text === lastAutoSnapText) return; // 内容没变 → 不存
+  lastAutoSnap = now;
   lastAutoSnapText = text;
   vscode.postMessage({ type: 'saveSnapshot', text: text, name: '' }); // 空 name = 自动保存
 }
@@ -3694,6 +4357,12 @@ window.addEventListener('message', e => {
     applyTheme(msg.value);
     return;
   }
+  if (msg.type === 'setCenterMode') { // 设置页切换「画布中央」档 → 宿主推送到所有打开的视图（2026-09-16）
+    applyCenterMode(msg.value);
+    // 切档后立刻按新落点重新定位一次：让用户马上看到位置变化（否则画面不动，会误以为"没生效"）
+    try { if (state.tree) locateCenter(); } catch (e) {}
+    return;
+  }
   if (msg.type === 'setHideHint') { // 设置页切换「隐藏新增页面提示」→ 即时生效（2026-09-01）
     state.hideHint = !!msg.value;
     render();
@@ -3740,11 +4409,27 @@ window.addEventListener('message', e => {
     }
     return;
   }
+  // 导入的媒体已存盘（「更多」菜单选文件 / 多选粘贴）：按扩展名分流进 images / embeds（2026-09-17）
+  if (msg.type === 'importMediaRes') {
+    const names = msg.names || [];
+    if (names.length) addMediaNames(names, msg.nodeId);
+    else if (!msg.cancelled) toast(T('more.pickFail'), true); // 用户主动取消选择 → 不报错
+    return;
+  }
   if (msg.type === 'imgUriRes') {
     // 资源可访问地址返回：填到对应元素上（img/video/audio 通用），并缓存
     document.querySelectorAll('[data-req="' + msg.id + '"]').forEach(im => {
-      if (msg.uri) { im.src = msg.uri; imgUriCache[im.dataset.path] = msg.uri; }
-      else { im.classList.add('img-missing'); }
+      if (msg.uri) {
+        im.src = msg.uri; imgUriCache[im.dataset.path] = msg.uri;
+        im.classList.remove('img-missing'); delete im.dataset.missing; im.alt = ''; // 恢复成正常图
+      } else if (im.tagName === 'IMG') {
+        markImgMissing(im, im.dataset.path); // 图片 → 显示可见的「缺失」占位（音视频保持原样式）
+        // 2026-09-17：主动补一次 error —— 缺失图不会设 src，因此永远不会自己触发 load/error，
+        // 而开屏的 layoutSettled 正在等「每张图都有结论」。不补这一下就必等满兜底时间（开屏慢两三秒的根因）。
+        try { im.dispatchEvent(new Event('error')); } catch (_) {}
+      } else {
+        im.classList.add('img-missing');
+      }
     });
     return;
   }
@@ -3789,10 +4474,12 @@ window.addEventListener('message', e => {
     if (typeof msg.showNow === 'boolean' && !msg.showNow) setShowNow(false, false, true);
     applyIncoming(msg.text, { filename: msg.filename || '', filePath: msg.filePath || '', drillPid: drillPid, isLink: !!msg.isLink, defaultPid: msg.defaultPid || '' }); // filePath：init 必须透传，否则 state.filePath 空 → 复制 AI 定位路径只剩文件名（2026-09-01 修）
     applyTheme(msg.theme || 'default'); // 主题随 init 下发（2026-08-31）
+    applyCenterMode(msg.centerMode || 'canvas'); // 画布中央档随 init 下发（2026-09-16）
     state.hideHint = !!msg.hideHint; // 空图新手提示是否隐藏随 init 下发（2026-09-01）
     state.isLink = !!msg.isLink;
     state.isPro = !!msg.isPro; // 是否 Pro（2026-09-04：= licenseState.active，功能权限；试用期内也为 true → 功能不锁）
     state.licenseSource = msg.licenseSource || 'none'; // 'license'=已授权；'trial'/'none'=未授权 → 右上角"激活 Pro"提示按钮显示条件
+    state.trialRemainingMs = (typeof msg.trialRemainingMs === 'number' && msg.trialRemainingMs > 0) ? msg.trialRemainingMs : 0; // 试用剩余毫秒：算「还剩 N 天」提示行
     updateProCta();
     state.defaultPid = normPid(msg.defaultPid); // 保存的默认路径 pid（.mmlink=文件内 mmlinkPid / 普通思维导图笔记=workspaceState）
     // 「隐藏完成」与「只看 Now」的关闭态已在上方建树前预置（persist=false 不回写，避免 init 时
@@ -3801,10 +4488,6 @@ window.addEventListener('message', e => {
     // 开屏兜底：恢复成「开」但文档根本无 Now 节点 → 自动退出，避免画面塌缩成只剩 root
     // （与删除触同源；autoExit 用 persist=true 会顺手清掉 workspaceState 里坏掉的 showNow:true）
     autoExitShowNowWhenEmpty(); updateNowSideBtn();
-    // 调试开关状态恢复（fab → 调试界面 控制右上角刷新按钮显隐；2026-08-21 定）。debugMode 由扩展经 view 回送。
-    debugMode = !!(saved && saved.debugMode);
-    const rf0 = document.getElementById('btn-refresh');
-    if (rf0) rf0.classList.toggle('hidden', !debugMode);
     // 恢复 / 默认 视图：单坐标系下 render 前直接还原即可（无滚动范围依赖，不会被 clamp）
     if (hasSavedView) {
       zoom = saved.zoom; panX = saved.panX || 0; panY = saved.panY || 0;
@@ -3827,10 +4510,12 @@ window.addEventListener('message', e => {
         updateDefaultPathBtn();
         updateUndoRedo();
         booted = true; // 还原完成，之后用户操作才写回
+        reportHistState(); // 画布就绪：主动上报一次「我在编辑态」，把面板的 currentTs 清掉（见 reportHistState 注释）
       } catch (e) {
         reveal(); // 出错也必须显示，绝不 opacity:0 白屏（位置不准总比白屏好）
         booted = true; // 2026-09-01 修「切走再回永远回中央」：还原抛异常时 booted 若卡死在 false，
         // persistNow/schedulePersist 整个会话静默不写 → 视图状态从不保存 → 下次打开永远走无记忆居中
+        reportHistState();
         try { vscode.postMessage({ type: 'log', text: 'init 还原异常（booted 已兜底置 true）: ' + (e && e.message ? e.message : e) }); } catch (_) {}
         throw e;
       }
@@ -3846,229 +4531,543 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'snapshotSaved') {
-    // 自动/手动保存快照成功：静默即可
+    // 自动/手动保存快照成功：静默即可（面板列表的刷新由宿主负责）
     return;
   }
-  if (msg.type === 'snapshotsListed') {
-    state.historyList = msg.snapshots || [];
-    if (pendingAutoLoadFirst && state.historyList.length) {
-      pendingAutoLoadFirst = false;
-      vscode.postMessage({ type: 'loadSnapshot', timestamp: state.historyList[0].timestamp }); // 默认进最新一条
-    } else {
-      pendingAutoLoadFirst = false;
-      renderHistoryPanel();
-    }
+  // ---- 历史只读态（2026-09-14 起由宿主侧 Obsidian 原生「历史记录」面板驱动）----
+  // 宿主在面板里点某条 → histEnterSnapshot（连正文一起下发）→ 画布切进只读快照；
+  // 面板的按钮态与高亮由画布回报（histState）——画布是"现在在看哪条"的唯一真相源。
+  if (msg.type === 'histEnterSnapshot') {
+    enterHistorySnapshot(msg.timestamp, msg.text);
     return;
   }
-  if (msg.type === 'snapshotLoaded') {
-    // 加载某个快照进入历史页：历史页 = 只读文档（state.tree 直接指向快照树，不再临时交换）
-    // 2026-08-28 修（历史页切快照 → 退出后当前文档被覆盖成某条历史版本）：
-    // 原来无条件 state.liveTree = state.tree —— 历史页内点另一条快照会再次收到 snapshotLoaded，
-    // 此时 state.tree 已是上一条快照树，实时文档树被覆盖丢失；退出历史页时 state.tree = liveTree
-    // （=上一条快照树），之后任何一次编辑写回 = 整个文件被覆盖成那条历史版本（autoSnapshot 也会
-    // 把错树存进历史列表，时间线上看起来内容乱跳）。
-    // liveTree 只在「首次进入历史页」时暂存一次，页内切快照绝不动它。
-    // 判断用 liveTree 是否为空（closeHistoryPanel 会置回 null）——不能用 historyMode：
-    // openHistoryPanel 在等列表回包前就已把 historyMode 置 true，收到 snapshotLoaded 时
-    // 恒为 true，用它判断会导致 liveTree 从未暂存 → 差异基线为 null → 所有节点全标红（2026-08-28 回归，当日修）。
-    if (!state.liveTree) state.liveTree = state.tree; // 暂存真实文档树（差异基线 + 关闭时还原）
-    state.historyMode = true;
-    state.historyText = msg.text || '';
-    state.historyCurrentTs = msg.timestamp || 0;
-    const res = parse(state.historyText);
-    state.historyTree = res.root;
-    state.tree = state.historyTree;        // 历史页期间 state.tree 即快照树：render/折叠/框选/复制都复用同一套逻辑
-    state.selectedId = null;
-    state.multiSelected = new Set();
-    computeHistoryDiff();                  // 差异基线用 liveTree
-    renderHistoryPanel();
-    renderHistoryTree(true); // 进入快照：把第一个差异节点居中，避免画布乱飘
-    updateToolbar();
+  if (msg.type === 'histExit') {
+    exitHistorySnapshot();
     return;
   }
   if (msg.type === 'snapshotRestored') {
-    // 扩展已写回文件并回带新文本：用 applyIncoming 重建当前文档树（防回环，不写回）
+    // 宿主已写回文件并回带新文本：用 applyIncoming 重建当前文档树（防回环，不写回）
     if (msg.text) applyIncoming(msg.text);
-    state.liveTree = state.tree; // 还原后「实时文档」即新内容，closeHistoryPanel 据此还原而非旧的 liveTree
-    closeHistoryPanel();
+    state.liveTree = state.tree; // 还原后「实时文档」即新内容，退出时据此还原而非旧的 liveTree
+    // 还原已经把「还原后的内容」存成了一条新快照 → 刷新节流基准，免得下一次编辑立刻又自动存一份一模一样的
+    lastAutoSnapText = serialize(state.tree);
+    lastAutoSnap = Date.now();
+    exitHistorySnapshot();
     toast(T('toast.restored'));
     return;
   }
-  if (msg.type === 'snapshotCopyCreated') {
-    toast(T('toast.copyCreated', msg.path ? msg.path.split(/[\\/]/).pop() : ''));
-    return;
-  }
 });
-// ============ 历史记录页（2026-08-27） ============
+// ============ 历史只读快照（2026-08-27 起；2026-09-14 改由宿主原生面板驱动）============
 // 机制：
-//  - 点击「历史记录」→ 扩展列出 附件/.history/ 下的快照 → 选一条 → 进入只读历史页（飞书式：左侧导图 + 右侧时间线）。
-//  - 历史页不能编辑文字，但可以展开/折叠、复制单个节点。
-//  - 「只看差异」（红钮）：按「位置+标题结构」比对当前文档与该快照，不同的节点标红，相同且非差异祖先的子树折叠压缩。
+//  - 快照列表与操作（返回/只看差异/还原/创建副本/重命名/删除）都在宿主侧的原生「历史记录」面板里
+//    （Obsidian 右侧栏视图，见 main.js 的 HistoryPanelView）；本文件只负责「把某条快照画出来」。
+//  - 宿主点某条 → histEnterSnapshot（带正文）→ 这里切进只读快照（state.tree 指向快照树）；
+//    面板点「返回编辑」/ 画布按 Esc / 关掉面板 → histExit → 还原实时文档树。
+//  - 只读期间不能编辑文字，但可以展开/折叠、复制单个节点。
+//  - 「只看差异」：按「位置+标题结构」比对当前文档与该快照，不同的节点标红，相同且非差异祖先的子树折叠压缩。
 //  - 差异比对只用位置+标题结构，不用 persistId（绝大多数节点平时无 id，见 commentFor）。
 
-// 节点特征（用于位置+结构比对）：标题 + 是否为纯链接 + 图片张数 + 备注。
+// 节点特征（用于内容比对）：标题 + 链接 + 图片【文件名列表】+ 嵌入 + 备注 + bold/minor/now/color。
+// 2026-09-15 补全：原来只比 4 项（标题/链接/图片张数/备注），改颜色、切 Minor/Now、加粗、
+// 换一张图（张数没变）这些真实变化全都测不出来。⚠️ fold 绝不能加 —— 折叠是视图状态，
+// 历史界面渲染时本来就会重设 fold（applyDiffOnlyFold），加了会把所有节点都标成"有差异"。
 function nodeSig(n) {
   return JSON.stringify({
     t: n.title || '',
     l: n.link || '',
-    i: (n.images || []).length,
-    n: n.note || ''
+    i: (n.images || []).join('|'),   // 比文件名列表：换一张图（张数不变）也算差异
+    e: (n.embeds || []).join('|'),
+    n: n.note || '',
+    b: !!n.bold,
+    m: !!n.minor,
+    w: !!n.now,
+    c: n.color || ''
   });
 }
-// 计算差异：前序遍历同时走「当前树」「历史树」同一位置，特征不同 → 该历史节点标红。
-// 返回 Set（历史节点 id）。忽略「当前有、历史没有」的情况（2026-08-27 定：只标红历史中与当前不同的）。
+// 计算差异（2026-09-15 重写：层内按标题配对，不再按下标）。返回 Set（历史节点 id）。
+//   旧逻辑两树按"第 i 个孩子对第 i 个孩子"比 —— 中间插入/删除一个，后面整排错位、级联误标（"加一行红一片"）。
+//   新逻辑每一层【按标题认人】（同名按出现顺序一一配，重排不误报）：
+//     配上 + 指纹相同 → 不标，进孩子继续配
+//     配上 + 指纹不同 → 只标它自己（改备注/颜色/图片只黄一个，不连坐子树），进孩子继续配
+//     历史版配不上的  → 父标黄，**孩子逐层在当前版全局找同名**（挪走的能认回来，不连坐，见 orphanSubtreeIds）
+//     当前版多出的    → 不标（历史树上没有可标的地方；节点数差由横幅常驻说明报）
+//   ⚠️ 配对键只用【标题】（身份），配对之后才比完整指纹（内容）—— 两把尺子不能混用：
+//      按完整指纹配对的话，改一个备注就配不上 → 会被当成"删了旧的"而连坐整棵子树。
+//   ⚠️ 不用 persistId（绝大多数节点没有，作者注释也明确不用）。普通节点改名靠"孩子标题序列"
+//      二次配对兜底；孩子也变了/被挪走 → 走孤儿逐层全局匹配（orphanSubtreeIds），能认回多少认多少。
+//   ⚠️ 单层兄弟超过 DIFF_PAIR_MAX 时退回按下标比；总节点数超过 DIFF_NODES_MAX 时**整个退回**
+//      （总量保险丝，2026-09-15 实测 20 万节点+大量改名会到秒级 → 超大文件宁可糙不卡）。
+const DIFF_PAIR_MAX = 500;      // 层内精确配对的单层上限
+const DIFF_NODES_MAX = 30000;   // 总节点数上限：超过 → 整个退回按下标的老算法
+let diffMax = DIFF_PAIR_MAX;    // 本轮实际生效的上限（computeHistoryDiff 每次按总量重设）
+let diffUsedCur = null;  // 当前版节点占用表：正常配对 / 二次配对 / 孤儿认领 都会占用，防止一个当前节点被认领两次
+let diffCurIndex = null; // 当前版 标题 → 节点数组 的索引（孤儿全局搜索用；每次 computeHistoryDiff 重建）
 function computeHistoryDiff() {
   const diff = new Set();
   if (!state.historyTree) return diff;
   const cur = state.liveTree; // 当前文档根（进入历史页时暂存，state.tree 此时已指向快照树）
   const his = state.historyTree; // 快照根
-  function walk(c, h) {
-    if (!h) return; // 历史无此位置 → 不标红（属于"当前有、历史没有"，忽略）
-    const same = c && nodeSig(c) === nodeSig(h);
-    if (!same) diff.add(h.id); // 此位置特征不同（或当前无）→ 历史该节点标红
-    // 往下比较：以历史树结构为准展开（保证历史中存在的节点都能被比对/标红）
-    const cKids = (c && c.children) || [];
-    h.children.forEach((hc, i) => walk(cKids[i], hc));
-  }
-  walk(cur, his);
+  if (!cur) { markSubtreeIds(his, diff); state.historyDiffIds = diff; return diff; } // 没有基线（异常窗口）→ 全标
+  // 建占用表 + 当前版标题索引（孤儿全局搜索用），顺便数总节点数
+  diffUsedCur = new Set();
+  diffCurIndex = new Map();
+  let total = 0;
+  (function idx(n) {
+    if (!n) return;
+    total++;
+    const t = n.title || '';
+    let a = diffCurIndex.get(t);
+    if (!a) { a = []; diffCurIndex.set(t, a); }
+    a.push(n);
+    (n.children || []).forEach(idx);
+  })(cur);
+  diffMax = total > DIFF_NODES_MAX ? 0 : DIFF_PAIR_MAX; // 总量保险丝：超大文件整个走按下标的老路径
+  diffUsedCur.add(cur.id);
+  // 根自身也要比（根的标题/备注等可能变；根只有一对，不存在配对问题）
+  if (nodeSig(cur) !== nodeSig(his)) diff.add(his.id);
+  walkDiffChildren(cur, his, diff);
   state.historyDiffIds = diff;
   return diff;
 }
+// 把一棵子树整棵记为差异（仅剩"无基线全标"这一处使用）
+function markSubtreeIds(root, diff) {
+  (function w(n) { if (!n) return; diff.add(n.id); (n.children || []).forEach(w); })(root);
+}
+// 「孤儿」子树（2026-09-15 用户提议）：历史父节点配不上（被改名/上下文没了）时，**不再整棵一刀切标黄**——
+// 父自己标黄（它在这个上下文确实没了），孩子逐个在当前版【全局】找未占用的同名节点：
+//   找到 → 认定"它还活着（被挪走了/挂在别处）"：比指纹（不同才标它自己），并以它为锚继续正常配孩子层；
+//   全局都没有 → 标黄它自己，再往下递归搜孩子的孩子（无限层，直到再也找不到为止）。
+// 典型场景：把一个子树挪到别的父节点下、再把原父节点改名 —— 孩子们在当前版都还活着，不该全黄。
+function orphanSubtreeIds(h, diff) {
+  // h 自己也先全局认领一把：它可能整个被挪到当前版的别处了（标题没变）→ 不标，以它为锚继续配孩子
+  const self = findFreeCurByName(h.title);
+  if (self) {
+    diffUsedCur.add(self.id);
+    if (nodeSig(self) !== nodeSig(h)) diff.add(h.id); // 挪走了但内容也变了 → 还是标它自己
+    walkDiffChildren(self, h, diff);
+    return;
+  }
+  diff.add(h.id); // 全局都没有 → 真没了，标黄
+  for (const k of h.children || []) {
+    const c = findFreeCurByName(k.title);
+    if (!c) { orphanSubtreeIds(k, diff); continue; } // 全局都没有 → 标黄孩子，继续往下搜
+    diffUsedCur.add(c.id); // 占用：这个当前节点归这个孤儿了
+    if (nodeSig(c) !== nodeSig(k)) diff.add(k.id); // 找到了但内容也变了 → 标黄孩子自己
+    walkDiffChildren(c, k, diff); // 以找到的节点为锚，孩子层继续正常配
+  }
+}
+// 在当前版（liveTree）全局找【未占用】的同名节点（走预建索引，均摊 O(1)；已占用的懒清理）
+function findFreeCurByName(title) {
+  const arr = diffCurIndex && diffCurIndex.get(title);
+  if (!arr) return null;
+  while (arr.length && diffUsedCur.has(arr[0].id)) arr.shift();
+  return arr.length ? arr[0] : null;
+}
+// 比较两个已配对节点的孩子层。上限读模块级 diffMax（computeHistoryDiff 按总节点数重设：
+// 总节点数超 DIFF_NODES_MAX 时为 0 → 所有层都走按下标的老路径，总量保险丝保证永不卡）。
+function walkDiffChildren(c, h, diff) {
+  const cKids = c.children || [], hKids = h.children || [];
+  if (hKids.length > diffMax || cKids.length > diffMax) {
+    // 极端大层：退回按下标（老逻辑），保证不卡
+    hKids.forEach((hc, i) => {
+      const cc = cKids[i];
+      if (!cc) { orphanSubtreeIds(hc, diff); return; }
+      if (nodeSig(cc) !== nodeSig(hc)) diff.add(hc.id);
+      diffUsedCur.add(cc.id);
+      walkDiffChildren(cc, hc, diff);
+    });
+    return;
+  }
+  const used = new Array(cKids.length).fill(false);
+  for (const hKid of hKids) {
+    // 第一轮：按标题在当前版这一层找还没被占用的同名节点（同名按出现顺序一一配）
+    let cKid = null;
+    for (let i = 0; i < cKids.length; i++) {
+      if (!used[i] && (cKids[i].title || '') === (hKid.title || '')) { cKid = cKids[i]; used[i] = true; break; }
+    }
+    // 第二轮（2026-09-15 用户提议）：配不上同名时，在当前层未占用的节点里找【孩子标题序列完全一样】的
+    // —— 有就认定"还是它，只是改了名/改了内容"：只标它自己，孩子进正常配对，**不再连坐整棵子树**。
+    // 只对【有孩子】的历史节点做：叶子配不上时 markSubtree 本来就只标它自己，无差别；
+    // 且空孩子不参与，避免一堆无孩子的节点互相误配。
+    if (!cKid && (hKid.children || []).length) {
+      const hKidSeq = (hKid.children || []).map(k => k.title || '').join('\u0001');
+      for (let i = 0; i < cKids.length; i++) {
+        if (used[i]) continue;
+        const seq = (cKids[i].children || []).map(k => k.title || '').join('\u0001');
+        if (seq === hKidSeq) { cKid = cKids[i]; used[i] = true; diffUsedCur.add(cKid.id); break; }
+      }
+    }
+    if (!cKid) { orphanSubtreeIds(hKid, diff); continue; } // 两轮都配不上 → 孤儿处理：父标黄、孩子逐层全局认领
+    if (nodeSig(cKid) !== nodeSig(hKid)) diff.add(hKid.id); // 同一个节点但内容变了 → 只标它自己
+    diffUsedCur.add(cKid.id); // 占用：这个当前节点归这个历史节点了（孤儿全局搜索不会再认领它）
+    walkDiffChildren(cKid, hKid, diff); // 孩子层继续按标题配
+  }
+  // 当前版多出的（used=false）→ 不标：历史树上没有这个节点
+}
+
+// 历史界面里「只看 Now」+「只看差异」的【合成折叠】（2026-09-14 用户定：两者会抢同一个 fold 标记）
+// 顺序固定：① 先按差异折整棵树（applyDiffOnlyFold，由调用方先做）→ ② 再按 Now 开道：
+//   · 展开通往 Now 的整条祖先链 —— 跟编辑态点 Now 一样，保证 Now 前面那条路一定看得见；
+//   · Now 自身【不硬折】：把 Now 这一整棵子树交给差异规则重折 ——
+//     子树里没差异 → 规则②同样会把 Now 折起（= Now 的最小态，跟以前一样）；
+//     子树里有差异 → 展开到差异节点为止（就是用户要的"Now 之后按差异来开"）。
+// Now 前面的路径上若有差异，标黄由渲染层自动做（applyHistoryDiffClasses），这里不用管。
+// ⚠️ 两处都必须调（进/换快照、以及历史界面里点「只看 Now」），否则换快照后 Now 会被差异折叠折进卡里。
+// （放在 applyDiffOnlyFold 之前，是为让"合成规则"紧挨差异算法好读；函数声明提升，调用没问题。）
+function applyNowThenDiffFold(root) {
+  if (!state.showNow || !root) return;
+  collectNowNodes(root).forEach(now => {
+    const path = pathTo(root, now.id); // 祖先链（含 Now 自身）
+    if (path) for (let i = 0; i < path.length - 1; i++) path[i].fold = false; // 只展开祖先，自身交给下面
+    applyDiffOnlyFold(now);            // Now 自身 + 子树按差异定（重折，不硬折）
+  });
+}
 
 // 历史页渲染：复用编辑视图 render()（保留连线/缩放/滚动/卡片样式），不另写一棵树。
-// 做法：临时把 state.tree 换成快照树 → render() → 恢复。差异标红 / 只看差异折叠都作用在快照树上。
-// 「只看差异」：画面只留下差异节点（红卡片）本身，差异节点下「没有差异的子分支」也收起，
-// 差异节点之间的祖先路径保持展开以连接它们。每次调用前先全展开，避免上次残留折叠影响。
+// 「只看差异」的折叠（2026-09-14 用户定版）：三条规则、**没有任何例外**。对每个节点 n 从上往下判：
+//   ① 这一枝【每一层都是差异】→ 保留两层：n 展开、它的孩子都露出来、孩子各自折起来。
+//      作用一：给人"里面还有、可能还会变"的暗示；作用二：大文件里"一整段都变了"不至于把整段全展开、画面爆大。
+//   ② n 的孩子里【没有差异了】（或没有孩子）→ **折 n 自己**：画面只剩这一张卡，点开还能看。
+//      ⚠️ 折的是"母节点自己"，不是折孩子 —— 折孩子会变成"母节点 + 一堆孩子卡"，那正是用户报的现象（2026-09-14）。
+//   ③ 其他（这枝有差异、但没到"每层都变"）→ n 展开，对孩子重复上面三条。
+// **没有例外**：根照同一条规则走（孩子没变就折根；整枝都变就留两层）。
+// 一处差异都没有时 = 根走第②条被折起来 → 画面只剩主节点一张卡（不是空白：折叠只收孩子，卡片本身始终会渲染）。
 function applyDiffOnlyFold(root) {
-  (function reset(n) { n.fold = false; (n.children || []).forEach(reset); })(root);
-  function hasDiff(n) {
-    if (state.historyDiffIds.has(n.id)) return true;
-    return (n.children || []).some(hasDiff);
-  }
-  (function walk(n) {
-    if (!n.children || !n.children.length) return;
-    const selfDiff = state.historyDiffIds.has(n.id);
-    const subtreeHasDiff = selfDiff || n.children.some(hasDiff);
-    if (!subtreeHasDiff) { n.fold = true; return; } // 整棵子树无差异 → 折叠（连自身都不显眼）
-    // 子树有差异：本节点展开；无差异的子分支折叠，有差异的子分支继续递归
-    n.children.forEach(c => { if (!hasDiff(c)) c.fold = true; else walk(c); });
+  (function reset(n) { n.fold = false; (n.children || []).forEach(reset); })(root); // 先一律展开：不看这一版文件里原本的折法
+  // 子树统计（一次后序遍历）：total = 子树节点数；d = 其中被标差异的数量
+  (function stat(n) {
+    let t = 1, d = state.historyDiffIds.has(n.id) ? 1 : 0;
+    (n.children || []).forEach(c => { const s = stat(c); t += s.t; d += s.d; });
+    n.__diffStat = { t, d };
+    return n.__diffStat;
   })(root);
-  if (root.fold) root.fold = false; // 兜底：若全树无差异被整体折叠，至少展开根避免空白
+  // 规则①的判定（2026-09-15 放宽，用户实测定）：原来是"子树 100% 每层都是差异"才触发，
+  // 太苛刻 —— 实测一份"整份文档都被换成新内容"的旧版本（89% 节点是差异，134 个碰巧配上/认领的
+  // 把 100% 破坏了），规则①不触发 → 走③大面积展开 → 画面爆掉。
+  // 改为占比阈值：子树差异占比 ≥ 85% 就视为"整枝都变了" → 保留两层。想调松紧改这个值。
+  const DENSE_RATIO = 0.85;
+  (function walk(n, isRoot) {
+    const kids = n.children || [];
+    const st = n.__diffStat;
+    // ⚠️ 规则①的完整触发条件 = 【n 自己也是差异】+ 子树差异占比 ≥ 阈值 + 【n 不是主节点】。
+    // - "n 自己也是差异"是用户原话里本来就有的（"母节点和它的子节点全部变了"——母节点当然也得是变的），
+    //   2026-09-15 放宽成占比时被我手滑丢了 → 没变的节点（如第一层）也触发"留两层"、把真正的差异层折进去藏住。
+    // - ⚠️ "主节点不触发①"（2026-09-15 用户实踩第四轮）：主节点的密度是【所有分支混在一起】算的——
+    //   "新测试"枝 100% 变了把整体密度抬到 88%，于是"基础测试"枝（83 个节点只变 3 个 = 4%，稀疏差异）
+    //   也被整个折掉、里面的零星差异（新节点的 Minor 变化）全被藏住。→ 主节点只要有差异就展开（③），
+    //   "留两层"从它的下一层开始、每条分支按自己的密度定。主节点只在"下面完全没差异"时走②（= 只显示主节点）。
+    if (!isRoot && kids.length && state.historyDiffIds.has(n.id) && st.d / st.t >= DENSE_RATIO) { // ① 整枝几乎都变了 → 留两层（n 展开，孩子露出来但折起来）
+      n.fold = false;
+      // ⚠️ 2026-09-15 用户实踩：折孩子不能一刀切。孩子分两种：
+      //   - 孩子自己也是差异 → 折起来（它就是"露出的下一层折卡"）；
+      //   - 孩子自己【没变】、但它的子树里有差异（如"新测试"：自己与当前版同名同内容，下面 100% 变了）
+      //     → 绝不能折！折了 = 把整个差异区域藏起来（用户报"新测试后面全部关起来了"）。
+      //     → 继续 walk(c)（规则③会展开它，走到差异节点处由那些节点自己的①接手压缩）。
+      //   孩子自己没变、子树也没差异 → walk(c) 里规则②自然折掉它。
+      kids.forEach(c => { walk(c, false); if (state.historyDiffIds.has(c.id)) c.fold = true; });
+      return;
+    }
+    if (!kids.length || !kids.some(c => c.__diffStat.d > 0)) { // ② 下面没差异了（含叶子）→ 折自己
+      n.fold = true;
+      return;
+    }
+    n.fold = false;                   // ③ 下面还有差异 → 展开，继续往下判
+    kids.forEach(c => walk(c, false));
+  })(root, true);
+  (function clean(n) { delete n.__diffStat; (n.children || []).forEach(clean); })(root); // 别把临时统计留在树上
 }
 
-// 历史页：取「第一个差异节点」（前序遍历第一个命中 historyDiffIds 的节点），用于进入快照时居中，避免画布乱飘
-function firstDiffNode() {
-  if (!state.historyTree || !state.historyDiffIds.size) return null;
-  let found = null;
-  (function walk(n) {
-    if (found || !n) return;
-    if (state.historyDiffIds.has(n.id)) { found = n; return; }
-    (n.children || []).forEach(walk);
-  })(state.historyTree);
-  return found;
+// 主节点自己哪儿变了（只给"画面只剩主节点"时那条 toast 用）：逐项比 nodeSig 的那四项
+function rootChangedAspects() {
+  const h = state.historyTree, c = state.liveTree;
+  if (!h || !c) return [];
+  const out = [];
+  if ((h.title || '') !== (c.title || '')) out.push(T('hist.aspectTitle'));
+  if ((h.note || '') !== (c.note || '')) out.push(T('hist.aspectNote'));
+  if ((h.link || '') !== (c.link || '')) out.push(T('hist.aspectLink'));
+  if ((h.images || []).length !== (c.images || []).length) out.push(T('hist.aspectImage'));
+  return out;
 }
-// 历史页：把第一个差异节点放到视口左侧 1/4、垂直居中（复用定位调参 --locate-*），解决「切快照画布不知道渲染到哪」
-function centerHistoryOnFirstDiff() {
-  const node = firstDiffNode();
-  if (!node) return; // 无差异则不强制居中
-  const el = document.querySelector('.node-row[data-id="' + node.id + '"] .card');
-  if (!el) return;
-  placeCardAtViewport(el, cfgNum('--locate-first-x', 0.25));
+
+// 整棵树有多少个节点（不含传入的根自身）。只为"这一版和当前差几个节点"那句 toast 用。
+// 不复用 countDescendants：那个会受沙盒里的「隐藏 Minor」影响（用户可能在沙盒里开过），这里要的是真实数量。
+function countDescendantsAll(n) {
+  let c = 0;
+  (n.children || []).forEach(k => { c += 1 + countDescendantsAll(k); });
+  return c;
 }
-function renderHistoryTree(centerFirstDiff) {
+
+// 历史页渲染：复用编辑视图 render()（保留连线/缩放/滚动/卡片样式），不另写一棵树。
+// recenter 只在【首次进入历史界面】时传 true —— 把当前主节点摆到「自定义中央位置」，给一个稳定的初始视角。
+// 之后换快照 / 折叠触发的重绘一律不传 → 视口原地不动（用户调过的缩放与位置就是"这次进历史的视角"）。
+function renderHistoryTree(recenter) {
   if (!state.historyTree) return;
   // 历史页模型：state.tree 此时已指向快照树（进入时一次性交换，关闭时还原）。
   // 这里直接 render，不再临时交换——折叠/框选/复制等交互都复用实时视图同一套逻辑。
   state.selectedId = null;               // 历史页无选中高亮
   state.multiSelected = new Set();
-  render();                              // 完全复用：连线、缩放、平移、卡片样式
-  // 差异标红：给差异节点卡片加 hist-diff 类（render 重建了 DOM，标红在 render 后做）
-  if (state.historyDiffIds.size) {
-    document.querySelectorAll('#tree .card').forEach(c => {
-      if (state.historyDiffIds.has(c.dataset.id)) c.classList.add('hist-diff');
-    });
+  render();                              // 完全复用：连线、缩放、平移、卡片样式；差异标记由 render 末尾统一补
+  // 首次进入归位：定位复用现成机制 placeCardAtViewport + 调参区的 --locate-first-x / --locate-y
+  // （就是"把根放在画面这个位置"）。顺带根治"进去一片空白"：不归位时主节点可能正好在屏幕外。
+  // ⚠️ 归位内部读 --locate-reset-zoom（默认开）会把 zoom 打回 1 —— 所以只能首次做，否则切快照会清掉用户的缩放。
+  // （原 firstDiffNode / centerHistoryOnFirstDiff「居中到第一个差异节点」已按用户意见删除。）
+  if (recenter) {
+    const root = state.historyTree;
+    const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
+    if (el) placeCardAtViewport(el, cfgNum('--locate-first-x', 0.4));
   }
-  if (centerFirstDiff) centerHistoryOnFirstDiff(); // 进入/切换快照时把第一个差异节点居中，避免画布乱飘
 }
 
-// 历史页时间线日期/时间格式化（2026-08-27 优化）：
-// - 时间只显示「时:分」，不显示秒
-// - 日期：3 分钟内→刚刚；当天→今天；昨天→昨天；今年内→M 月 D 日；往年→YYYY 年 M 月 D 日
-function fmtHistoryDate(ts) {
-  const d = new Date(ts);
-  const now = new Date();
-  const pad = n => (n < 10 ? '0' + n : '' + n);
-  const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const dayDiff = Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
-  const sameYear = d.getFullYear() === now.getFullYear();
-  // 2026-08-28：「刚刚」也带上具体时间——顶部几条密集自动快照若只显示「刚刚」无从核对先后，
-  // 排序按 timestamp 降序，画面看着像乱了其实没乱。
-  if (now.getTime() - ts < 3 * 60 * 1000) return T('hist.justNow', d.getHours() + ':' + pad(d.getMinutes()));
-  let datePart;
-  if (dayDiff === 0) datePart = T('hist.today');
-  else if (dayDiff === 1) datePart = T('hist.yesterday');
-  else if (sameYear) datePart = T('hist.dateMD', d.getMonth() + 1, d.getDate());
-  else datePart = T('hist.dateYMD', d.getFullYear(), d.getMonth() + 1, d.getDate());
-  return datePart + ' ' + d.getHours() + ':' + pad(d.getMinutes());
-}
-
-function renderHistoryPanel() {
-  const view = document.getElementById('history-view');
-  if (!view) return;
-  const tl = document.getElementById('history-timeline');
-  tl.innerHTML = '';
-  if (!state.historyList.length) {
-    tl.innerHTML = '<div style="padding:24px 12px;color:var(--muted,#8e959f);font-size:12px;line-height:1.6">' + T('hist.empty') + '</div>';
-  }
-  // 时间线：最新的在最上
-  state.historyList.forEach(s => {
-    const item = document.createElement('div');
-    item.className = 'hist-item' + (s.timestamp === state.historyCurrentTs ? ' active' : '');
-    item.dataset.ts = s.timestamp;
-    const tag = s.name ? escapeHtml(s.name) : T('hist.auto');
-    item.innerHTML = '<div class="hist-dot"></div><div class="hist-meta"><span class="hist-line">'
-      + fmtHistoryDate(s.timestamp) + '：' + tag + '</span></div>';
-    item.onclick = () => {
-      if (s.timestamp === state.historyCurrentTs) return;
-      vscode.postMessage({ type: 'loadSnapshot', timestamp: s.timestamp });
-    };
-    tl.appendChild(item);
+// 给差异节点卡片贴 hist-diff 类（render 会重建 DOM，必须在 render 之后贴）。
+// 由 render 末尾（历史态时）与 renderHistoryTree 共用 —— 见 render 里的调用说明。
+function applyHistoryDiffClasses() {
+  if (!state.historyDiffIds.size) return;
+  document.querySelectorAll('#tree .card').forEach(c => {
+    if (state.historyDiffIds.has(c.dataset.id)) c.classList.add('hist-diff');
   });
-  // 工具栏 diff 钮状态
-  const diffBtn = view.querySelector('.hb[data-act="diff"]');
-  if (diffBtn) diffBtn.classList.toggle('on', state.historyShowDiffOnly);
-  // 视图切换：历史页复用 #view-map（原地渲染快照），只显示右侧栏 #history-view；不隐藏 #view-map
-  view.classList.remove('hidden');
-  const vm = document.getElementById('view-map');
-  if (vm) vm.classList.remove('hidden');
-  const md = document.getElementById('view-md');
-  if (md) md.classList.add('hidden');
-  // 历史页只读：进入/刷新历史页时把焦点从工具栏按钮上移开，避免 Enter/空格隔空激活（配合 keydown 全键 preventDefault 双保险）
-  if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('hb')) document.activeElement.blur();
 }
 
-function closeHistoryPanel() {
+// ===== 沙盒（2026-09-14 用户定，**最高原则**）=====
+// 进历史界面 = 进一个隔离的沙盘：进去时把「白板状态」整组存下来、把显示类开关重置为默认（未按下），
+// 你在里面随便下钻 / 折叠 / 开关 / 缩放平移，退出时整组还原 —— **带不出去**。
+// 前面的「守卫」和「退出丢弃」都只是实现手段，沙盒才是模型；判断新需求时先问"它在沙盒里的语义是什么"。
+//   · 清单见 sandboxSave：**以后新增任何"会被沙盒改动"的状态，必须同时加进这两张清单，否则会漏**
+//   · 「不落盘」靠三处挡住：persistNow / schedulePersist 的定时器 / setHideDone·setShowNow 的持久化消息
+let sandboxSaved = null;
+
+function sandboxSave() {
+  sandboxSaved = {
+    hideDone: state.hideDone,                 // 隐藏 Minor
+    showNow: state.showNow,                   // 只看当前关注
+    nowVisibleSnapshot: nowVisibleSnapshot,
+    currentRootId: state.currentRootId,       // 当前停在哪个节点（下钻）
+    currentRootPid: state.currentRootPid,
+    pathHistory: state.pathHistory.slice(),   // 下钻路径栈（上一/下一）
+    pathHistoryIndex: state.pathHistoryIndex,
+    nowLocateIndex: state.nowLocateIndex,
+    zoom: zoom, panX: panX, panY: panY,       // 视口：沙盒里缩放/平移也带不出去
+    // 撤销/重做栈：拆掉「万一漏了守卫 → 快照树被压进撤销栈 → 退出后某次 Cmd+Z 把历史版本写进当前文档」
+    // 这条延迟引爆炸弹。⚠️ 存副本而不是"记个深度数字"：栈满 100 时 pushUndo 会 shift()，长度不变而脏条目仍在栈顶。
+    undo: undoStack.slice(),
+    redo: redoStack.slice(),
+  };
+}
+function sandboxRestore() {
+  const s = sandboxSaved;
+  sandboxSaved = null;
+  if (!s) return;
+  state.currentRootId = s.currentRootId;
+  state.currentRootPid = s.currentRootPid;
+  state.pathHistory = s.pathHistory;
+  state.pathHistoryIndex = s.pathHistoryIndex;
+  state.nowLocateIndex = s.nowLocateIndex;
+  zoom = s.zoom; panX = s.panX; panY = s.panY;
+  undoStack.length = 0; for (const x of s.undo) undoStack.push(x);
+  redoStack.length = 0; for (const x of s.redo) redoStack.push(x);
+  // 两个显示类开关走各自的 setter（persist=false 不落盘 / skipRender=true 不各自重绘）→ 图标与按钮态一并回来
+  setHideDone(s.hideDone, false, true);
+  setShowNow(s.showNow, false, true);
+  applyTreeTransform(); // 视口回原位（与 init 恢复同一套做法）
+}
+
+// 进入历史只读态（宿主「历史记录」面板里点了某条快照）：state.tree 一次性指向快照树，退出时还原 liveTree。
+// 2026-08-28 修（切快照 → 退出后当前文档被覆盖成某条历史版本）：liveTree 只在「首次进入」暂存一次，
+// 换快照绝不动它 —— 否则第二次进入时 state.tree 已是上一条快照树，实时树被覆盖丢失，退出后一次编辑写回
+// 就把整个文件写成那条历史版本。判断用 liveTree 是否为空（退出时置回 null），不能用 historyMode
+// ——进入时两者都是 true，用它判断会让 liveTree 永不暂存 → 差异基线为 null → 所有节点全标红。
+function enterHistorySnapshot(timestamp, text) {
+  if (!state.tree) return; // 数据还没到位（未就绪窗口）→ 不渲染，别拿空树去 buildRow
+  // 是不是【首次进入历史界面】（面板里换快照也会走到这里，那时 liveTree 已在 → 不算首次）。
+  // 用途：① 沙盒只在首次存白板 / 装初值；② 只在首次把主节点归位到「自定义中央位置」。
+  // ② 的由来（2026-09-14 用户定）：进历史后用户会缩放 / 平移，再点别的历史记录时应当【保持他调好的视角】，
+  //   而不是每条都重新归位。原实现无条件归位，而 placeCardAtViewport 在 --locate-reset-zoom 打开时
+  //   会把 zoom 打回 1 → 表现就是"切一条，我调的缩放和位置全没了"。
+  const firstEnter = !state.liveTree;
+  if (firstEnter) {
+    // 【只在首次进入时】暂存白板 + 装沙盒初始值。沙盒内换快照会再次进这里，那时不能重来
+    //（重来会把"沙盒当前态"当成白板存下去，退出就还原成错的）。
+    state.liveTree = state.tree; // 暂存真实文档树（差异基线 + 退出时还原）
+    sandboxSave();
+    // 沙盒初始 = 一律「未按下」、从根看起（用户 2026-09-14 定）：进来看到的是这一版本来的样子
+    state.hideDone = false;
+    state.showNow = false;
+    nowVisibleSnapshot = null;
+    state.currentRootId = null;
+    state.currentRootPid = '';
+    state.pathHistory = ['']; state.pathHistoryIndex = 0;
+    state.nowLocateIndex = 0;
+    setHideDone(false, false, true); // 同步按钮图标/提示（不落盘、不各自重绘）
+    setShowNow(false, false, true);
+  }
+  state.historyMode = true;
+  state.historyText = text || '';
+  state.historyCurrentTs = timestamp || 0;
+  const res = parse(state.historyText);
+  state.historyTree = res.root;
+  state.tree = state.historyTree; // 只读期间 state.tree 即快照树：render/折叠/框选/复制都复用同一套逻辑
+  state.selectedId = null;
+  state.multiSelected = new Set();
+  // 画布可能停在 Markdown 文本视图：快照只在导图画布上渲染，先切回来
+  const vm = document.getElementById('view-map');
+  const md = document.getElementById('view-md');
+  if (vm) vm.classList.remove('hidden');
+  if (md) md.classList.add('hidden');
+  state.view = 'map';
+  computeHistoryDiff();  // 差异基线用 liveTree
+  // 进快照 = 自动「只看差异」（2026-09-14 用户定；原来那个按钮已删）：
+  //   ① 一律【忽略这一版文件里原本的 fold 标记】—— applyDiffOnlyFold 内部会先全部展开、再按差异重折；
+  //   ② 只留差异节点 + 通往它们的路径，整枝没差异的直接折起来。之后用户想怎么折都随他。
+  // 改的是这棵【内存里的快照树】（parse 出来的副本），不落盘（emitUpdate 有守卫）、退出即丢 —— 没碰原文件。
+  // 放在这里而不是"只在首次进入"：面板里换版本也走这个函数 → 每条版本都独立现算，互不影响。
+  applyDiffOnlyFold(state.historyTree);
+  // 这一版【一个 Now 节点都没有】→ 退出「只看 Now」。语义同编辑态的兜底 `autoExitShowNowWhenEmpty`
+  //（当前视图没有 Now 就退出），换快照这条路径原先漏了它 —— 后果：showNow 还开着，而可见集按新树
+  // 算出来只剩主节点 → 渲染时把主节点以外全过滤掉，画面看着就是"全都折起来了 / 后面全不见了"。
+  // 用 (persist=false, skipRender=true)：沙盒里不落盘，也不各自重绘（下面 renderHistoryTree 统一渲染）。
+  if (state.showNow && collectUsableNows(currentRoot()).length === 0) setShowNow(false, false, true);
+  // 开着「只看 Now」时，再套一层合成折叠：Now 前面按 Now 的路展开、Now 之后按差异展开（见函数注释）
+  applyNowThenDiffFold(state.historyTree);
+  // 「只看 Now」的可见集是「按下那一刻」定格的【旧树节点集合】；换快照后新树的节点不在集里，
+  // 会被过滤得只剩主节点、后面全部不见（用户 2026-09-14 报"有概率主节点后面全部不见了"）。
+  // 换快照 = 视图基准变化 → 基于新树重算 —— 同 goTo 下钻 / applyText 重解析的既有规矩（那两处同款注释）。
+  if (!firstEnter && state.showNow) nowVisibleSnapshot = computeNowVisible(currentRoot());
+  if (!firstEnter) {
+    // 换快照：① 停掉可能还在跑的首次归位动画，否则它会继续把视口滑到旧目标、把用户的视角带跑；
+    // ② **锚定主节点** —— 复用编辑态那套 keepView（记锚点 → render 末尾 applyPendingKeepView 补偿 pan），
+    //    主节点就"定"在它刚才在屏幕上的位置，缩放也原样保留（用户 2026-09-14 报：换快照画面会跳走、
+    //    放大缩小的关系没记住）。
+    //    ⚠️ 这里**不能**改用 placeCardAtViewport（归位）：它内部读 --locate-reset-zoom（默认开）会把
+    //    zoom 强制打回 1，等于每次换快照清一次用户的缩放 —— 正是上一版被用户否掉的行为。
+    //    ⚠️ 只有"主节点"能这么锚定：parse 出来的根节点 id **恒为 'root'**（见 parse），跨版本稳定，
+    //    render 后 rectCenter('root') 才能在新的快照树上找到同一个锚点。下钻状态下 DOM 里没有这一行，
+    //    keepView 会自己 return（不锚定），退化为"保持 pan 不变"，不会出错。
+    stopViewAnim();
+    keepView(state.historyTree);
+  }
+  // 归位只在【首次进入】做；换快照传 false → 保持用户当前调好的缩放与位置（沙盒会话级视角，见函数开头注释）
+  // 换快照时的重绘不重新归位，是因为要"记住"用户的操作：缩放倍数、主节点在画面里的位置、下钻位置、显示开关。
+  // 这些都跟着"这一次进历史"整体走，退出时由 sandboxRestore 整组还原。
+  renderHistoryTree(firstEnter);
+  // 画面只剩主节点一张卡时，横幅下方给一行【常驻】说明 —— 原来是 toast，几秒就消失，想仔细看都不行
+  // （2026-09-14 用户定：改成常驻灰字，由 updateHistoryBanner 渲染，切快照 / 退出即消失）。
+  // 这个状态 = 根被规则②折起来（⇒ 主节点以下一处【节点文字】差异都没有），所以差异只可能在主节点自己身上。
+  // ⚠️ 但【不能说"下面完全没变化"】：比对是按「同层位置」比节点文字（标题/链接/图片数/备注），
+  //    当前版本"多出来的节点"（尤其挂在某组末尾的）比对不到 —— 所以节点数不同时必须把差数说出来，
+  //    否则用户看到徽标 137/138 不一样、提示却说下面没变，会以为程序错了（2026-09-14 用户指出）。
+  // ⚠️ 必须在 updateToolbar() **之前**算好（它内部调 updateHistoryBanner 读这个字段），放函数末尾就晚一拍。
+  let note = '';
+  if (state.historyTree.fold) {
+    // 两种"差在哪"各自判断：① 主节点自身有没有变（rootChangedAspects 逐项比 nodeSig 那四项）
+    // ② 两版节点总数差（>0 = 最新版比这一版多）。四种组合对应四种说法（文案 2026-09-14 用户定稿）。
+    const rootChanged = rootChangedAspects().length > 0;
+    const d = countDescendantsAll(state.liveTree) - countDescendantsAll(state.historyTree);
+    const cnt = d === 0 ? '' : T(d > 0 ? 'hist.addNodes' : 'hist.removeNodes', Math.abs(d));
+    if (!rootChanged && !cnt) note = T('hist.sameAsNow');           // 完全相同
+    else if (!rootChanged) note = T('hist.onlyCountDiff', cnt);     // 内容没变，只是节点数不同
+    else if (!cnt) note = T('hist.onlyRootDiff');                   // 只差主节点
+    else note = T('hist.rootAndCountDiff', cnt);                    // 主节点变了 + 节点数也不同
+  }
+  state.historyNote = note;
+  updateToolbar();
+  // 折叠层级条也渲染在宿主状态栏里，而「进历史」是在右侧面板点的 —— 画布收不到 pointerdown，
+  // 宿主不会把层级条交还本视图，数字就不出现。复用现成的上报（节流 500ms，宿主收到即重绘）。
+  reportCanvasActive();
+  reportHistState();
+}
+// 退出历史只读态：还原真实文档树（宿主面板里点「返回编辑」/ 按 Esc / 关掉面板都走这里）
+function exitHistorySnapshot() {
+  if (!state.historyMode) return;
   state.historyMode = false;
-  state.historyShowDiffOnly = false;
   state.historyDiffIds = new Set();
-  if (state.liveTree) state.tree = state.liveTree; // 还原真实文档树（历史页期间 state.tree 指向快照树）
+  state.historyNote = ''; // 常驻提示跟着退出一起消失（updateToolbar → updateHistoryBanner 会按它隐藏）
+  if (state.liveTree) state.tree = state.liveTree; // 还原真实文档树（只读期间 state.tree 指向快照树）
   state.liveTree = null;
-  const view = document.getElementById('history-view');
-  if (view) view.classList.add('hidden');
-  const map = document.getElementById('view-map');
-  if (map) map.classList.remove('hidden');
+  stopViewAnim(); // 先停掉可能还在跑的归位/定位动画，否则它会在退出后继续写 pan/zoom、把刚还原的编辑态视角带偏
+  sandboxRestore(); // 沙盒收尾：白板状态整组还原（显示开关 / 下钻位置 / 路径栈 / 视口 / 撤销重做栈）
   render(); // 用回真实 state.tree 刷新编辑视图
   updateToolbar();
+  reportHistState();
+}
+// 把只读态回报给宿主（面板据此刷新高亮与按钮可用性）——画布是「现在在看哪条」的唯一真相源。
+// ⚠️ 画布**每次初始化完成（booted）也必须上报一次**（init 分支里调）：宿主面板是全局单例、活得更久，
+// 画布重建（切走再切回 / 视图重挂）后若不主动报"我在编辑态"，面板会继续以为"正在看上一条" → 再点
+// 同一条时 `if (s.timestamp !== this.currentTs)` 判定"已在这条"、不触发 histEnter → 画布停在文档树
+// （展开状态），用户看到的就是"这一版本该只显示主节点，却全部展开了"（2026-09-14 用户报）。
+function reportHistState() {
+  try {
+    vscode.postMessage({
+      type: 'histState',
+      mode: state.historyMode ? 'snapshot' : 'edit',
+      timestamp: state.historyMode ? state.historyCurrentTs : 0,
+    });
+  } catch (_) {}
 }
 
-// 进入历史页：先拉快照列表；若已有历史树则直接渲染，否则等 listSnapshots 回包
-function openHistoryPanel() {
-  state.historyMode = true;
-  vscode.postMessage({ type: 'listSnapshots' });
-  // 列表回包会触发 snapshotsListed → 自动 load 第一条（若还没选）
-  pendingAutoLoadFirst = true;
+// 画布顶部历史横幅（2026-09-14 用户定）：进历史只读态时，画布顶上压一整条贯通横条 —— 浅黄底、
+// **刻意不跟主题走**（用户要求"要显眼"），一眼就能看出现在看的是历史版本。
+// 元素写在宿主骨架里（main.js buildFrameHtml，见 skill 规则 11：静态元素进骨架、前端只切显隐），
+// 这里只负责显隐 / 改文字 / 一次性绑事件；由 updateToolbar 统一调用（进、出历史都走那里）。
+// 左「返回编辑」，中「历史版本 · <这一版的名字或时间>」，右「将此版本设为最新版本」。
+let histBannerBound = false;
+function updateHistoryBanner() {
+  const el = document.getElementById('hist-banner');
+  if (!el) return;
+  const on = !!state.historyMode;
+  el.classList.toggle('hidden', !on);
+  document.body.classList.toggle('hist-on', on); // 面包屑（下钻路径）下移让位，两条不叠（见 mindmap-app.css）
+  // 横幅正下方的常驻提示行（「与当前完全相同 / 只差主节点…」）：内容由 enterHistorySnapshot 算好存
+  // state.historyNote，这里只管显隐 —— 它跟横幅一体，进、出历史都经 updateToolbar 走到这里刷新。
+  // 一枚按钮 · 两种状态（2026-09-14 用户定：不要两枚，改成随状态变字变色的单枚）：
+  //   普通态（淡）：固定说明「黄色节点为和最新版本不同的节点」（进历史界面就有）
+  //   特殊态（亮，加 .is-strong）：画面只剩主节点时，字换成具体差异说明（如「最新版本和此版本相同」）
+  const noteEl = document.getElementById('hist-note');
+  if (noteEl) {
+    const detail = on ? (state.historyNote || '') : '';
+    // 文字包一层 span 才好看成"小按钮"（直接给块级元素加背景会撑满整行）；用 textContent 不拼 HTML。
+    let chip = noteEl.querySelector('.hist-note-chip');
+    if (!chip) { chip = document.createElement('span'); chip.className = 'hist-note-chip'; noteEl.appendChild(chip); }
+    chip.textContent = detail || T('hist.tipText');
+    chip.classList.toggle('is-strong', !!detail); // 有具体说明 → 亮一点
+    noteEl.classList.toggle('hidden', !on);       // 退出历史界面整枚消失
+  }
+  if (!histBannerBound) {
+    histBannerBound = true; // 横幅不随 render 重建，事件只绑一次，重复绑会叠加
+    // 横幅是 #view-map 的子元素，鼠标事件会冒泡到画布那套（框选 / 点空白清选）——拦在自己这一层，
+    // 否则点横幅会顺带触发框选或清掉选中。
+    el.addEventListener('mousedown', (e) => e.stopPropagation());
+    el.addEventListener('click', (e) => e.stopPropagation());
+    // 三个按钮的小图标（沿用原来面板按钮那套：进入 / 书签 / 还原箭头）。只插一次 —— 横幅不随 render 重建。
+    const setIc = (id, name) => {
+      const b = document.getElementById(id);
+      if (!b || b.querySelector('.hb-ic')) return;
+      const s = document.createElement('span');
+      s.className = 'hb-ic';
+      s.innerHTML = renderIcon(name, 14); // 显示尺寸交给 CSS 的 --hb-ic-size 统管
+      b.insertBefore(s, b.firstChild);
+    };
+    setIc('hb-back', 'log-in');       // 返回编辑
+    setIc('hb-copy', 'bookmark');     // 创建副本
+    setIc('hb-latest', 'refresh-cw'); // 将此版本设为最新版本
+    const back = document.getElementById('hb-back');
+    if (back) back.onclick = () => exitHistorySnapshot();
+    // 「创建副本」= 把这一版另存成一个新文件（不动当前文件），宿主侧 histCreateCopy() 收尾
+    const copy = document.getElementById('hb-copy');
+    if (copy) copy.onclick = () => vscode.postMessage({ type: 'histCopyRequest' });
+    // 「设为最新版本」= 原「还原此版本」：确认弹窗与还原动作都在宿主，复用面板那一套（文案只有一份）
+    const latest = document.getElementById('hb-latest');
+    if (latest) latest.onclick = () => vscode.postMessage({ type: 'histRestoreRequest' });
+  }
+  // 横幅中间 = 说明文字（2026-09-15 用户定：「历史版本」「版本名」都拿掉，全换成下面那枚按钮的文字）：
+  //   普通态（淡）= 固定说明 hist.tipText「黄色节点为和最新版本不同的节点」；
+  //   特殊态（亮，.is-strong）= 画面只剩主节点时的具体差异说明（四种说法）。
+  const note = document.getElementById('hb-note');
+  if (note) {
+    const detail = on ? (state.historyNote || '') : '';
+    note.textContent = detail || T('hist.tipText');
+    note.classList.toggle('is-strong', !!detail);
+    note.classList.toggle('hidden', !on);
+  }
 }
-let pendingAutoLoadFirst = false;
 
 // 手动命名保存快照（webview 内自建输入框，不用 window.prompt——VSCode webview 禁用原生 prompt）
 function manualSaveSnapshot() {
@@ -4082,52 +5081,15 @@ function manualSaveSnapshot() {
   });
 }
 
-// 切换「只看差异」：折叠压缩只在切换这一刻应用一次，之后用户可自由折叠/展开（不再每帧重折）
-function toggleHistoryDiff() {
-  if (!state.historyTree) { state.historyShowDiffOnly = false; renderHistoryPanel(); return; } // 2026-08-28 加守卫：快照未加载完（列表空/回包慢）时点了会空指针崩溃
-  state.historyShowDiffOnly = !state.historyShowDiffOnly;
-  renderHistoryPanel();
-  if (state.historyShowDiffOnly) {
-    applyDiffOnlyFold(state.historyTree); // 全展开 + 仅留差异路径折叠压缩（一次性）
-    renderHistoryTree(true);              // 聚焦第一个差异节点
-  } else {
-    // 退出只看差异：把快照树全部展开，恢复完整结构；保持当前视图不居中
-    (function reset(n) { n.fold = false; (n.children || []).forEach(reset); })(state.historyTree);
-    renderHistoryTree(false);
-  }
-}
-
-// 历史页工具栏按钮（绑定一次）
-(function initHistoryToolbar() {
-  const view = document.getElementById('history-view');
-  if (!view) return;
-  view.querySelectorAll('.hb').forEach(btn => {
-    const icon = btn.dataset.icon;
-    const label = btn.dataset.label || '';
-    btn.innerHTML = renderIcon(icon, 16) + '<span class="hb-label">' + label + '</span>';
-    btn.onclick = e => {
-      e.stopPropagation();
-      const act = btn.dataset.act;
-      if (act === 'exit') closeHistoryPanel();
-      else if (act === 'restore') {
-        showConfirm(T('hist.confirmRestore'), () => {
-          vscode.postMessage({ type: 'restoreSnapshot', text: state.historyText });
-        });
-      } else if (act === 'copy') {
-        vscode.postMessage({ type: 'createCopyFromSnapshot', text: state.historyText });
-      } else if (act === 'diff') {
-        toggleHistoryDiff();
-      }
-    };
-  });
-})();
+// 「只看差异」按钮已删除（2026-09-14 用户定）：进历史快照时就自动只看差异，
+// 由 enterHistorySnapshot 直接调 applyDiffOnlyFold，不再有开关与消息。
 
 function escapeHtml(s) {
   return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 // ============ webview 内自建浮层（替代 window.prompt/confirm，VSCode webview 禁用原生弹窗） ============
-function showPrompt(title, placeholder, onOk, onCancel) {
+function showPrompt(title, placeholder, onOk, onCancel, initial) {
   closePrompt(); // 先清掉可能残留的
   const mask = document.createElement('div');
   mask.className = 'wb-mask';
@@ -4141,6 +5103,7 @@ function showPrompt(title, placeholder, onOk, onCancel) {
     + '</div></div>';
   document.body.appendChild(mask);
   const input = mask.querySelector('.wb-input');
+  if (initial) input.value = initial; // 重命名场景：预填原名，便于就地修改
   const ok = () => { const v = input.value; closePrompt(); if (onOk) onOk(v); };
   const cancel = () => { closePrompt(); if (onCancel) onCancel(); };
   mask.querySelector('.wb-btn-ok').onclick = ok;
@@ -4151,6 +5114,47 @@ function showPrompt(title, placeholder, onOk, onCancel) {
     else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
   };
   setTimeout(() => input.focus(), 0);
+}
+// 带说明文字的小弹窗（2026-09-17 加，「更多」菜单里需手填的入口用它）：
+// hint = 输入框上方的灰色小字（解释这个入口是什么意思）；fields = 1~2 个输入框的占位提示
+function buildPrompt(title, hint, fields, onOk, initials) {
+  closePrompt(); // 先清掉可能残留的
+  const mask = document.createElement('div');
+  mask.className = 'wb-mask';
+  mask.id = 'wb-prompt-mask';
+  const inputsHtml = fields.map((ph, i) =>
+    '<input class="wb-input wb-input-' + i + '" type="text" placeholder="' + escapeHtml(ph || '') + '">').join('');
+  mask.innerHTML = '<div class="wb-dialog">'
+    + '<div class="wb-dialog-title">' + escapeHtml(title) + '</div>'
+    + (hint ? '<div class="wb-dialog-hint">' + escapeHtml(hint) + '</div>' : '')
+    + inputsHtml
+    + '<div class="wb-dialog-actions">'
+    + '<button class="wb-btn wb-btn-cancel">' + T('btn.cancel') + '</button>'
+    + '<button class="wb-btn wb-btn-ok">' + T('btn.ok') + '</button>'
+    + '</div></div>';
+  document.body.appendChild(mask);
+  const inputs = fields.map((_, i) => mask.querySelector('.wb-input-' + i));
+  (initials || []).forEach((v, i) => { if (v && inputs[i]) inputs[i].value = v; });
+  const ok = () => { const vals = inputs.map(inp => inp.value); closePrompt(); if (onOk) onOk(vals); };
+  const cancel = () => closePrompt();
+  mask.querySelector('.wb-btn-ok').onclick = ok;
+  mask.querySelector('.wb-btn-cancel').onclick = cancel;
+  mask.onclick = e => { if (e.target === mask) cancel(); };
+  inputs.forEach(inp => {
+    inp.onkeydown = e => {
+      if (e.key === 'Enter') { e.preventDefault(); ok(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    };
+  });
+  setTimeout(() => inputs[0].focus(), 0);
+}
+// 单输入框 + 说明（仓库内附件 / 本地文件链接 / 关联节点用）
+function showPromptH(title, hint, placeholder, onOk, initial) {
+  buildPrompt(title, hint, [placeholder], vals => { if (onOk) onOk(vals[0]); }, [initial]);
+}
+// 双输入框 + 说明（网页链接用：显示文字 + 地址）
+function showPrompt2(title, hint, ph1, ph2, onOk, init1, init2) {
+  buildPrompt(title, hint, [ph1, ph2], vals => { if (onOk) onOk(vals[0], vals[1]); }, [init1, init2]);
 }
 function showConfirm(title, onOk) {
   closePrompt();
@@ -4182,6 +5186,41 @@ function closePrompt() {
 // ============ 图片 URI 异步加载（webview 不能直接读本地文件，问扩展要可访问地址） ============
 const imgUriCache = {};
 let imgReqId = 0;
+// 图片读不到 → 变成「看得见、点得到」的缺失占位（2026-09-17）。
+// 为什么用 alt 而不是 CSS ::before：<img> 是替换元素，伪元素不渲染 —— 这正是以前预埋文案
+// 一直显示不出来的原因。alt 文本浏览器一定会画出来，尺寸随文字撑开，也就点得到/选得中/删得掉。
+function markImgMissing(imgEl, name) {
+  imgEl.classList.add('img-missing');
+  imgEl.dataset.missing = '1'; // 状态标记（class 只管样式；判定统一走 isImgMissing，防样式类被别处删掉导致状态丢）
+  imgEl.alt = T('img.missing');
+  imgEl.title = name + '\n' + T('tip.imgMissing');
+}
+function isImgMissing(imgEl) {
+  return !!(imgEl && (imgEl.dataset.missing === '1' || imgEl.classList.contains('img-missing')));
+}
+// 双击缺失图 → 弹说明框，明确告诉用户「缺的是哪张」（2026-09-17）。
+// 刻意只留一个「好的」按钮：真遇到缺图，人的第一反应是关掉继续干活，不会当场去找图。
+// 所以说明里直接告诉他「把文件放回库 → 重启 Obsidian 就会恢复」，比塞个「重新查找」按钮实在
+// （那个按钮实际没人会用 —— 用户 2026-09-17 定：撤掉重试机制）。
+// 为什么不让用户靠悬停看文件名：图片的悬停提示只能走原生 title，而插件统一的黑色小字提示用的是
+// [data-tip]::after —— 伪元素在 <img> 这类替换元素上不渲染，挂不上去。
+function showMissingImgInfo(relPath) {
+  closePrompt(); // 先清掉可能残留的
+  const mask = document.createElement('div');
+  mask.className = 'wb-mask';
+  mask.id = 'wb-prompt-mask';
+  mask.innerHTML = '<div class="wb-dialog">'
+    + '<div class="wb-dialog-title">' + escapeHtml(T('img.missingTitle')) + '</div>'
+    + '<div class="wb-dialog-hint">' + escapeHtml(T('img.missingHint')) + '</div>'
+    + '<div class="wb-missing-name">' + escapeHtml(relPath) + '</div>'
+    + '<div class="wb-dialog-actions">'
+    + '<button class="wb-btn wb-btn-ok">' + T('btn.okay') + '</button>'
+    + '</div></div>';
+  document.body.appendChild(mask);
+  const close = () => { try { mask.remove(); } catch (_) {} };
+  mask.querySelector('.wb-btn-ok').onclick = close;
+  mask.onclick = e => { if (e.target === mask) close(); };
+}
 function reqImg(relPath, imgEl) {
   if (!relPath) return;
   if (imgUriCache[relPath]) { imgEl.src = imgUriCache[relPath]; return; }
@@ -4348,11 +5387,9 @@ function parseFileLink(raw) {
   const display = normalizeFileDisplay(m[1].trim(), p);
   return { path: p, display };
 }
-// 文件链接显示名归一化：空或像路径时只留文件名，保留用户自定义中文名
+// 文件链接显示名：[显示名] 框即真相源，渲染只认框里原样内容；仅当显示名为空时退回末级名（文件夹取目录名）
 function normalizeFileDisplay(display, p) {
-  if (!display) return p.split(/[\\/]/).pop() || p;
-  if (display === p) return p.split(/[\\/]/).pop() || p;
-  if (/^(\/|[A-Za-z]:[\\/])/.test(display)) return p.split(/[\\/]/).pop() || p;
+  if (!display) return (p.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || p);
   return display;
 }
 // 经宿主打开文件链接指向的本地文件（宿主决定用导图视图还是系统默认应用）
@@ -4381,6 +5418,17 @@ function collectNowNodes(root) {
   })(root);
   return out;
 }
+// Now 节点是否被 Minor「埋掉」（2026-09-15 用户定稿）：自身或祖先链（不含主节点——主节点恒可见）
+// 上有 Minor 标记 → 这个 Now 就不再重要，不参与只看 Now / 定位等一切 Now 相关功能。
+// 无条件判定，与「隐藏 Minor」开关无关：标了 Minor 就代表不关注，按标记算，不按当前显隐算。
+function nowTaintedByMinor(root, now) {
+  const path = pathTo(root, now.id);
+  return !!path && path.some((n, i) => i > 0 && nodeIsMinor(n));
+}
+// 「可用的 Now」= 收集结果剔除被 Minor 埋掉的（只看 Now / 定位 / 置灰判定统一用这个口径）
+function collectUsableNows(root) {
+  return collectNowNodes(root).filter(n => !nowTaintedByMinor(root, n));
+}
 // 计算「只显示 Now」下的可见节点集：Now 节点 + 其祖先链（从主节点导过来的必要路径）+ Now 节点的直接子节点
 // （类比 hideDone 的剔除渲染：返回 Set，buildRow 里不在集内且 depth>0 的节点直接 return null）
 function computeNowVisible(root) {
@@ -4392,7 +5440,7 @@ function computeNowVisible(root) {
   // 【2026-08-31 反修】此前加过「下钻态子树整体可见」豁免 → 下钻到无 now 标记的普通节点 + showNow 时过滤完全失效
   //（点了「只看 Now」画面毫无变化）。按语义：不看子树整体，只看当前视图里有没有 Now 节点。
   collectNowNodes(root).forEach(now => {
-    set.add(now.id);
+    if (nowTaintedByMinor(root, now)) return; // 2026-09-15 修「半截」：被 Minor 埋掉的 Now 无条件不计入（见 nowTaintedByMinor）
     const path = pathTo(root, now.id); // 祖先链（含 now 自身），保住从主节点到 Now 的路径
     if (path) path.forEach(n => set.add(n.id));
     // Now 的子树（含所有层级的子孙）恒进可见集：setShowNow 不再强制折叠 Now 子树（子孙保持原始折叠态），
@@ -4425,9 +5473,10 @@ function cardTitleInner(node) {
 // URL 链接 v2：[显示名](https://…)（标准 Markdown）或裸 https://x / www.x / ftp:// / mailto:；点击浏览器打开
 function parseUrlLink(raw) {
   const t = String(raw || '').trim();
-  const m = t.match(/^\[([^\]]*)\]\(((?:https?|ftp):\/\/[^)\s]+|mailto:[^)\s]+)\)$/);
+  const m = t.match(/^\[([^\]]*)\]\(((?:https?|ftp):\/\/[^)\s]+|mailto:[^)\s]+|www\.[^)\s]+)\)$/);
   if (m) {
-    const url = m[2].trim();
+    let url = m[2].trim();
+    if (/^www\./i.test(url)) url = 'https://' + url; // 裸 www. 补 https，便于浏览器打开
     return { url, display: normalizeUrlDisplay(m[1].trim(), url) };
   }
   if (/^(https?:\/\/|ftp:\/\/|mailto:|www\.)[^\s]+$/i.test(t)) {
@@ -4437,12 +5486,9 @@ function parseUrlLink(raw) {
   }
   return null;
 }
-// URL 显示名归一化：空或像 URL 时只显示根域名（并剥 www.），保留用户自定义中文名
+// URL 显示名：[显示名] 框即真相源，渲染只认框里原样内容；仅当显示名为空时退回根域名
 function normalizeUrlDisplay(display, url) {
   if (!display) return urlRootDisplay(url);
-  const urlNoProto = url.replace(/^(https?:\/\/|ftp:\/\/|mailto:)/i, '');
-  if (display === url || display === urlNoProto) return urlRootDisplay(url);
-  if (/^(https?:\/\/|ftp:\/\/|mailto:|www\.)/i.test(display)) return urlRootDisplay(url);
   return display;
 }
 function urlRootDisplay(url) {
@@ -4530,7 +5576,7 @@ function renderInline(text) {
   // 混排切出的链接 token 必须含右括号结尾（parseUrlLink/parseFileLink 都要求 \)$）：
   // 旧正则 URL/file 共用 [^)\s]+ 且不带 \) → token 永远缺右括号 → parse 恒 null → [名](url) 内嵌一直是纯文字（隐藏老 bug）；
   // file 另用 [^)]+（本地路径可含空格，如 "Digital Life"，2026-09-02 实踩：含空格路径内嵌失效）
-  const re = /\[\[[^\[\]]+\]\]|\[[^\[\]]*\]\(file:\/\/[^)]+\)|\[[^\[\]]*\]\((?:https?|ftp):\/\/[^)\s]+\)|mailto:[^)\s]+\)|(?:https?:\/\/|ftp:\/\/|mailto:|www\.)[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
+  const re = /\[\[[^\[\]]+\]\]|\[[^\[\]]*\]\(file:\/\/[^)]+\)|\[[^\[\]]*\]\((?:https?|ftp):\/\/[^)\s]+\)|\[[^\[\]]*\]\(www\.[^)\s]+\)|mailto:[^)\s]+\)|(?:https?:\/\/|ftp:\/\/|mailto:|www\.)[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
   let last = 0, m, html = '';
   while ((m = re.exec(text)) !== null) {
     html += escMd(text.slice(last, m.index));
@@ -4586,14 +5632,8 @@ function bindInline(container) {
 }
 
 // ============ 浮动操作面板 ============
-// 调试界面开关：fab → 调试界面 控制左工具栏刷新按钮显隐（2026-08-25：刷新钮从右上角移到左工具栏）
-let debugMode = false;
-function setDebugMode(on) {
-  debugMode = on;
-  const rf = document.getElementById('btn-refresh');
-  if (rf) rf.classList.toggle('hidden', !on);
-  persistNow(); // 经 setView 写穿到扩展内存 Map（替代 getState，切页重建不丢）
-}
+// （画布里的「调试界面开关」连同顶部刷新按钮已于 2026-09-14 一并删除。
+//   注意：设置页里那个 debugMode 是【另一个东西】—— 作者的许可状态调试栏，保留不动。）
 
 // ============ 左侧工具栏 + 三个点菜单（飞书风重做，2026-08-21） ============
 // 撤销/重做置灰（按钮已移入更多菜单，2026-08-25）
@@ -4606,7 +5646,12 @@ function updateUndoRedo() {
 // 隐藏完成（Minor）按钮图标：原方案 eye/eye-off（状态切图标）
 // persist=true 时同步给扩展存 workspaceState（按文件记，下次打开保持）；init 恢复时传 false 不回写（2026-08-24 P1）
 function setHideDone(on, persist, skipRender) {
+  // 沙盒化（2026-09-14 用户定）：历史界面里这个开关【可以点】，但只在本界面生效、不落盘；
+  // 退出由 sandboxRestore 整组还原。所以这里不再 return，只在发消息那步挡住持久化。
   state.hideDone = on;
+  // 2026-09-15：hideDone 变了 → Minor 链的埋没关系变了 →「只看 Now」可见集必须重算，
+  // 否则先开 hideDone 再开 showNow（或反过来切）时快照是旧的，被 Minor 埋掉的 Now 会显示成半截。
+  if (state.showNow && state.tree && !skipRender) nowVisibleSnapshot = computeNowVisible(currentRoot());
   const b = document.getElementById('btn-hide-done');
   if (b) {
     b.innerHTML = renderIcon(on ? 'frame-eye-closed' : 'frame-eye-open', 18); // 2026-08-26：用户自定义图标（Frame / Frame-1），关闭态蓝色由 .active-hide 提供
@@ -4614,31 +5659,34 @@ function setHideDone(on, persist, skipRender) {
     b.classList.toggle('active-hide', on);
     b.dataset.tip = on ? T('tb.showMinor') : T('tb.hideMinor');
   }
-  if (persist !== false) vscode.postMessage({ type: 'setHideDone', value: !!on });
+  if (persist !== false && !state.historyMode) vscode.postMessage({ type: 'setHideDone', value: !!on }); // 沙盒里不持久化
   if (skipRender) return; // 只写状态与按钮图标，不重建树（init 建树前预置过滤开关用）
   if (!state.tree) return; // 树未初始化（自检脚本 / 启动阶段），只更新图标
   keepView(currentRoot()); // 2026-08-24 修：之前误传 currentRoot().id（字符串），keepView 内 node.id=undefined 静默 return，锚定从未生效
   render();
 }
 // 只显示「当前关注 Now」节点（2026-08-27 起）：切换 showNow。
-// 开：剔除渲染只留 Now+祖先路径+Now 直接子节点（computeNowVisible）+ 定位首 Now 居中。
+// 开：剔除渲染只留 Now+祖先路径+Now 直接子节点（computeNowVisible）；视图锚定主节点不跳转
+//   （2026-09-14 起与「隐藏 Minor」一致：keepView(currentRoot())；原为 resetView 定位首 Now 居中，主节点会偏离原位）。
 // 关：正常渲染。
 // 数据层展开/折叠（用户 2026-08-27 后续定）：仅真实点击开启（persist 默认 true）时改 node.fold——
 //   展开藏 Now 的所有祖先（让 Now 露出）+ 折叠 Now 的直接子节点（其后整棵子树收起，类点折叠按钮）；
 //   改前 pushUndo 可撤销，emitUpdate 落盘。init 恢复(persist=false)与点关闭时都不碰 node.fold，交回用户手动（"点完按钮后别管，除非再次点击"）。
 function setShowNow(on, persist, skipRender) {
-  if (state.historyMode) return; // 历史页只读：禁止切换"只看当前关注"（会持久化偏好 + 改折叠 + resetView，泄露到实时视图导致塌缩）
-  // 真实点击开启时，当前视图（currentRoot 范围）一个 Now 节点都没有 → 不开、退出，并提示原因
-  //（否则可见集只剩当前根、画面塌缩成单节点，用户看到"点了没反应/节点失效"；2026-08-31 语义）
-  if (on && persist !== false && state.tree && collectNowNodes(currentRoot()).length === 0) {
+  // 沙盒化（2026-09-14 用户定）：历史界面里可以点，只在本界面生效、不落盘；退出由 sandboxRestore 整组还原。
+  // 注意它在这里改的是【快照树】的 fold，不会碰到实时文档树；pushUndo 的污染也由沙盒还原清掉。
+  // 真实点击开启时，当前视图（currentRoot 范围）一个【可显示的】Now 节点都没有 → 不开、退出，并提示原因
+  //（否则可见集只剩当前根、画面塌缩成单节点，用户看到"点了没反应/节点失效"；2026-08-31 语义）。
+  // 2026-09-15：口径改为可用 Now（collectUsableNows，剔除被 Minor 埋掉的）——全是这种就等于没有可显示的。
+  if (on && persist !== false && state.tree && collectUsableNows(currentRoot()).length === 0) {
     toast(T('toast.showNowEmpty'));
-    vscode.postMessage({ type: 'setShowNow', value: false }); // 回写 perFile，别存一个无效的 true
+    if (!state.historyMode) vscode.postMessage({ type: 'setShowNow', value: false }); // 回写 perFile，别存一个无效的 true（沙盒里不落盘）
     updateNowSideBtn();
     return;
   }
   state.showNow = on;
   nowVisibleSnapshot = (on && state.tree) ? computeNowVisible(currentRoot()) : null; // 「按下那一刻」定格可见集；关闭即清空（2026-08-28）
-  if (persist !== false) vscode.postMessage({ type: 'setShowNow', value: !!on });
+  if (persist !== false && !state.historyMode) vscode.postMessage({ type: 'setShowNow', value: !!on }); // 沙盒里不持久化
   // 只写状态与按钮图标，不重建树（init 建树前预置「关闭态」用）；开启态需建树后算可见快照，不走这里
   if (skipRender) { updateNowSideBtn(); return; }
   if (!state.tree) { updateNowSideBtn(); return; } // 树未初始化，只更新图标
@@ -4646,22 +5694,28 @@ function setShowNow(on, persist, skipRender) {
   if (on && persist !== false) {
     pushUndo();
     const root = currentRoot();
-    collectNowNodes(root).forEach(now => {
+    collectUsableNows(root).forEach(now => { // 2026-09-15：只展开/折可用 Now（被 Minor 埋掉的不参与）
       const path = pathTo(root, now.id); // 祖先链（含自身）
       if (path) for (let i = 0; i < path.length - 1; i++) path[i].fold = false; // 展开所有祖先（自身保留）
-      now.fold = true; // 进入「只看当前关注」：仅折 Now 自身（最小态，画面只剩 Now 一行），子孙保持原始折叠态；
+      // 历史界面（沙盒）里**不硬折 Now**：Now 自身与它的子树交给差异规则重折
+      // （子树没差异 → 规则②照样把 Now 折起 = Now 的最小态；有差异 → 展开到差异节点）。
+      // 用户 2026-09-14 定："先按 Now 把要显示的显示出来，Now 之后的子节点再按差异来开"。
+      if (state.historyMode) applyDiffOnlyFold(now);
+      else now.fold = true; // 进入「只看当前关注」：仅折 Now 自身（最小态，画面只剩 Now 一行），子孙保持原始折叠态；
       // 点 Now 展开后子节点按原状显示（不逐层续折），任意层级都可在 nowVisibleSet 内展开查看/编辑。
     });
     emitUpdate(); // 落盘 fold 变化
   }
-  // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」的头号根因：
+  // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」的头号根因（历史，勿回退）：
   // 原 `if (on) resetView()` 不看 persist——init 恢复（persist=false）也走 resetView → rAF 里 locateCenter
   // → placeCardAtViewport 强制 pan=0 + scroll=定位规范值，把 init hasSavedView 分支刚恢复的 pan 抹掉；
   // 随后的 scroll 事件 persist 又把被污染的状态写回记忆 → 永远回中央。修：init 恢复只重渲染应用 Now 过滤，
-  // 视图位置完全交给 init 的恢复/定位分支；只有真实点击开启才定位到第一个 Now 节点。
+  // 视图位置完全交给 init 的恢复/定位分支（init 期间 applyPendingKeepView 还有 booted 门闩兜底，不补偿）。
+  // 2026-09-14 改：真实点击开启也不再定位——原 resetView → locateCenter 把第一个 Now 摆到画面 25%，
+  // 主节点会偏离用户原本的中间位置；现与「隐藏 Minor」一致：锚定主节点，画面位置不变。
   if (on) {
-    state.nowLocateIndex = 0;
-    if (persist !== false) resetView(); // 真实点击开启：定位到第一个 Now 节点为画面自定义中间
+    state.nowLocateIndex = 0; // 多 Now 时定位按钮循环的起点（下钻/返回等仍按此定位到 Now）
+    if (persist !== false) { keepView(currentRoot()); render(); } // 真实点击开启：锚定主节点，不跳转
     else render(); // init 恢复：只按快照重渲染应用过滤，绝不定位
   }
   else { keepView(currentRoot()); render(); }
@@ -4673,15 +5727,8 @@ function updateNowSideBtn() {
   const b = document.getElementById('btn-now-side');
   const wrap = document.getElementById('now-wrap');
   if (!b || !wrap) return;
-  if (state.historyMode) {
-    // 历史页只读：禁用"只看当前关注"（与编辑类操作一致），避免切换偏好泄露到实时视图
-    b.disabled = true;
-    b.innerHTML = renderNowIcon('side');
-    wrap.dataset.side = 'right';
-    wrap.dataset.tip = T('tb.nowReadonly');
-    return;
-  }
-  const hasNow = state.tree ? collectNowNodes(currentRoot()).length > 0 : false;
+  // 沙盒（2026-09-14 用户定）：历史界面里这个按钮不再置灰 —— 可以点，只影响本界面，退出整组还原。
+  const hasNow = state.tree ? collectUsableNows(currentRoot()).length > 0 : false; // 2026-09-15：口径=可用 Now（被 Minor 埋掉的不算）
   b.disabled = !hasNow;
   b.classList.toggle('now-on', hasNow && state.showNow);
   wrap.dataset.side = 'right'; // 左侧 toolbar 按钮 → tooltip 向右浮动（避开画布；2026-08-27）
@@ -4695,6 +5742,16 @@ function updateNowSideBtn() {
   }
 }
 // 默认路径按钮状态：当前页面路径 vs 保存的默认路径（两态：置灰 / 蓝色点击返回）
+// 位置归一（2026-09-15 定稿）：比较前先把「主节点」翻成统一记号——
+// 空串（没下钻 / 文件头没写 node）与主节点自身编号（如历史遗留 node: pfzXXX）视为同一位置。
+// 消除「同一位置两种写法」导致的按钮误亮（实踩：主节点带 ID 的文件，两按钮在主节点误亮）。
+const POS_ROOT = '·root·';
+function normPos(pid) {
+  pid = String(pid || '').trim().replace(/[^A-Za-z0-9]/g, '');
+  if (!pid) return POS_ROOT;
+  if (state.tree && pid === state.tree.persistId) return POS_ROOT;
+  return pid;
+}
 // 默认路径是否有效：空串=默认是根（永远有效）；否则树里必须还存在该 persistId 节点
 function defaultPathValid() {
   const d = (state.defaultPid || '').trim();
@@ -4702,44 +5759,50 @@ function defaultPathValid() {
   return !!findNodeByPersistId(state.tree, d);
 }
 function updateDefaultPathBtn() {
-  // 2026-08-28：路径按钮移到更多菜单（data-act="default-path"，名「链接」）。子菜单 4 项已删，仅保留返回默认路径入口
-  const b = document.querySelector('#more-menu .mm[data-act="default-path"]');
-  if (!b) return;
+  // 2026-09-15 定稿：路径入口只在「更多」菜单（一级按钮已删）。本函数只做两件事：
+  // ① 更多按钮图标随状态切换：当前 ≠ 默认且默认有效 → 双点+斜杠（斜杠主题色）；相同/失效 → 原三个点
+  // ② 同步菜单项置灰（updatePathMenuBtns）
   const valid = defaultPathValid();
-  const cur = (currentRoot() ? (currentRoot().persistId || '') : '').trim();
-  const def = (state.defaultPid || '').trim();
+  const cur = normPos(state.currentRootPid);
+  const def = normPos(state.defaultPid);
   const same = cur === def;
-  if (!valid) { b.disabled = true; b.title = T('tb.pathInvalid'); }
-  else if (same) { b.disabled = true; b.title = T('tb.pathIsDefault'); }
-  else { b.disabled = false; b.title = T('tb.pathBack'); }
+  const bMore = document.getElementById('btn-more');
+  if (bMore) bMore.innerHTML = (valid && !same) ? MORE_PATH_HINT_SVG : renderIcon(ICON_FIXED.more, 18);
   updatePathMenuBtns();
 }
-// 子菜单 4 项的置灰：上一/下一按历史栈位置，返回默认/更新当前按「是否已是默认 / 默认是否有效」（2026-08-28 恢复）
+// 路径 4 项（「更多」菜单平铺）置灰：上一/下一按历史栈位置，返回默认/设默认按归一位置比较（2026-09-15 定稿）
 function updatePathMenuBtns() {
-  const back = document.getElementById('mi-path-back');
-  const fwd = document.getElementById('mi-path-fwd');
-  const def = document.getElementById('mi-path-default');
-  const save = document.getElementById('mi-path-save');
+  const back = document.querySelector('#more-menu .mm[data-act="path-back"]');
+  const fwd = document.querySelector('#more-menu .mm[data-act="path-fwd"]');
+  const def = document.querySelector('#more-menu .mm[data-act="path-default"]');
+  const save = document.querySelector('#more-menu .mm[data-act="path-save"]');
   if (back) back.disabled = state.pathHistoryIndex <= 0;
   if (fwd) fwd.disabled = state.pathHistoryIndex >= state.pathHistory.length - 1;
-  const cur = (currentRoot() ? (currentRoot().persistId || '') : '').trim();
-  const dflt = (state.defaultPid || '').trim();
+  // 当前/默认位置都走 normPos 归一（主节点统一记号），规则只有一条：相同 → 灰，不同 → 亮
+  const cur = normPos(state.currentRootPid);
+  const dflt = normPos(state.defaultPid);
   const same = cur === dflt;
   const valid = defaultPathValid();
   if (def) def.disabled = !valid || same;
   if (save) save.disabled = same && valid;
 }
-// 初始化左侧一级菜单按钮图标 + tooltip（undo/redo 已移入更多菜单，2026-08-25；slash 路径按钮 2026-08-28 也移入更多菜单）
+// 更多按钮提示图标（2026-09-15 实验）：两个圆点 + 一条斜杠。**仅在当前位置 ≠ 默认路径时显示**
+//（相同则保持原三个点，见 updateDefaultPathBtn 的切换）；斜杠 style 直接吃 var(--accent) 主题色。
+const MORE_PATH_HINT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" class="icon">' +
+  '<path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<path d="M14.3386 6.00005L9.98501 17.9509" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--accent)"/>' +
+  '</svg>';
+// 初始化左侧一级菜单按钮图标 + tooltip（undo/redo 已移入更多菜单，2026-08-25；路径按钮 2026-09-15 定稿：删除，入口只在「更多」菜单）
 ['locate', 'hide', 'more'].forEach(k => {
   const id = k === 'hide' ? 'btn-hide-done' : 'btn-' + k;
   const b = document.getElementById(id);
   if (!b) return;
-  b.innerHTML = renderIcon(ICON_FIXED[k], 18);
+  b.innerHTML = k === 'more' ? MORE_PATH_HINT_SVG : renderIcon(ICON_FIXED[k], 18);
   const tipMap = {
     undo: T('tb.undo'),
     redo: T('tb.redo'),
     locate: T('tb.locate'),
-    slash: T('tb.defaultPath'),
     hide: T('tb.minorToggle'),
     more: T('common.more'),
   };
@@ -4790,8 +5853,40 @@ function foldRun(mode, lvl) {
   foldApply(mode, lvl, paths);
   emitUpdate();
   if (isSelMode) keepView(paths[0][paths[0].length - 1]); // 选中节点保持屏幕原位（2026-08-26 位置刷新优化）
-  else { resetView(); return; } // 画面折叠：resetView 自带 render + 居中（2026-09-13：原写法 resetView 后又 render()，同一棵树白建两遍）
+  else {
+    // view 模式落位（2026-09-15 重做，用户定）：缩放全程不变，按主节点可见性三分——
+    // 完整可见 → 原地站住（锚定补偿后画面不动）；被视口截断 → 最小平移露出全卡；
+    // 完全不在画面里 → 标准机位（--locate-first-x / --locate-y，缩放仍不变）。
+    keepView(currentRoot()); // 锚点 = 主节点；render 末尾 applyPendingKeepView 把它摆回原屏幕位置
+    render(); // render 内会调 updateFoldBar 重发状态
+    viewFoldLocate();
+    return;
+  }
   render(); // render 内会调 updateFoldBar 重发状态
+}
+// view 折叠落位（2026-09-15）：在 render + 锚定补偿之后调用，按主节点卡片可见性三分处理（缩放全程不变）。
+function viewFoldLocate() {
+  const root = currentRoot();
+  const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
+  if (!el) { locateCenter(); return; }
+  const vr = viewMap.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const fullyIn = r.left >= vr.left && r.right <= vr.right && r.top >= vr.top && r.bottom <= vr.bottom;
+  if (fullyIn) { persistNow(); return; } // 完整可见：原地站住（锚定补偿已把根放回原位），什么都不做
+  const partial = r.right > vr.left && r.left < vr.right && r.bottom > vr.top && r.top < vr.bottom;
+  if (partial) {
+    // 被视口截断：最小平移把整卡挪进画面，留 12px 边距喘口气
+    let dx = 0, dy = 0;
+    if (r.left < vr.left) dx = vr.left + 12 - r.left; else if (r.right > vr.right) dx = vr.right - 12 - r.right;
+    if (r.top < vr.top) dy = vr.top + 12 - r.top; else if (r.bottom > vr.bottom) dy = vr.bottom - 12 - r.bottom;
+    panX += dx / zoom; panY += dy / zoom;
+  } else {
+    // 完全不在画面里：回标准机位（与定位按钮同参 --locate-first-x / --locate-y，但缩放不变）
+    const c = worldCenter(el);
+    panX = vr.width * cfgNum('--locate-first-x', 0.25) / zoom - c.x;
+    panY = vr.height * cfgNum('--locate-y', 0.5) / zoom - c.y;
+  }
+  applyTreeTransform(); drawEdges(); persistNow();
 }
 // 纯折叠动作（不含 pushUndo / 定位 / 渲染）
 function foldApply(mode, lvl, paths) {
@@ -4844,6 +5939,8 @@ function pathTo(root, target) {
 // 画面按层折叠（数字左键 / mode='view'）：targetDepth=code depth；d<targetDepth 打开路径，d===targetDepth 只折该层（单层语义，更深层 fold 不动）
 function foldByLevelPure(targetDepth) {
   const root = currentRoot();
+  root.fold = false; // 2026-09-15 修：view 模式 lvl=1 会把主节点折起（root.fold=true），而本函数从不处理 d=0——
+                     // 从「只剩主节点」点 2/3/4/5 时没人把主节点展开 → 画面无反应。任何按层折叠（≥2 层）都蕴含主节点展开。
   const walk = (node, d) => {
     if (d > 0) {
       if (d < targetDepth) node.fold = false;
@@ -4885,7 +5982,9 @@ function foldSelSubtreeToLevel(lvl, selNode) {
 // 2026-09-13 定案（v2）：数字的作用看有没有选中 —— 未选中 = 画面按层折叠（view）；选中 = 折选中节点、外部不变（keep），
 //   按住 Cmd 则换成「外部能折尽折 + 折选中节点」（min）。右键菜单是这两条的等价入口（宿主侧触发，回 mode 参数）。
 function updateFoldBar() {
-  if (state.historyMode) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; }
+  // 历史只读态也显示折叠条（2026-09-14 用户定）：折叠是"看清楚"的操作，属沙盒允许的一类。
+  // 安全性：foldRun → emitUpdate 被守卫挡住（不写回）；pushUndo 压进栈的脏条目由 sandboxRestore 整体还原；
+  // 折的是快照树（state.tree 当时即快照树），退出即丢。原来的「历史态直接 hidden」守卫已删。
   const root = currentRoot();
   if (!root) { vscode.postMessage({ type: 'foldBarState', hidden: true }); return; } // 2026-08-30 防御：树未初始化/解析异常时 root 为 null
   // 数字范围 = 整棵树最深层级（1..treeMax+1）—— 固定不随选中变化；单主节点也显示「1」
@@ -4951,6 +6050,8 @@ function buildLocateItems() {
   };
   let nowIdx = 0; // Now 序号：locateToItem 靠它点亮当前 Now（丢了会全部变淡紫，2026-09-11 实踩）
   (function walk(n, ancDepth, ancIsNow) {
+    // 2026-09-15：被 Minor 埋掉的 Now 不参与定位（用户定）——其子树内的 Now 也必然被埋，整股跳过
+    if (nodeIsNow(n) && nowTaintedByMinor(root, n)) return;
     const type = typeOf(n);
     if (!type) { (n.children || []).forEach(c => walk(c, ancDepth, ancIsNow)); return; } // 非感兴趣节点：穿过并继承层深
     const depth = n.id === root.id ? 0 : (ancIsNow ? ancDepth + 1 : 0);
@@ -5041,9 +6142,14 @@ function clearLocatePredict() {
 
 // 定位态高亮（多 Now 时）：给当前定位(idx)的 Now 卡加 now-current、其余加 now-unlocated（document 顺序 = 先序 = collectNowNodes 顺序）
 function applyNowLocateAt(idx) {
-  const nows = collectNowNodes(currentRoot());
+  const nows = collectUsableNows(currentRoot()); // 2026-09-15：与定位序列同口径（被 Minor 埋掉的 Now 不参与）
   if (nows.length <= 1) return;
-  const icoEls = document.querySelectorAll('.now-ico');
+  const ids = new Set(nows.map(n => n.id));
+  // 高亮只挂在可用 Now 的图标上（被埋的 Now 即便渲染着也不参与计数，保持与定位序列对齐）
+  const icoEls = Array.prototype.slice.call(document.querySelectorAll('.now-ico')).filter(el => {
+    const row = el.closest('.node-row');
+    return row && ids.has(row.dataset.id);
+  });
   if (icoEls.length !== nows.length) return; // 渲染集与数据不一致（如开了只显示 Now）→ 不处理，避免错位
   viewMap.classList.add('now-locate-active');
   icoEls.forEach((el, i) => {
@@ -5100,6 +6206,9 @@ let requestMenuHide = null; // 由 bindNowLocateHover 注入（hide 在 IIFE 内
 //   编辑像正常文本框（全选/拖选/复制粘贴/删字都原生可用），保存后才同步到画布；
 //   Cmd/Ctrl 快捷键照常作用于选中节点（鼠标被菜单占用时的操作手段）。
 function startMenuEdit(b, item) {
+  // 沙盒：历史界面里不许改内容 —— 这条是「定位菜单里二次点击同一条 = 就地改标题」的入口
+  //（2026-09-14 用户报的最后一处漏网：定位子菜单能编辑）。给 toast 而不是静默，否则用户以为双击失灵。
+  if (state.historyMode) { toast(T('toast.histNoEdit')); return; }
   const node = item.node;
   const t = b.querySelector('.now-num-title');
   if (!node || !t) return;
@@ -5462,65 +6571,23 @@ document.getElementById('btn-hide-done').onclick = () => {
   setHideDone(!state.hideDone);
 };
 applyProGate(document.getElementById('btn-hide-done')); // Pro 拦截（2026-09-04）：Minor（隐藏完成）按钮
-// 2026-08-30 恢复：更多菜单「路径链接」hover 浮出的子菜单 4 项（HTML 见 main.js #default-path-menu）
-// 全部走存在性守卫：元素缺失时静默跳过，绝不 null.onclick 中断初始化（2026-08-30 所有导图打不开的教训）
-(function initPathSubmenu() {
-  const sub = document.getElementById('default-path-menu');
-  if (!sub) return;
-  sub.querySelectorAll('.dp-ic').forEach(span => {
-    const name = ICON_FIXED[span.dataset.ic];
-    if (name) span.innerHTML = renderIcon(name, 16);
-  });
-  const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-  on('mi-path-back', historyBack);
-  on('mi-path-fwd', historyForward);
-  on('mi-path-default', returnToDefault);
-  on('mi-path-save', saveAsCurrent);
-})();
-updatePathMenuBtns(); // 子菜单 4 项初始置灰态（函数内有 if 守卫，无按钮时不报错）
+updatePathMenuBtns(); // 菜单项初始置灰态（「更多」平铺 4 项，函数内有 if 守卫，无按钮时不报错）
 // 更多：纯 hover 浮出（CSS #more-wrap:hover #more-menu），点击不再 toggle（避免 toggleMoreMenu 的 fixed 内联定位覆盖 hover 样式）
 document.getElementById('btn-more').onclick = (e) => { e.stopPropagation(); };
-// 工具栏 hover 子菜单（slash 路径菜单 / more 更多菜单）：JS 控制显隐，mouseleave 延迟 220ms 关闭
-// —— 避免纯 CSS :hover 在「按钮 ↔ 菜单」间隙的死区导致鼠标一移出按钮菜单就消失、点不到
-function bindHoverMenu(wrapId, menuId, useFixed, keepAliveSel) {
+// 工具栏 hover 子菜单（more 更多菜单）：JS 控制显隐，mouseleave 延迟 220ms 关闭
+// —— 避免纯 CSS :hover 在「按钮 ↔ 菜单」间隙的死区导致鼠标一移出按钮菜单就消失、点不到。
+// （2026-09-15 定稿：原 fixed/portal 定位分支与 keepAlive 随路径子菜单移入「更多」平铺而删除）
+function bindHoverMenu(wrapId, menuId) {
   const wrap = document.getElementById(wrapId);
   const menu = document.getElementById(menuId);
   if (!wrap || !menu) return;
   let timer = null;
-  // 2026-08-28：useFixed=true 时菜单用 position:fixed + 按 wrap 视口坐标定位——逃出父级 overflow
-  // 裁剪域（如 more-menu 的 overflow-y:auto 会裁掉内嵌 absolute 子菜单）。菜单向上展开（顶部对齐 wrap 顶部 - menuHeight），
-  // 底部对齐 wrap 底部，位置更靠上贴近触发按钮（2026-08-28）
   const show = () => {
     clearTimeout(timer);
     menu._hoverTimer = null;
-    // 已打开时直接跳过：避免每次 mouseenter 都重跑「visibility:hidden 量尺寸→恢复」导致菜单瞬间
-    // 失焦触发 mouseleave、220ms 后即使鼠标还在上面也关掉（即「hover 子子菜单就消失」的根因）
-    if (useFixed && !menu.classList.contains('open')) {
-      // 关键：把子菜单挪到 body 顶层（portal），彻底脱离 more-menu 的 overflow/transform 裁剪域。
-      // 此前「隐在菜单里 / 非常异常」的根因就是子菜单嵌套在 overflow:auto 容器里被裁，
-      // 或 position:fixed 受 transform 祖先影响变成相对祖先定位而乱飞。挪出来后 fixed 恒对视口。
-      if (menu.parentElement !== document.body) document.body.appendChild(menu);
-      const r = wrap.getBoundingClientRect();
-      menu.style.position = 'fixed';
-      menu.style.bottom = 'auto'; // 清掉 CSS .dp-menu 残留的 bottom:-1px，避免 top/bottom 同时生效歧义
-      menu.style.visibility = 'hidden';
-      menu.classList.add('open'); // 先显示以便量取真实尺寸
-      const w = menu.offsetWidth, h = menu.offsetHeight;
-      let left = r.right; // 默认在「链接」按钮右侧浮出
-      if (left + w > window.innerWidth - 8) left = r.left - w; // 右溢出则翻到按钮左侧
-      menu.style.left = left + 'px';
-      menu.style.top = Math.max(8, r.bottom - h) + 'px'; // 底部对齐按钮底部（更靠上，贴近触发钮）；贴顶兜底
-      menu.style.visibility = '';
-    }
     menu.classList.add('open');
   };
   const hide = () => {
-    // keepAliveSel：若指定的「子子菜单」仍打开，则本菜单保持打开并轮询，直到子菜单关闭再真正收起
-    // （否则 hover 子子菜单时本菜单 mouseleave 会把它关掉，整条 hover 链断掉）
-    if (keepAliveSel) {
-      const alive = document.querySelector(keepAliveSel);
-      if (alive && alive.classList.contains('open')) { timer = setTimeout(hide, 160); return; }
-    }
     timer = setTimeout(() => menu.classList.remove('open'), 220);
   };
   wrap.addEventListener('mouseenter', show);
@@ -5528,8 +6595,7 @@ function bindHoverMenu(wrapId, menuId, useFixed, keepAliveSel) {
   menu.addEventListener('mouseenter', show);
   menu.addEventListener('mouseleave', hide);
 }
-bindHoverMenu('more-wrap', 'more-menu', false, '#default-path-menu'); // 子子菜单打开时「更多」菜单保持不关
-bindHoverMenu('mm-link-wrap', 'default-path-menu', true); // 2026-08-28：fixed 定位逃出 more-menu 裁剪
+bindHoverMenu('more-wrap', 'more-menu'); // 「更多」菜单：hover 浮出（路径 4 项已平铺进菜单，2026-09-15 定稿）
 
 // 三个点菜单（#more-menu）初始化（图 + 文字 + 快捷键）
 (function initMoreMenu() {
@@ -5547,18 +6613,18 @@ document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
   btn.onclick = e => {
     e.stopPropagation();
     const act = btn.dataset.act;
-    if (act === 'add-child') addChild();
-    else if (act === 'add-sibling') addSibling();
-    else if (act === 'delete') deleteNode();
-    else if (act === 'undo') doUndo();
+    if (act === 'undo') doUndo();
     else if (act === 'redo') doRedo();
-    else if (act === 'default-path') { if (!btn.disabled) returnToDefault(); }
-    else if (act === 'toggle-debug') setDebugMode(!debugMode);
+    // 2026-09-15 临时实验：路径 4 项平铺进「更多」（一级按钮隐藏期间）；正式取舍待用户测试后定
+    else if (act === 'path-back') historyBack();
+    else if (act === 'path-fwd') historyForward();
+    else if (act === 'path-default') returnToDefault();
+    else if (act === 'path-save') saveAsCurrent();
     else if (act === 'toggle-view') switchView();
-    else if (act === 'history') openHistoryPanel();
+    else if (act === 'history') vscode.postMessage({ type: 'openHistoryPanel' }); // 交给宿主打开原生「历史记录」面板
     else if (act === 'save-snapshot') manualSaveSnapshot();
     else if (act === 'join-group') openUrl(JOIN_GROUP_URL); // 更多菜单「加入 28 Notes 微信群」（2026-09-07）
-    else if (act === 'about') vscode.postMessage({ type: 'openUrl', url: 'https://space.bilibili.com/481595180' });
+    else if (act === 'guide') openUrl(GUIDE_URL); // 更多菜单「使用指南」（2026-09-17：原 about=B 站，改为使用指南飞书文档）
     else if (act === 'settings') { vscode.postMessage({ type: 'log', text: '更多菜单→打开设置请求发出' }); vscode.postMessage({ type: 'openSettings' }); } // 更多菜单「设置与 bug 提报」（2026-09-01）
     document.getElementById('more-menu').classList.remove('open');
   };
@@ -5583,13 +6649,6 @@ document.addEventListener('dragend', () => {
   stopAutoScroll();
   clearDragHighlights();
 });
-// 左工具栏刷新按钮（调试开关开时显示；图标 lucide:refresh-ccw-dot）
-const btnRefresh = document.getElementById('btn-refresh');
-if (btnRefresh) {
-  btnRefresh.innerHTML = renderIcon('refresh-ccw-dot', 18);
-  btnRefresh.onclick = () => vscode.postMessage({ type: 'refreshData' });
-}
-
 wlog('webview 脚本加载完成，发送 ready');
 window.__MM_FLUSH__ = persistNow; // 宿主 rebind 重建 iframe 前同步调用，把当前 view 立即落盘（2026-09-01 修源思维导图切走丢位置）
 

@@ -21,11 +21,13 @@
   --shin-file-badge-color: var(--text-faint);     /* 捷径 ↗ 颜色（改这个才是捷径颜色！①的颜色走 --shin-mindmap-badge-color） */
 
   /* ── ③ 图标徽章（设置页「徽章样式」选“图标”时，思维导图文件右侧的 Ribbon 小 logo）── */
-  --shin-badge-icon-size: 12px;                   /* 图标大小 */
+  --shin-badge-icon-size: 22px;                   /* 图标大小 */
   --shin-badge-icon-opacity: .3;                  /* 图标常态透明度：1=不透明，0.3=很淡 */
   --shin-badge-icon-opacity-hover: 0.6;           /* 图标悬停时透明度（淡图标悬停变清晰） */
-  --shin-badge-icon-offset-x: -14px;              /* 图标水平位置：正→右移，负→左移 */
-  --shin-badge-icon-offset-y: -6px;               /* 图标垂直位置：正→下移，负→上移 */
+  --shin-badge-icon-offset-x: 0px;               /* 图标水平位置：正→右移，负→左移（默认 0 = 贴右，与 Obsidian 原生 .nav-file-tag 一致；
+                                                    此前 -14px 会把图标左移 14px 导致右间距偏大） */
+  --shin-badge-icon-offset-y: 0px;               /* 图标垂直位置：正→下移，负→上移（默认 0 = 垂直居中；
+                                                    此前 -6px 是 content:url() 时代的补偿量，background 方案下反致偏上） */
 
   /* 以下两对同时影响 ①文字 和 ②捷径（文本系通用），一般不用动 */
   --shin-file-badge-transform: uppercase;         /* 大小写：none=原样，uppercase=英文转全大写 */
@@ -73,13 +75,15 @@
   --shin-foldbar-pop-gap-x: 4px;
   --shin-foldbar-pop-right: -3px;
   --shin-ribbon-size: 28px;  /* 按钮外框（悬浮背景层）大小 */
-  --shin-ribbon-icon-size: 25px;  /* 图标本身大小：想缩小图标改这个，外框不变则自动留白 */
+  --shin-ribbon-icon-size: 22px;  /* 图标本身大小：想缩小图标改这个，外框不变则自动留白 */
 }
 /* Ribbon 图标按钮统一（不比侧栏其它图标大一圈）。给按钮加了 shin-ribbon-action class 后再生效。 */
 .shin-ribbon-action {
   padding: 0 !important;
   width: var(--shin-ribbon-size) !important; height: var(--shin-ribbon-size) !important;
-  display: flex !important; align-items: center; justify-content: center;
+  /* display 不能带 !important：官方功能区管理器隐藏按钮靠内联 display:none，
+     样式表 !important 会压过内联样式，导致「右键取消勾选/设置清单」都藏不住按钮 */
+  display: flex; align-items: center; justify-content: center;
 }
 .shin-ribbon-action svg { width: var(--shin-ribbon-icon-size); height: var(--shin-ribbon-icon-size); }
 .status-bar .shin-foldbar { display: inline-flex; align-items: center; gap: 1px; }
@@ -199,6 +203,11 @@
   --pm-top-pad: 52px;
   --pm-bottom-pad: 47px;
   --pm-blue: #0d72ff;
+  /* 下文 .pm-theme-pink 会整体覆写这几个值：粉线主题下蓝色系转粉。单独微调改这里 */
+  --pm-cta-bg: #0070f5;          /* 激活按钮底色（默认蓝） */
+  --pm-cta-bg-hover: #0062d6;    /* 激活按钮 hover 底色 */
+  --pm-cta-shadow: rgba(0,112,245,.35); /* 激活按钮阴影 */
+  --pm-scroll-thumb: rgba(13,114,255,.35); /* 滚动条滑块色 */
   --pm-blue-btn: #479aff;
   --pm-div: #e9e9e9;
   --pm-text: #000000;
@@ -282,7 +291,7 @@
 .pm-shell .modal-close-button{ color:#5d5d5d; opacity:1; }
 
 .pm-shell ::-webkit-scrollbar{ width:8px; }
-.pm-shell ::-webkit-scrollbar-thumb{ background:rgba(13,114,255,.35); border-radius:8px; }
+.pm-shell ::-webkit-scrollbar-thumb{ background:var(--pm-scroll-thumb); border-radius:8px; }
 .pm-shell ::-webkit-scrollbar-track{ background:transparent; }
 
 /* —— 滚动正文（=302 / =299 内容，严格按设计稿 top 绝对定位；浮层绝对定位盖其上）—— */
@@ -339,11 +348,20 @@
 .pm-cta{
   position:absolute; left:50%; bottom:var(--pm-cta-bottom); transform:translateX(-50%); z-index:5;
   padding:10px 24px; border:var(--pm-cta-border-w) solid var(--pm-cta-border-c) !important; border-radius:999px;
-  background:#0070f5 !important; color:#fff !important; font-size:14px; font-weight:600; cursor:pointer;
+  background:var(--pm-cta-bg,#0070f5) !important; color:#fff !important; font-size:14px; font-weight:600; cursor:pointer;
   background-image:none !important; outline:none !important;
-  box-shadow:0 2px 10px rgba(0,112,245,.35);
+  box-shadow:0 2px 10px var(--pm-cta-shadow,rgba(0,112,245,.35));
 }
-.pm-cta:hover{ background:#0062d6 !important; }
+.pm-cta:hover{ background:var(--pm-cta-bg-hover,#0062d6) !important; }
+
+/* 粉线主题：弹窗内蓝色系整体转粉（由 ProFeaturesModal/PaymentModal.onOpen 按 settings.theme 加 .pm-theme-pink）。
+   仅覆写少量变量，其余蓝色（--pm-blue 派生）自动跟随。 */
+.pm-theme-pink{
+  --pm-blue:#E91E63;
+  --pm-cta-bg:#E91E63; --pm-cta-bg-hover:#C2185B;
+  --pm-cta-shadow:rgba(233,30,99,.35);
+  --pm-scroll-thumb:rgba(233,30,99,.35);
+}
 
 /* —— 浮层：灰色提示文字（钉底居中，固定不滚）—— */
 .pm-scrollhint, .pay-scrollhint{
@@ -354,7 +372,7 @@
 /* —— 支付页（页面4 / 301）：严格还原 299 设计稿（字号/颜色走调教区变量）—— */
 .pay-num{ font-family:var(--pm-font-rounded); color:var(--pm-blue); font-size:var(--pay-num-fs); font-weight:800; line-height:1.1; }
 .pay-h{ color:var(--pm-blue); font-size:var(--pay-h-fs); font-weight:600; }
-.pay-qrbox{ width:254px; height:276px; border:1px solid #4263eb; border-radius:16px; background:#fff; overflow:hidden; }   /* 设计稿 254×276、圆角16 */
+.pay-qrbox{ width:254px; height:276px; border:1px solid var(--pm-blue); border-radius:16px; background:#fff; overflow:hidden; }   /* 设计稿 254×276、圆角16 */
 .pay-qrbox img{ position:absolute; left:0; top:-27.17%; width:100%; height:127.17%; display:block; }   /* 放大1.27倍、上移裁切多余白边 */
 .pay-email{ font-size:var(--pay-email-fs); color:var(--pm-blue); font-weight:600; line-height:1.7; }
 .pay-email-addr{ cursor:pointer; user-select:all; }
@@ -362,7 +380,7 @@
 .pay-steps{ font-size:var(--pay-steps-fs); color:var(--pm-text-dim); line-height:1.8; }   /* 步骤说明为灰色 */
 .pay-alt{ font-size:var(--pay-alt-fs); color:var(--pm-text-dim); line-height:1.55; }
 .pay-path{ font-size:var(--pay-path-fs); color:var(--pm-text); }
-.pay-shot{ width:310px; height:407px; border:1px solid #5776ff; border-radius:18px; overflow:hidden; background:#fff; }   /* 设计稿 310×407、圆角18 */
+.pay-shot{ width:310px; height:407px; border:1px solid var(--pm-blue); border-radius:18px; overflow:hidden; background:#fff; }   /* 设计稿 310×407、圆角18 */
 .pay-shot img{ width:100%; height:100%; object-fit:cover; display:block; }
 .pay-thanks{ font-size:var(--pay-thanks-fs); color:rgba(255,0,0,.86); }
 
@@ -378,3 +396,79 @@
 .theme-dark .pm-cap{ color:#8a93a6; }
 .theme-dark .pm-p-dim{ color:#8a93a6; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   历史记录面板（Obsidian 原生右侧栏视图，2026-09-14）
+   列表与全部操作都在这里；画布只负责渲染快照（差异标红在 mindmap-app.css）。
+   ⚠️ 布局刻意不依赖「父 height:100% + 子 flex:1」——侧栏里百分比高度常常解析不成，
+   会塌成 0 高（本项目踩过）。这里用自然流 + 工具条 position:sticky，最坏只是不吸顶，不会白板。
+   ═══════════════════════════════════════════════════════════════════════════════ */
+.workspace-leaf-content[data-type="28notes-history"] .view-content { padding: 8px 10px 12px; }
+
+.shin-hist-panel { display: block; }
+
+/* 顶部工具栏的样式已随按钮一起删除（2026-09-14：面板不再有顶部按钮，见 main.js build） */
+
+/* 顶部一行（2026-09-14 用户定）：左「28 Notes Mind Map 历史记录」+ 右「保存规则」小按钮 */
+.shin-hist-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 2px 6px;
+}
+.shin-hist-head-title {
+  font-size: var(--font-ui-smaller); font-weight: 600; color: var(--text-normal);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.shin-hist-rules-btn {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  background: transparent; border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s); box-shadow: none; cursor: pointer;
+}
+.shin-hist-rules-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+/* 「保存规则」展开的三行小字（文案带 <br>，由 JS 走 innerHTML 写入） */
+.shin-hist-rules {
+  padding: 6px 8px; margin: 0 2px 8px;
+  font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
+.shin-hist-rules.hidden { display: none; }
+.shin-hist-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--radius-s); cursor: pointer;
+}
+.shin-hist-item:hover { background: var(--background-modifier-hover); }
+.shin-hist-item.is-current { background: var(--background-modifier-active-hover, var(--background-modifier-hover)); }
+/* 一行：日期 ｜ 名字（2026-09-14 用户定：两行 + 小圆点 → 一行无圆点） */
+.shin-hist-line {
+  min-width: 0; flex: 1 1 auto;
+  font-size: var(--font-ui-smaller); color: var(--text-normal);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.shin-hist-empty { padding: 14px 2px; font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6; }
+
+/* 面板里的小弹窗（重命名 / 删除确认） */
+.shin-hist-input { width: 100%; }
+.shin-hist-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* 「⋯」按钮背景（2026-09-14 用户定：默认**全透明** —— 主题会给 button 加椭圆底色，压掉它）。
+   想要淡淡一层：把 transparent 改成如 rgba(0,0,0,.06)。⚠️ 这里必须用高优先级选择器
+   （.workspace-leaf-content[data-type=...] 前缀），普通 class 选择器会被主题的 button 底色盖掉。 */
+:root { --shin-hist-more-bg: transparent; }
+.workspace-leaf-content[data-type="28notes-history"] .shin-hist-more {
+  background: var(--shin-hist-more-bg);
+  border: none; box-shadow: none;
+}
+/* 每条历史记录右侧的「⋯」操作菜单（2026-09-14：重命名 / 删除从顶部工具栏搬到这里）
+   ⚠️ 用户 2026-09-14 定：**不要任何装饰** —— 就是三个点；悬停只把颜色调实一点，别加背景。 */
+.shin-hist-more {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0;
+  border-radius: 0;
+  color: var(--text-faint); cursor: pointer;
+}
+.shin-hist-item:hover .shin-hist-more { color: var(--text-muted); }
+.shin-hist-more:hover { color: var(--text-normal); } /* 只改颜色，不加背景 */
+.shin-hist-more .svg-icon { width: 15px; height: 15px; }
