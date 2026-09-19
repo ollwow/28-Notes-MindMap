@@ -35,9 +35,9 @@ function toast(msg, isWarn, action) {
     btn.onclick = () => { el.style.display = 'none'; clearTimeout(toastTimer); try { action.fn(); } catch (_) {} };
     el.appendChild(btn);
   }
-  el.style.background = isWarn ? '#fff3cd' : '#e8f4ff';
-  el.style.color = isWarn ? '#7a5b00' : '#1a4f8b';
-  el.style.border = isWarn ? '1px solid #f0d48a' : '1px solid #b8d8f5';
+  el.style.background = isWarn ? 'var(--toast-warn-bg)' : 'var(--toast-info-bg)';
+  el.style.color = isWarn ? 'var(--toast-warn-text)' : 'var(--toast-info-text)';
+  el.style.border = isWarn ? '1px solid var(--toast-warn-line)' : '1px solid var(--toast-info-line)';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3200);
   el.style.display = 'flex';
@@ -98,7 +98,10 @@ const state = { tree: null, selectedId: null, dragId: null, dragIds: null, view:
   historyNote: '',           // 横幅下方的常驻提示（「与当前完全相同 / 只差主节点…」；空 = 不显示。2026-09-14 由 toast 改常驻）
   historyDiffIds: new Set(), // 与当前文档有差异的节点 id
   nowLocateIndex: 0,         // 当前定位的 Now 序号（定位按钮循环/悬浮菜单用；正常模式必初始化，否则 locateCenter 取模得 NaN 报错，2026-08-27 修）
-  liveTree: null            // 进入历史页前的真实文档树（差异比对基线 + 关闭时还原），历史页期间 state.tree 指向快照树
+  liveTree: null,           // 进入历史页前的真实文档树（差异比对基线 + 关闭时还原），历史页期间 state.tree 指向快照树
+  addPanel: null,           // 「添加」面板的条目顺序 / 显隐（设置页「添加面板简化」；随 init / setAddPanel 下发，2026-09-18）
+  morePanel: null,          // 左下「更多」菜单的条目显隐（设置页「更多面板简化」；顺序固定，随 init / setMorePanel 下发，2026-09-18）
+  canvasHotkeys: null       // 画布键位表 { match: 归一化串→动作, disp: 动作→显示串 }（唯一真相源 = 原生快捷键页，随 init / setCanvasHotkeys 下发，2026-09-18）
 };
 
 // 拖拽预测：找落点（重构为「结构化空间分区」，替代原先的欧氏最近 + 手写 if/else）
@@ -305,6 +308,7 @@ const ICONS = {
   'corner-up-right': '<path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>',
   'corner-up-left': '<path d="m20 20v-7a4 4 0 0 0-4-4H4"/><path d="M9 14 4 9l5-5"/>',
   'save': '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
+  'command': '<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
   'slash': '<path d="M2 22 22 2"/>',
   'text-quote': '<path d="M17 5H3"/><path d="M21 12H8"/><path d="M21 19H8"/><path d="M3 12v7"/>',
   'home': '<path d="M21 19v-6.733a4 4 0 0 0-1.245-2.9L13.378 3.31a2 2 0 0 0-2.755 0L4.245 9.367A4 4 0 0 0 3 12.267V19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2"/>',
@@ -349,7 +353,9 @@ const ICONS = {
   // （2026-09-17 删：iconify mingcute:bilibili-line —— 原来「了解插件」菜单项用的图标；
   //   该项已改成「使用指南」并用 lucide sprout，这个图标没人引用了。）
   // 设置（2026-09-01）：齿轮，lucide「settings」——「设置与 bug 提报」菜单图标
-  'settings': '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  'settings': '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>  <circle cx="12" cy="12" r="3"/>',
+  // 滑杆齿轮（lucide「settings-2」，2026-09-18）：「自定义子面板」菜单项 —— 与上面那个整颗齿轮区分开
+  'settings-2': '<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
   // 底部「加入微信群」临时 CTA 图标（lucide message-circle）
   'message-circle': '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
   // 侧边 Ribbon「新建思维导图」按钮图标（2026-09-17 统一：与宿主 RIBBON_ICON_SVG 同源，节点链接复用此图标）。
@@ -1121,44 +1127,24 @@ viewMap.addEventListener('dragover', autoScrollOnDrag);
 //   飞书蓝线 = --edge 切到 --edge-feishu
 //   飞书灰线版 = 不切 --edge（保持 --edge 默认灰 #c5cdd9）
 //   飞书粉线版（2026-09-01）= 连线+主节点背景+选中/hover/定位按钮等蓝色系全部覆盖为粉色调，对应 --*-pink 旋钮
+// 深色模式开关（2026-09-18）：在画布根元素挂/摘 .theme-dark —— mindmap-app.css 末尾的深色令牌块据此生效。
+// 明暗 × 风格是两条**独立的类轴**（.theme-dark × .nm-theme-*），纯 CSS 组合出全部状态；
+// 深色下切主题、主题下切深色，都只是类的增减，不存在「内联被清掉要重放」这类双轨 bug。
+let nmDarkOn = false;
+let nmLastTheme = 'default';
+function applyDarkMode(on) {
+  nmDarkOn = !!on;
+  document.documentElement.classList.toggle('theme-dark', nmDarkOn);
+}
+// 主题类名（2026-09-18 收编）：applyTheme 从「JS 逐个写内联变量」改为「只切类」，
+// 所有颜色值住 mindmap-app.css 的 .nm-theme-* 类（用户改色只去 CSS 一个地方）。
+const NM_THEME_CLASSES = ['nm-theme-feishu', 'nm-theme-feishuGray', 'nm-theme-feishuPink'];
 function applyTheme(t) {
-  const r = document.documentElement;
-  // 先清掉所有主题相关 inline 变量（避免切主题时残留上一主题）
-  ['--edge','--accent','--sel','--root-bg','--sel-root','--sel-lv1','--sel-ln','--hover-border','--hover-border-root',
-   '--drag-edge','--drag-edge-alpha','--l1-bg','--fold-border','--fold-color','--pro-cta-color',
-   '--sib-predict','--sib-predict-ln','--sib-predict-root']
-    .forEach(k => r.style.removeProperty(k));
-  if (t === 'feishu') {
-    r.style.setProperty('--edge', 'var(--edge-feishu)');
-    r.style.setProperty('--drag-edge-alpha', 'var(--drag-edge-alpha-feishu)'); // 蓝线版预测线透明度（设置页可调，独立持久化）
-  }
-  else if (t === 'feishuGray') {
-    r.style.setProperty('--drag-edge-alpha', 'var(--drag-edge-alpha-feishuGray)'); // 灰线版预测线透明度（设置页可调，独立持久化）
-  }
-  else if (t === 'feishuPink') {
-    r.style.setProperty('--edge', 'var(--edge-pink)');
-    r.style.setProperty('--root-bg', 'var(--root-bg-pink)');
-    r.style.setProperty('--accent', 'var(--accent-pink)');
-    r.style.setProperty('--sel', 'var(--sel-pink)');
-    r.style.setProperty('--sel-root', 'var(--sel-root-pink)');
-    r.style.setProperty('--sel-lv1', 'var(--sel-lv1-pink)');
-    r.style.setProperty('--sel-ln', 'var(--sel-ln-pink)');
-    r.style.setProperty('--hover-border', 'var(--hover-border-pink)');
-    r.style.setProperty('--hover-border-root', 'var(--hover-border-root-pink)');
-    // 拖拽/折叠相关（2026-09-01 补：之前漏了，粉色主题下仍显示蓝色）
-    r.style.setProperty('--drag-edge', 'var(--drag-edge-pink)');
-    r.style.setProperty('--drag-edge-alpha', 'var(--drag-edge-alpha-feishuPink)'); // 粉线版预测线更淡
-    r.style.setProperty('--l1-bg', 'var(--l1-bg-pink)');       // 预测父节点底
-    r.style.setProperty('--fold-border', 'var(--fold-border-pink)'); // 折叠钮边框
-    r.style.setProperty('--fold-color', 'var(--fold-color-pink)');   // 折叠图标/数字色
-    // 右上角「激活 Pro」试用提示按钮文字色：默认蓝，粉线版跟随主题转粉
-    r.style.setProperty('--pro-cta-color', 'var(--accent-pink)');
-    // 同级预测节点边框（2026-09-01）：复用粉线版选中边框色（分根/一级/普通）
-    r.style.setProperty('--sib-predict', 'var(--sib-predict-pink)');
-    r.style.setProperty('--sib-predict-ln', 'var(--sib-predict-ln-pink)');
-    r.style.setProperty('--sib-predict-root', 'var(--sib-predict-root-pink)');
-  }
-  // 其余值走 CSS 顶部 :root 默认；切回默认主题时所有 inline 已清，回归默认。
+  nmLastTheme = t;
+  const cl = document.documentElement.classList;
+  NM_THEME_CLASSES.forEach((c) => cl.remove(c));
+  if (t === 'feishu' || t === 'feishuGray' || t === 'feishuPink') cl.add('nm-theme-' + t);
+  // 其余值走 CSS :root 默认；深色叠加 = .theme-dark.nm-theme-* 组合选择器（CSS 里），无需任何重放。
 }
 function drawEdges() {
   const tr = treeEl.getBoundingClientRect();
@@ -1357,10 +1343,13 @@ function buildCard(node, depth, done) {
     card.appendChild(n);
   }
   // 图片（可多张，缩略图异步加载；单击选中、双击放大、右键复制）——独占一行，文字在上
-  if ((node.images || []).length) {
+  // 排序（2026-09-19 用户定）：**标题语法提升图在前，手动粘贴的附件图在后**
+  const inlineImgs = nmExtractInlineImages(node.title || '').images;
+  const allNodeImgs = inlineImgs.concat(node.images || []);
+  if (allNodeImgs.length) {
     const imgs = document.createElement('div');
     imgs.className = 'imgs';
-    node.images.forEach(p => {
+    allNodeImgs.forEach(p => {
       const img = document.createElement('img');
       img.className = 'img';
       img.dataset.path = p;
@@ -1812,28 +1801,15 @@ function placeCardAtViewport(el, xRatio, onDone) {
   const c = worldCenter(el);
   animateScrollTo(vr.width * xRatio / z2 - c.x, vr.height * cfgNum('--locate-y', 0.5) / z2 - c.y, z2, onDone);
 }
-function locateCenter(forceIdx) {
+function locateCenter() { // 定位按钮（2026-09-18 用户定改写）：**编辑中/已选中 → 该节点定位自定义位；未选中 → 主节点定位同一位**（替代原「选中节点定位」「主节点定位」两条命令；zoom 回 100% 是 placeCardAtViewport 的默认行为，旋钮 --locate-reset-zoom）
+  // 原「没选中 → 循环定位 Now」不再走这里（定位子菜单里的 Now 列表定位 locateToItem 不受影响）
   const selX = cfgNum('--locate-selected-x', 0.5);
-  const firstX = cfgNum('--locate-first-x', 0.25);
   const activeId = state.selectedId || state.editingTitleId || state.editingNoteId || null;
-  if (activeId) {
-    const el = document.querySelector('.node-row[data-id="' + activeId + '"] .card');
-    if (el) { placeCardAtViewport(el, selX); return; }
-  }
-  // 未选中：有 Now 节点 → 按 nowLocateIndex 定位（单 Now 直接定位；多个由定位按钮/悬浮菜单循环切换）
-  const nows = collectUsableNows(currentRoot()); // 2026-09-15：被 Minor 埋掉的 Now 不参与定位
-  if (nows.length) {
-    const idx = (forceIdx != null)
-      ? (((forceIdx % nows.length) + nows.length) % nows.length)
-      : (((state.nowLocateIndex || 0) % nows.length) + nows.length) % nows.length; // ||0 兜底：未初始化时取模得 NaN
-    if (forceIdx == null) state.nowLocateIndex = idx; // 仅自动定位（无 forceIdx）时回写计数；点击循环走 forceIdx，不改计数器
-    const el = document.querySelector('.node-row[data-id="' + nows[idx].id + '"] .card');
-    if (el) { placeCardAtViewport(el, firstX); if (forceIdx == null) updateNowMenuBold(); return; }
-  }
-  // 未选中且无 Now：第一层级 = 最前面那个节点 = 当前根（currentRoot）居中
+  const el = activeId && document.querySelector('.node-row[data-id="' + activeId + '"] .card');
+  if (el) { placeCardAtViewport(el, selX); return; }
   const root = currentRoot();
-  const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
-  if (el) { placeCardAtViewport(el, firstX); return; }
+  const rootEl = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
+  if (rootEl) { placeCardAtViewport(rootEl, selX); return; }
   centerView(); drawEdges(); // 兜底：当前根无卡片 → 整画布居中
 }
 function resetView() {
@@ -2249,7 +2225,7 @@ function updateToolbar() {
     const rootNow = currentRoot() || state.tree;
     const selIsRoot = !!rootNow && state.selectedId === rootNow.id;
     btnDrill.classList.toggle('disabled', !hasSel || selIsRoot);
-    btnDrill.dataset.tip = !hasSel ? T('tb.drillDefault') : (selIsRoot ? T('tb.drillAtRoot') : T('tb.drill'));
+    btnDrill.dataset.tip = !hasSel ? T('tb.drillDefault') + nmKeySuffix('drill', '{Mod} + E') : (selIsRoot ? T('tb.drillAtRoot') : T('tb.drill') + nmKeySuffix('drill', '{Mod} + E'));
   }
   // Minor（隐藏完成）按钮：树里没有任何 Minor 节点 → 置灰（用 .disabled 类非 disabled 属性，hover 仍可出 tooltip）
   // 2026-08-30 定：无 Minor 时 tooltip 改「当前没有 Minor 节点」
@@ -2261,8 +2237,8 @@ function updateToolbar() {
   if (hd) {
     hd.classList.toggle('disabled', !anyMinor); // 沙盒里照常可用（显示类开关，退出整组还原）
     if (!anyMinor) hd.dataset.tip = T('tb.noMinor');
-    else if (state.hideDone) hd.dataset.tip = T('tb.showMinor');
-    else hd.dataset.tip = T('tb.hideMinor');
+    else if (state.hideDone) hd.dataset.tip = T('tb.showMinor') + nmKeySuffix('hideMinor', '{Mod} + {Alt} + M');
+    else hd.dataset.tip = T('tb.hideMinor') + nmKeySuffix('hideMinor', '{Mod} + {Alt} + M');
   }
   const menu = document.getElementById('more-menu');
   if (!menu) return;
@@ -2633,6 +2609,11 @@ function editSession(el, opts) {
     if (!text) return;
     e.preventDefault();
     e.stopPropagation();
+    // 整段 = 图片语法 → 转**图片附件**（与选中态粘贴同款，2026-09-19 用户定），不进标题文字
+    const tt = text.trim();
+    const mWikiImg = tt.match(/^!\[\[([^\]]+)\]\]$/);
+    const mMdImg = !mWikiImg && tt.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+    if (mWikiImg || mMdImg) { addImageToNode(mWikiImg ? mWikiImg[1].trim() : mMdImg[1]); return; }
     const ins = (opts.newline === false)
       ? text.replace(/\r\n?/g, '\n').split('\n').map(l => l.replace(/^\t+/, '')).join(' ').trim()
       : text.replace(/\r\n?/g, '\n').split('\n').map(l => l.replace(/^\t+/, '')).join('\n');
@@ -2724,6 +2705,8 @@ function editSession(el, opts) {
     if (!placed) { r.selectNodeContents(el); r.collapse(false); sel.addRange(r); }
   } else if (opts.cursorEnd) {
     r.selectNodeContents(el); r.collapse(false); sel.addRange(r); // 光标放末尾：接着旧文字写（2026-08-22 修"光标跳位置"）
+  } else if (opts.caretStart) {
+    r.selectNodeContents(el); r.collapse(true); sel.addRange(r); // 光标放最前：「从头开始编辑」命令（2026-09-18）
   } else {
     r.selectNodeContents(el); sel.addRange(r); // 默认全选（方便整体替换）
   }
@@ -2742,12 +2725,35 @@ function selectAllInEdit(el) {
 function ensureCardVisible(card) {
   const cr = card.getBoundingClientRect();
   const vr = viewMap.getBoundingClientRect();
+  // 右缘落点边距（旋钮，2026-09-18 用户定）：卡片超出右缘被拉回来时，停在离右缘多远处。
+  // 之前写死 16px = 新建子节点总是落在贴着右缘的位置；调大（如 120）→ 落点往左收、不那么靠边。
+  const insetR = cfgNum('--nm-edge-inset-x', 16);
   let dx = 0;
-  if (cr.right > vr.right - 16) dx = cr.right - vr.right + 16;
+  if (cr.right > vr.right - insetR) dx = cr.right - vr.right + insetR;
   else if (cr.left < vr.left + 16) dx = -(vr.left + 16 - cr.left);
   if (dx) { panX -= dx / (zoom || 1); applyTreeTransform(); drawEdges(); }
 }
-function startEdit(node, titleEl, pos, cursorEnd) {
+// 新建节点落点防遮挡（2026-09-18 用户定）：新建/编辑的卡与底部固定工具条（#node-menu，fixed bottom:32px）
+// 重叠时，**只做垂直**平移，把卡片中心挪到自定义 Y（--locate-y）—— 左右不动（用户明确不要横向位移）。
+// 复用出画拉回同款坐标换算（屏幕差 ÷ zoom）。
+function ensureNewCardAboveToolbar(id) {
+  const card = document.querySelector('.node-row[data-id="' + id + '"] .card');
+  const menu = document.getElementById('node-menu');
+  if (!card || !menu || menu.classList.contains('hidden')) return;
+  const cr = card.getBoundingClientRect();
+  const mr = menu.getBoundingClientRect();
+  if (cr.bottom <= mr.top) return; // 没被工具条盖住 → 不动
+  const vr = viewMap.getBoundingClientRect();
+  // 目标 Y 是**独立旋钮** --nm-newchild-y（默认 0.6）：不与定位的 --locate-y 共用（用户定），
+  // 想调去 mindmap-app.css「定位调参区」改这一个值即可。
+  const targetY = vr.height * cfgNum('--nm-newchild-y', 0.6);
+  const dy = (cr.top + cr.height / 2) - targetY;         // 卡片中心比目标位低多少
+  if (dy > 0) {
+    panY -= dy / (zoom || 1); // 内容上移（同 ensureCardVisible 的换算：屏幕差 ÷ zoom）
+    applyTreeTransform(); drawEdges(); persistNow();
+  }
+}
+function startEdit(node, titleEl, pos, cursorEnd, caretStart) {
   if (state.historyMode) return; // 历史页只读：禁止进入编辑
   disarmProxy(); // 进真编辑态，proxy 让位（titleEl 抢焦）
   // 不隐藏 nodeMenu：2026-08-21 定「编辑时本质上也是选中，下面 toast 也要在」
@@ -2780,6 +2786,7 @@ function startEdit(node, titleEl, pos, cursorEnd) {
   editSession(titleEl, {
     pos,
     cursorEnd,
+    caretStart, // 「从头开始编辑」命令（2026-09-18）：光标放最前；丢了这行光标会落成全选（实踩）
     suggest: true, // 标题敲 [[ 弹文件建议（2026-08-29）
     keys: {
       // 2026-08-21 定：Shift+Enter = 保存并直接进备注编辑；Tab = 直接创建子节点进编辑
@@ -2944,9 +2951,9 @@ function ensureNodeMenu() {
     // 格式按钮：图标用 lucide type；**图标本身**随当前节点的格式变（加粗=画粗、红/黄=换色，可叠加）
     // 有子菜单 → **不挂提示**（提示会跟横排子菜单叠住，用户 2026-09-17）；说明放在子菜单各项上
     { act: 'style',  icon: 'type' },
-    { act: 'note', icon: 'text-quote', tip: T('nm.note') },
-    { act: 'now', icon: 'now', tip: T('nm.now') },
-    { act: 'done', icon: 'squircle-dashed', tip: T('nm.minor') },
+    { act: 'note', icon: 'text-quote', tip: T('nm.note') + nmKeySuffix('editNote') },
+    { act: 'now', icon: 'now', tip: T('nm.now') + nmKeySuffix('now') },
+    { act: 'done', icon: 'squircle-dashed', tip: T('nm.minor') + nmKeySuffix('minor') },
     // 2026-09-17：图标由三点改 plus，语义变成"新增东西"；位置按用户要求放回**最右**（最自然）。
     // 刻意**不挂 data-tip**：悬浮时黑色提示框会和弹出的子菜单叠在一起，很怪（用户 2026-09-17）
     { act: 'more', icon: 'plus' },
@@ -3002,6 +3009,8 @@ function showNodeMenu() {
   // 多选：隐藏备注按钮（不支持给多个节点写同一备注）；其余按钮（格式/添加/Minor）保留
   const bNoteBtn = btnOf('note');
   if (bNoteBtn) bNoteBtn.style.display = multi ? 'none' : '';
+  // 「添加」按钮：面板里一条可点的都没有（全关了 / 只剩分隔线）→ 入口整个藏起来（2026-09-18）
+  syncAddEntryBtn();
   // on 状态反映：仅单选有意义（多选各节点状态不一，按钮保持中性）
   if (!multi) {
     const r = findNode(state.tree, state.selectedId);
@@ -3037,11 +3046,20 @@ function hideNodeMenu() {
   // 底部工具条一藏，挂在它上面的悬浮面板也要跟着收（否则会孤零零留在屏幕上）
   hideMoreMenu(); hideMoreSub(); hideStyleMenu();
 }
+// 「添加」按钮显隐：面板里没有任何可点的条目时不显示（设置页全关时的兜底，2026-09-18）
+// 抽成函数是因为三个地方要调：工具条显示时、面板配置下发时、初始配置下发时。
+function syncAddEntryBtn() {
+  const btns = nodeMenu ? nodeMenu.children : null;
+  if (!btns) return;
+  for (const b of btns) if (b.dataset.act === 'more') b.style.display = nmAddHasRows() ? '' : 'none';
+}
 
 // ============ 底部菜单最右「添加」按钮：悬浮弹出的添加类入口（2026-09-17）============
 // id 用 node-more-menu，不与左侧工具栏那个 #more-menu（撤销/路径导航）重名。
 // 2026-09-17 二次改版（用户）：按钮由「更多」(三点) 改叫「添加」(plus)；
 // 一级菜单收成 4 项 + 一个「添加其他内容」二级入口，顶上再加节点级操作（加子节点/加同级/删除）。
+// 2026-09-18 三次改版：一级/二级里放什么、什么顺序，改由设置页「界面简化 → 添加面板简化」决定
+// （settings.addPanel，随 init / setAddPanel 下发）—— 见下面 NM_ADD_META / nmAddSplit。
 let moreMenu = null;
 let moreHideTimer = 0;
 let moreSubMenu = null;
@@ -3049,6 +3067,9 @@ let moreSubHideTimer = 0;
 // 鼠标离开按钮/面板后**延时多少毫秒**才收起：留一个宽容期，鼠标从按钮移到面板、
 // 或从一级移到二级时穿过间隙不会中途关掉（2026-09-17 用户反馈"移到二级就整个关了" → 220 → 320）
 const NM_HIDE_MS = 320;
+// 二级面板纵向对齐（2026-09-18）：true = 面板**底边**与一级面板底边齐平（二级比一级高时会整体上提，
+// 避免最后几行压到 Obsidian 底部的状态条上）；false = 老行为，与鼠标所在那一行的顶边对齐。
+const NM_SUB_BOTTOM_ALIGN = true;
 // 悬浮面板定位：默认在锚点**正上方居中**（底部工具条贴屏底，往上弹才不出屏）；上方放不下才翻到下方。
 function placePanelNear(panel, anchor, gap) {
   const g = gap || 8;
@@ -3062,55 +3083,121 @@ function placePanelNear(panel, anchor, gap) {
   panel.style.left = left + 'px';
   panel.style.top = top + 'px';
 }
+// ===== 添加面板条目元数据（token → 图标 / 文案 / 提示，2026-09-18）=====
+// 顺序与显隐由设置页「界面简化 → 添加面板简化」决定，存在 settings.addPanel，随 init / setAddPanel 下发。
+// 文案包成函数：语言可能在运行中切换，建菜单那一刻再取值才对。
+const NM_ADD_META = {
+  image:       { icon: 'image',                 label: () => T('more.addImage'),       tip: () => T('more.addImageTip') },
+  // 「添加网页链接」与「添加双链」的相对位置（用户 2026-09-17）现由设置页顺序决定
+  url:         { icon: 'globe',                 label: () => T('more.addUrlLink'),     tip: () => T('more.addUrlLinkTip') },
+  wiki:        { icon: 'brackets',              label: () => T('more.addWiki'),        tip: () => T('more.addWikiTip') },
+  node:        { icon: 'frame',                 label: () => T('more.addNodeLink'),    tip: () => T('more.addNodeLinkTip') },
+  addChild:    { icon: 'arrow-right-from-line', label: () => T('more.addChild'),       tip: () => T('more.addChildTip') },
+  addSibling:  { icon: 'arrow-left-to-line',    label: () => T('more.addSibling'),     tip: () => T('more.addSiblingTip') },
+  delNode:     { icon: 'trash-2',               label: () => T('more.delNode'),        tip: () => T('more.delNodeTip') },
+  video:       { icon: 'square-play',           label: () => T('more.addVideo'),       tip: () => T('more.addVideoTip') },
+  audio:       { icon: 'audio-lines',           label: () => T('more.addAudio'),       tip: () => T('more.addAudioTip') },
+  vault:       { icon: 'file-plus-corner',      label: () => T('more.addVaultAttach'), tip: () => T('more.addVaultAttachTip') },
+  file:        { icon: 'folder-closed',         label: () => T('more.addFileLink'),    tip: () => T('more.addFileLinkTip') },
+  customPanel: { icon: 'settings-2',            label: () => T('more.customPanel'),    tip: () => T('more.customPanelTip') },
+  // 「AI 编辑」（2026-09-18）：右键「复制 AI 定位」的可视化形态 —— 弹窗展示 + 复制并关闭；图标同右键那一项（astroid）
+  aiEdit:      { icon: 'astroid',               label: () => T('more.aiEdit'),         tip: () => T('more.aiEditTip') },
+  // 二级入口：**有子菜单 → 不挂提示**（提示会跟子菜单叠住，用户 2026-09-17）
+  sub:         { icon: 'more-horizontal',       label: () => T('more.addOther'),       tip: null, sub: true },
+};
+// 前端兜底顺序：宿主没下发时按这套渲染，与 main.js 的 ADD_PANEL_DEFAULT_ORDER 保持一致
+const NM_ADD_FALLBACK_ORDER = ['image', 'url', 'wiki', 'node', 'aiEdit', 'sub', 'sep3', 'addChild', 'addSibling', 'delNode', 'sep1', 'video', 'audio', 'vault', 'file', 'sep2', 'customPanel'];
+// 分隔线 token 判定与"清理"（2026-09-18 用户定）：
+//   ① 两根分隔线挨在一起 → 只画一条（重复没意义）；
+//   ② 分隔线落在整段菜单的首行 / 末行 → 不画（上下没东西可隔）。
+// 一级、二级各清理各的，两段的头尾互不影响。
+function nmIsSep(tk) { return tk === 'sep1' || tk === 'sep2' || tk === 'sep3' || tk === 'sep4'; }
+function nmCleanRows(rows) {
+  const out = [];
+  rows.forEach(tk => {
+    if (nmIsSep(tk) && (out.length === 0 || nmIsSep(out[out.length - 1]))) return; // 首行 / 与前一根相邻 → 跳过
+    out.push(tk);
+  });
+  while (out.length && nmIsSep(out[out.length - 1])) out.pop(); // 末行 → 去掉。
+  return out;
+}
+// 按当前配置把可见条目切成「一级 / 二级」两段（2026-09-18 三次改版的下游：面板内容完全由设置决定）
+function nmAddSplit() {
+  const raw = (state.addPanel && typeof state.addPanel === 'object') ? state.addPanel : {};
+  const order = (Array.isArray(raw.order) && raw.order.length) ? raw.order : NM_ADD_FALLBACK_ORDER;
+  const hidden = new Set(Array.isArray(raw.hidden) ? raw.hidden : []);
+  const shown = order.filter(tk => !hidden.has(tk) && (NM_ADD_META[tk] || nmIsSep(tk)));
+  const i = shown.indexOf('sub');
+  // 入口本身留在**一级**面板里（它就是一级面板里那一行，悬浮它才展开二级）
+  let level1 = i < 0 ? shown.slice() : shown.slice(0, i + 1);
+  let level2 = i < 0 ? [] : shown.slice(i + 1);
+  // 二级里只剩分隔线（或啥都没有）→ 二级入口没意义：它不渲染，剩下的全平铺在一级
+  // （面板上干脆看不到这一行；设置页里它对应的那一行会置灰，让用户知道"它现在是空的"）
+  let subUsable = false;
+  if (i >= 0) {
+    subUsable = level2.some(tk => !nmIsSep(tk));
+    if (!subUsable) { level1 = shown.filter(tk => tk !== 'sub'); level2 = []; }
+  }
+  level1 = nmCleanRows(level1);
+  level2 = nmCleanRows(level2);
+  // 真能让用户点的行（既不是分隔线、也不是二级入口）——一条都没有时整个「添加」按钮都藏起来
+  const hasFunc = shown.some(tk => !nmIsSep(tk) && tk !== 'sub');
+  return { level1, level2, hasFunc, subUsable };
+}
+// 「添加」按钮要不要出现在节点底部工具条上：面板里一个可点的都没有 → 入口整个隐藏（2026-09-18 用户定）
+function nmAddHasRows() { return nmAddSplit().hasFunc; }
+// 造一个面板行：分隔线 → .mm-sep（复用左下「更多」那套样式）；其余 → 按钮
+function nmAddRowEl(tk) {
+  if (nmIsSep(tk)) { const s = document.createElement('div'); s.className = 'mm-sep'; return s; }
+  const meta = NM_ADD_META[tk];
+  if (!meta) return null;
+  const b = document.createElement('button');
+  b.className = 'mm';
+  b.dataset.act = tk;
+  const tip = meta.tip ? meta.tip() : '';
+  if (tip) b.dataset.tip = tip;  // 悬浮时的黑色小字提示（沿用现有 tooltip 机制）
+  b.dataset.side = 'left';       // 提示弹到**左侧**：弹上方会盖住上面那几行（用户 2026-09-17）
+  // 二级入口在右侧挂一个小箭头（用 .kbd 那格的样式：小字/半透明），提示"还有一层"
+  b.innerHTML = renderIcon(meta.icon, 16) + '<span class="mm-label">' + escapeHtml(meta.label()) + '</span>'
+    + (meta.sub ? '<span class="kbd">' + renderIcon('chevron-right', 14) + '</span>' : '');
+  // 编辑态下 mousedown 不让按钮夺焦：否则点面板 = 编辑框立即失焦 = 编辑结束（照加粗按钮同款处理）
+  b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
+  if (meta.sub) {
+    // 二级入口：悬浮即展开右侧面板；点击也展开一次（触屏 / 键盘兜底）
+    b.addEventListener('mouseenter', () => showMoreSub(b));
+    b.addEventListener('mouseleave', scheduleHideSub);
+    b.onclick = e => { e.stopPropagation(); showMoreSub(b); };
+  } else {
+    b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(tk); };
+  }
+  return b;
+}
+function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+// 面板重建闸门：只在「配置变了」或「首次打开」时重建，避免鼠标在面板里移动时反复重建 →
+// 行被替换会触发 mouseleave，二级面板会被误关（用户 2026-09-17 踩过同类坑）
+let moreMenuBuilt = false, moreSubBuilt = false;
+function invalidateAddMenus() { moreMenuBuilt = false; moreSubBuilt = false; }
+// 一级面板：条目与分隔线**刻意复用** #more-menu（左下工具栏那个「更多」）的 .mm / .mm-sep ——
+// 两个子菜单长得一样，不做第二套设计（用户 2026-09-17：统一感）。
 function ensureMoreMenu() {
   if (moreMenu) return moreMenu;
   moreMenu = document.createElement('div');
   moreMenu.id = 'node-more-menu';
   moreMenu.className = 'node-more-menu hidden';
-  // 条目与分隔线**刻意复用** #more-menu（左下工具栏那个「更多」）的 .mm / .mm-sep ——
-  // 两个子菜单长得一样，不做第二套设计（用户 2026-09-17：统一感）。
-  const items = [
-    // —— 常用添加 ——
-    { act: 'image', icon: 'image',    label: T('more.addImage'),    tip: T('more.addImageTip') },
-    // 「添加网页链接」与「添加双链」互换位置（用户 2026-09-17）
-    { act: 'url',   icon: 'globe',    label: T('more.addUrlLink'),  tip: T('more.addUrlLinkTip') },
-    { act: 'wiki',  icon: 'brackets', label: T('more.addWiki'),     tip: T('more.addWikiTip') },
-    { act: 'node',  icon: 'frame',    label: T('more.addNodeLink'), tip: T('more.addNodeLinkTip') },
-    // —— 其余全部收进这个二级入口（视频/音频/仓库内附件/本地文件链接 + 三项节点操作）。
-    //     **有子菜单的条目不挂提示**（会跟子菜单叠住，用户 2026-09-17）——
-    { act: 'sub', icon: 'more-horizontal', label: T('more.addOther'), sub: true },
-  ];
-  items.forEach(it => {
-    if (it.sep) { const s = document.createElement('div'); s.className = 'mm-sep'; moreMenu.appendChild(s); return; }
-    const b = document.createElement('button');
-    b.className = 'mm';
-    b.dataset.act = it.act;
-    if (it.tip) b.dataset.tip = it.tip;  // 悬浮时的黑色小字提示（沿用现有 tooltip 机制）
-    b.dataset.side = 'left'; // 提示弹到**左侧**：弹上方会盖住上面那几行（用户 2026-09-17）
-    // 二级入口在右侧挂一个小箭头（用 .kbd 那格的样式：小字/半透明），提示"还有一层"
-    b.innerHTML = renderIcon(it.icon, 16) + '<span class="mm-label">' + escapeHtml(it.label) + '</span>'
-      + (it.sub ? '<span class="kbd">' + renderIcon('chevron-right', 14) + '</span>' : '');
-    // 编辑态下 mousedown 不让按钮夺焦：否则点面板 = 编辑框立即失焦 = 编辑结束（照加粗按钮同款处理）
-    b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
-    if (it.sub) {
-      // 二级入口：悬浮即展开右侧面板；点击也展开一次（触屏 / 键盘兜底）
-      b.addEventListener('mouseenter', () => showMoreSub(b));
-      b.addEventListener('mouseleave', scheduleHideSub);
-      b.onclick = e => { e.stopPropagation(); showMoreSub(b); };
-    } else {
-      b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(it.act); };
-    }
-    moreMenu.appendChild(b);
-  });
   // 鼠标移到面板上就别关（从按钮移到面板有间隙），离开才延时关
   moreMenu.addEventListener('mouseenter', () => clearTimeout(moreHideTimer));
   moreMenu.addEventListener('mouseleave', scheduleHideMore);
   document.body.appendChild(moreMenu);
   return moreMenu;
 }
-// 二级面板：「添加其他内容」（2026-09-17）。
-// 内容 = 三项节点操作 ＋ 分隔线 ＋ 四项媒体/文件添加。
-// （同日改：原来一级单独一项「添加与删除节点」，用户要求也收进这里 —— 一级只剩 5 行。）
+function renderMoreMenu() {
+  const m = ensureMoreMenu();
+  clearEl(m);
+  nmAddSplit().level1.forEach(tk => { const el = nmAddRowEl(tk); if (el) m.appendChild(el); });
+  moreMenuBuilt = true;
+  return m;
+}
+// 二级面板的容器（内容每次由 renderMoreSub 按配置填）
 function ensureMoreSub() {
   if (moreSubMenu) return moreSubMenu;
   moreSubMenu = document.createElement('div');
@@ -3121,49 +3208,34 @@ function ensureMoreSub() {
   document.body.appendChild(moreSubMenu);
   return moreSubMenu;
 }
-let moreSubFilled = false;
-function fillMoreSub() {
+// 二级面板：「添加其他内容」（2026-09-17 建；2026-09-18 改由设置在「添加面板简化」页里的顺序驱动）。
+// 内容 = 当前排在二级入口下面的那些条目（含分隔线）。
+function renderMoreSub() {
   const s = ensureMoreSub();
-  if (moreSubFilled) return s; // 只建一次（避免鼠标在行内轻微移动时重建闪一下）
-  moreSubFilled = true;
-  const items = [
-    // —— 节点操作（平时很少用，所以放在二级里）——
-    { act: 'addChild',   icon: 'arrow-right-from-line', label: T('more.addChild'),   tip: T('more.addChildTip') },
-    { act: 'addSibling', icon: 'arrow-left-to-line',    label: T('more.addSibling'), tip: T('more.addSiblingTip') },
-    { act: 'delNode',    icon: 'trash-2',               label: T('more.delNode'),    tip: T('more.delNodeTip') },
-    { sep: true }, // 分隔线：上面是"节点操作"，下面是"添加内容"
-    // —— 添加内容（媒体与文件类）——
-    { act: 'video', icon: 'square-play',      label: T('more.addVideo'),       tip: T('more.addVideoTip') },
-    { act: 'audio', icon: 'audio-lines',      label: T('more.addAudio'),       tip: T('more.addAudioTip') },
-    { act: 'vault', icon: 'file-plus-corner', label: T('more.addVaultAttach'), tip: T('more.addVaultAttachTip') },
-    { act: 'file',  icon: 'folder-closed',    label: T('more.addFileLink'),    tip: T('more.addFileLinkTip') },
-  ];
-  items.forEach(it => {
-    if (it.sep) { const sep = document.createElement('div'); sep.className = 'mm-sep'; s.appendChild(sep); return; }
-    const b = document.createElement('button');
-    b.className = 'mm';
-    b.dataset.act = it.act;
-    if (it.tip) b.dataset.tip = it.tip;
-    // 二级与一级统一用同一套"左侧提示"，距离由 :root 的 --tip-left-* 两个变量统一控制（用户 2026-09-17）
-    b.dataset.side = 'left';
-    b.innerHTML = renderIcon(it.icon, 16) + '<span class="mm-label">' + escapeHtml(it.label) + '</span>';
-    b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
-    b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(it.act); };
-    s.appendChild(b);
-  });
+  clearEl(s);
+  nmAddSplit().level2.forEach(tk => { const el = nmAddRowEl(tk); if (el) s.appendChild(el); });
+  moreSubBuilt = true;
   return s;
 }
 function showMoreSub(row) {
   if (state.historyMode) return;
   clearTimeout(moreSubHideTimer); clearTimeout(moreHideTimer); // 二级展开期间一级别关
-  const s = fillMoreSub();
+  const s = moreSubBuilt ? ensureMoreSub() : renderMoreSub();
   s.classList.remove('hidden');
   const rr = row.getBoundingClientRect();
   const sw = s.offsetWidth, sh = s.offsetHeight;
   let left = rr.right - 8;                                    // 贴一级面板右侧（左边叠 8px 做"过桥"，斜着划过去也不会掉）
   if (left + sw > window.innerWidth - 8) left = Math.max(8, rr.left - sw + 8); // 右边放不下 → 翻到左侧
-  let top = rr.top;                                           // 与该行对齐
-  if (top + sh > window.innerHeight - 8) top = Math.max(8, window.innerHeight - 8 - sh);
+  // 纵向：默认「与鼠标所在行顶边对齐」；NM_SUB_BOTTOM_ALIGN 打开时改成「与一级面板底边对齐」
+  // （二级比一级高 → 整体上提，底边不再探到状态条下面；2026-09-18 用户反馈被状态条遮住）
+  let top = rr.top;
+  if (NM_SUB_BOTTOM_ALIGN && moreMenu && !moreMenu.classList.contains('hidden')) {
+    top = moreMenu.getBoundingClientRect().bottom - sh;
+  }
+  // 越界兜底：窗口特别矮时优先保证整块面板留在视口内
+  const maxTop = window.innerHeight - 8 - sh;
+  if (top > maxTop) top = maxTop;
+  if (top < 8) top = 8;
   s.style.left = left + 'px';
   s.style.top = top + 'px';
 }
@@ -3173,7 +3245,7 @@ function showMoreMenu(anchor) {
   if (state.historyMode) { hideMoreMenu(); return; } // 历史页只读
   clearTimeout(moreHideTimer);
   hideStyleMenu(); // 两个面板不同时开
-  const m = ensureMoreMenu();
+  const m = moreMenuBuilt ? ensureMoreMenu() : renderMoreMenu(); // 首次打开 / 配置改过 → 重建
   m.classList.remove('hidden');
   placePanelNear(m, anchor, 8);
 }
@@ -3192,9 +3264,9 @@ function ensureStyleMenu() {
   styleMenu.className = 'node-more-menu node-style-menu hidden';
   const items = [
     // 横排只放图标（B / 红圈 / 黄圈），文字说明交给悬浮提示（用户 2026-09-17）
-    { act: 'bold',   icon: 'bold',   tip: T('nm.bold') },
-    { act: 'red',    icon: 'circle', tip: T('nm.red'),    color: 'red' },
-    { act: 'yellow', icon: 'circle', tip: T('nm.yellow'), color: 'yellow' },
+    { act: 'bold',   icon: 'bold',   tip: T('nm.bold') + nmKeySuffix('bold') },
+    { act: 'red',    icon: 'circle', tip: T('nm.red') + nmKeySuffix('red'),    color: 'red' },
+    { act: 'yellow', icon: 'circle', tip: T('nm.yellow') + nmKeySuffix('yellow'), color: 'yellow' },
   ];
   items.forEach(it => {
     const b = document.createElement('button');
@@ -3383,6 +3455,8 @@ function addChild() {
   state.justCreated.add(newNode.id);
   emitUpdate(); render();
   startEditById(newNode.id);
+  // 落点防遮挡（2026-09-18）：新卡被底部工具条盖住 → 只做垂直上提（rAF 等一帧布局落定再量）
+  requestAnimationFrame(() => ensureNewCardAboveToolbar(newNode.id));
 }
 function addSibling() {
   if (state.historyMode) return; // 历史页只读
@@ -3397,6 +3471,8 @@ function addSibling() {
   state.justCreated.add(newNode.id);
   emitUpdate(); render();
   startEditById(newNode.id);
+  // 落点防遮挡（2026-09-18）：新卡被底部工具条盖住 → 只做垂直上提（rAF 等一帧布局落定再量）
+  requestAnimationFrame(() => ensureNewCardAboveToolbar(newNode.id));
 }
 // ⬆️：在选中节点上方新建同级节点（计划依赖排序用）
 function addSiblingAbove() {
@@ -3411,6 +3487,8 @@ function addSiblingAbove() {
   state.justCreated.add(newNode.id);
   emitUpdate(); render();
   startEditById(newNode.id);
+  // 落点防遮挡（2026-09-18）：新卡被底部工具条盖住 → 只做垂直上提（rAF 等一帧布局落定再量）
+  requestAnimationFrame(() => ensureNewCardAboveToolbar(newNode.id));
 }
 // ←：在选中节点父节点的下方、与父节点同级新建节点（上探一层加兄弟）；父已是根则无更高层可加
 function addParentSibling() {
@@ -3427,6 +3505,8 @@ function addParentSibling() {
   state.justCreated.add(newNode.id);
   emitUpdate(); render();
   startEditById(newNode.id);
+  // 落点防遮挡（2026-09-18）：新卡被底部工具条盖住 → 只做垂直上提（rAF 等一帧布局落定再量）
+  requestAnimationFrame(() => ensureNewCardAboveToolbar(newNode.id));
 }
 // 选中集中某节点的祖先是否也在选中集（多选复制/删除时只取顶层节点，避免父子树重复）
 function hasAncestorSelected(id) {
@@ -3700,10 +3780,28 @@ function moreMenuAction(act) {
   if (act === 'wiki') { addWikiLink(); return; }
   if (act === 'node') { addNodeLink(); return; }
   if (act === 'url') { addUrlLink(); return; }
+  // 「AI 编辑」（2026-09-18）：右键「复制 AI 定位」的可视化形态 —— 拼好文本发宿主弹窗（弹窗里复制并关闭）
+  if (act === 'aiEdit') {
+    const hit = state.selectedId ? findNode(state.tree, state.selectedId) : null;
+    const node = hit && hit.node;
+    if (!node) { toast(T('toast.pasteImg'), true); return; }
+    if (!node.persistId) { node.persistId = genPersistId(); pushUndo(); emitUpdate(); } // 懒分配持久 ID（与右键同源）
+    const p = state.filePath || (state.currentFilename || T('common.untitled'));
+    const text = '【1. 打开待编辑文档，路径：' + p + '；2. 打开文档后，根据文档顶部的 frontmatter 提示和下文的节点 ID 定位到要编辑的节点，节点 ID 为：' + node.persistId + '】';
+    vscodeApi.postMessage({ type: 'openAiEdit', text });
+    return;
+  }
   // 节点级操作（与左下「更多」里那三项同一个函数，行为完全一致）
   if (act === 'addChild') { addChild(); return; }
   if (act === 'addSibling') { addSibling(); return; }
   if (act === 'delNode') { deleteNode(); return; }
+  // 「自定义子面板」（2026-09-18）：跳去设置页「界面简化 → 添加面板简化」，自己排布这个面板
+  if (act === 'customPanel') {
+    try {
+      vscodeApi.postMessage({ type: 'openSettings', pagePath: [T('settings.uiSimplify'), T('settings.addPanelSimplify')] });
+    } catch (e) { wlog('打开自定义子面板设置失败: ' + e); }
+    return;
+  }
 }
 // 允许挂到节点上的附件扩展名（与「更多」菜单的选择白名单一致，2026-09-17）
 // 其它格式（.psd / .zip / .pdf / .docx…）一律不收 —— 挂上去也渲染不出来，只会变成「缺失」
@@ -4157,9 +4255,161 @@ function switchView() {
 }
 
 // ============ 快捷键 ============
-// 画布快捷键（2026-08-30 重映射）：定位 Cmd+P（重复按循环）/ Now Cmd+N / Minor Cmd+M / 隐藏Minor Option+Cmd+M / 只显示Now Option+Cmd+N / 标红 Cmd+R / 标黄 Cmd+Y / 进入当前节点 Cmd+E / 折叠 Cmd+F。均在画布获得焦点时生效（Obsidian 同键位不冲突）。
+// —— 画布键位表（2026-09-18）：唯一真相源 = Obsidian 原生快捷键页（.obsidian/hotkeys.json）——
+// 宿主读官方注册表后随 init / setCanvasHotkeys 推来；本文件**不再写死命令类键位**
+// （加粗/标红/标黄/Now/Minor/撤销/重做 已迁移；导航/编辑类键 Tab/Enter/方向/Cmd+C/E/P 等暂未迁移，二期）。
+// 用户在原生页改键后：重新聚焦画布 → focus 时拉一次新表（无官方改键事件，用拉取代替）→ 触发与提示同时跟新。
+function nmEventKey(e) { // 事件键名：优先物理键位 e.code。⚠️ macOS 按住 Option 时 e.key 会变成特殊字符
+  const c = String(e.code || ''); //（Option+B = ∆、Option+2 = ™），用 e.key 永远匹配不上带 Alt 的绑定（实踩）。
+  if (c.indexOf('Key') === 0) return c.slice(3).toLowerCase(); // KeyB → b
+  if (c.indexOf('Digit') === 0) return c.slice(5);             // Digit2 → 2
+  return e.key ? String(e.key).toLowerCase() : '';             // 其余（Enter/Tab/方向…）退回 key
+}
+function nmEventHotkey(e) { // 键盘事件 → 归一化串（与宿主 normHotkey 同一套规则：mod/alt/shift + 小写键名）
+  const parts = [];
+  if (e.metaKey || e.ctrlKey) parts.push('mod');
+  if (e.altKey) parts.push('alt');
+  if (e.shiftKey) parts.push('shift');
+  const k = nmEventKey(e);
+  if (k) parts.push(k);
+  return parts.join('+');
+}
+function nmMatchCanvasHotkey(e) { // 键盘事件 → 动作名（没命中 = null）
+  const n = nmEventHotkey(e);
+  return (n && state.canvasHotkeys && state.canvasHotkeys.match && state.canvasHotkeys.match[n]) || null;
+}
+function nmKeySuffix(act, fallback) { // 提示里的键位段：'（⌘B）'（zh）/ ' (⌘B)'（en）—— 一对括号包住，随改键实时变（2026-09-18 用户定格式）
+  // 该动作没绑键 → 空串（提示里就不显示键位）；给了 fallback（未注册但画布内写死的键，如下钻 E）→ 用它兜底
+  const d = (state.canvasHotkeys && state.canvasHotkeys.disp && state.canvasHotkeys.disp[act]) || (fallback ? modStr(fallback) : '');
+  if (!d) return '';
+  const en = (typeof getLang === 'function') && getLang() === 'en';
+  return en ? ' (' + d + ')' : '（' + d + '）';
+}
+function runCanvasAction(id) { // 画布动作统一入口：键盘（键位表）/ 宿主命令（canvasAction）/ 菜单按钮 三入口共用
+  switch (id) {
+    case 'bold': nodeMenuAction('bold'); break;
+    case 'red': nodeMenuAction('red'); break;
+    case 'yellow': nodeMenuAction('yellow'); break;
+    case 'now': toggleNowOfSelected(); break;
+    case 'minor': toggleDoneOfSelected(); break;
+    case 'editNote': editNoteOfSelected(); break;
+    case 'showNow': { const b = document.getElementById('btn-now-side'); if (b && !b.disabled) setShowNow(!state.showNow); break; }
+    case 'hideMinor': { const b = document.getElementById('btn-hide-done'); if (b && !b.disabled && !b.classList.contains('disabled')) setHideDone(!state.hideDone); break; }
+    case 'drill': if (state.selectedId) drillInto(state.selectedId); break;
+    case 'locate': { const bl = document.getElementById('btn-locate'); if (bl) bl.click(); break; }
+    // 选中导航的四个 case 已删（2026-09-19 用户定：动作回到 keydown 里写死调用，不进注册表、不进键位表；
+    // 函数仍保留在下面「方向键导航」小节，要复活就从这里和注册表的 CANVAS_ACTIONS 各加回一行）
+    // 原方向键占用的新建动作：放出来给用户自己绑（默认不绑）
+    case 'addSiblingAbove': addSiblingAbove(); break;
+    case 'addParentSibling': addParentSibling(); break;
+    // 编辑 / 居中（2026-09-18 用户定，均不设默认键）
+    case 'editStart': canvasEditSelected(false); break;
+    case 'editEnd': canvasEditSelected(true); break;
+    case 'centerNode': canvasCenterSelected(); break;
+    case 'centerRoot': canvasCenterRoot(); break;
+  }
+}
+// —— 方向键导航（2026-09-18 用户定；2026-09-19 起**只由 keydown 写死调用**，不注册成命令）——
+// —— 同层级跨树导航（2026-09-18 二次定）——
+// ↑↓ 规则升级：本级同级用完 → **跳到下一棵子树的同一层级**（第几层就跳第几层，不回到第一层）；
+// ↑ 反向同理。实现 = 按 DFS 先序（视觉自上而下）收集「同一深度」的全部节点，在名单里前后挪 ——
+// 同级天然相邻，跨树是名单的自然延续；某棵子树没有这一层就跳过它（best effort）。
+function canvasNodeDepth(id) {
+  let r = findNode(state.tree, id), n = 0;
+  while (r && r.parent) { n++; r = findNode(state.tree, r.parent.id); }
+  return n;
+}
+function canvasSameDepthIds(depth) {
+  const out = [];
+  (function walk(n, d) {
+    if (d === depth) out.push(n.id);
+    (n.children || []).forEach((c) => walk(c, d + 1));
+  })(state.tree, 0);
+  return out;
+}
+function canvasSelectParent() { // ← 选母节点
+  if (!state.selectedId) return;
+  const r = findNode(state.tree, state.selectedId);
+  if (r && r.parent) selectNode(r.parent.id);
+}
+function canvasSelectChild() { // → 选第一个子节点（连按 = 一直往深处钻，没有子节点就停）
+  if (!state.selectedId) return;
+  const r = findNode(state.tree, state.selectedId);
+  if (r && r.node.children && r.node.children.length) selectNode(r.node.children[0].id);
+}
+function canvasSelectNextSibling() { // ↓ 同层级的下一个：同级用完 → 下一棵子树的同一层级；整层到底 → 不动
+  if (!state.selectedId) return;
+  const list = canvasSameDepthIds(canvasNodeDepth(state.selectedId));
+  const at = list.indexOf(state.selectedId);
+  if (at >= 0 && at < list.length - 1) selectNode(list[at + 1]);
+}
+function canvasSelectPrevNode() { // ↑ 同层级的上一个：同级用完 → 上一棵子树的同一层级；整层到顶 → 不动
+  if (!state.selectedId) return;
+  const list = canvasSameDepthIds(canvasNodeDepth(state.selectedId));
+  const at = list.indexOf(state.selectedId);
+  if (at > 0) selectNode(list[at - 1]);
+}
+// —— 居中（2026-09-18 用户定：**一律复用既有的定位系统**，别自造第二套）——
+// 落点 = app.css :root「定位调参」区的 --locate-* 旋钮（用户早就调好的自定义居中）：
+//   选中/编辑中 → --locate-selected-x + --locate-y；主节点 → --locate-first-x + --locate-y。
+// 首版在这里自造了 NM_CENTER_X/Y，用户指出重复造轮子 → 删掉，全部走 locateCenter / placeCardAtViewport。
+function canvasCenterSelected() { // **只认选中/编辑中的节点**（2026-09-18 用户定：没选中 → 不动；定位主节点是另一条命令的事，别兜底）
+  const activeId = state.selectedId || state.editingTitleId || state.editingNoteId || null;
+  if (!activeId) return;
+  const el = document.querySelector('.node-row[data-id="' + activeId + '"] .card');
+  if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+}
+function canvasCenterRoot() { // 主节点（整张导图的根）回**同一个自定义居中位**（2026-09-18 用户定：与选中节点同一个 --locate-selected-x + --locate-y，不用 --locate-first-x）
+  const el = state.tree && document.querySelector('.node-row[data-id="' + state.tree.id + '"] .card');
+  if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+}
+// —— 编辑类命令（2026-09-18 用户定：从头 / 从末尾进入编辑，光标落在对应端；不设默认键）——
+function canvasEditSelected(atEnd) {
+  if (state.historyMode) return;
+  const id = state.selectedId;
+  if (!id) return;
+  const r = findNode(state.tree, id);
+  if (!r) return;
+  // 已经在编辑这个节点：只挪光标，不重启会话（重启会丢未保存的内容）
+  if (state.editingTitleId === id && state.editingTitleEl) {
+    const sel = window.getSelection();
+    const rg = document.createRange(); rg.selectNodeContents(state.editingTitleEl); rg.collapse(!atEnd);
+    sel.removeAllRanges(); sel.addRange(rg);
+    return;
+  }
+  const row = document.querySelector('.node-row[data-id="' + id + '"]');
+  const titleEl = row && row.querySelector('.title');
+  if (titleEl) startEdit(r.node, titleEl, null, atEnd, !atEnd); // 从头 = caretStart
+}
+// 编辑态仍然放行的画布动作（2026-09-18）：都是"不碰文字"的操作 —— 从头/从末尾（只挪光标）。
+// 居中两条命令已下架（用户定：定位按钮承担），不再放行。
+const NM_EDIT_MODE_ACTIONS = ['editStart', 'editEnd'];
+// 键位表更新后，把**已建好**的提示 DOM 重写一遍（这些按钮只在装载时建一次，data-tip 冻结在那一刻 —— 实踩：
+// 改键后提示不变）。底部工具条 Now/Minor + 「格式」子菜单三项；[data-act=done] 对应 Minor 动作。
+function refreshCanvasHotkeyTips() {
+  [
+    ['bold', T('nm.bold'), 'bold'],
+    ['red', T('nm.red'), 'red'],
+    ['yellow', T('nm.yellow'), 'yellow'],
+    ['now', T('nm.now'), 'now'],
+    ['done', T('nm.minor'), 'minor'],
+    ['note', T('nm.note'), 'editNote'],
+  ].forEach(([selAct, base, hAct]) => {
+    document.querySelectorAll('[data-act="' + selAct + '"][data-tip]').forEach((el) => {
+      el.setAttribute('data-tip', base + nmKeySuffix(hAct));
+    });
+  });
+}
 document.addEventListener('keydown', (e) => {
   const t = e.target;
+  // 图片预览开着 → 方向键只管翻图（▼ 必须放在最前面：选中图片后焦点在 armed proxy 的隐藏 input 上，
+  // 下面 INPUT 分支会把方向键吞掉；预览是模态层，这时也不该再走选中态 / 打字态的逻辑）。2026-09-19 修老 bug。
+  if (isPreviewOpen() && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault();
+    if (e.key === 'ArrowLeft') stepPreviewImage(-1);
+    else if (e.key === 'ArrowRight') stepPreviewImage(1);
+    return;
+  }
   // 历史只读：Esc = 退出（回编辑）；其余编辑类快捷键全部吞掉（不改动当前文档）
   if (state.historyMode) {
     // state.tree 此时就是快照树；只放行复制等只读键。
@@ -4177,7 +4427,9 @@ document.addEventListener('keydown', (e) => {
       // Cmd/Ctrl 组合键落到下方画布快捷键（Cmd+M/N/B… 作用于选中节点 —— 鼠标被菜单占用时的操作手段）
       if (!(e.metaKey || e.ctrlKey)) return;
     } else {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); wrapSelectionInEdit('**'); }
+      const hk = nmMatchCanvasHotkey(e);
+      if (hk === 'bold') { e.preventDefault(); wrapSelectionInEdit('**'); } // 编辑态：加粗键 = 选区插 **（键位跟表走，2026-09-18）
+      else if (hk && NM_EDIT_MODE_ACTIONS.indexOf(hk) >= 0) { e.preventDefault(); runCanvasAction(hk); } // 居中 / 从头从末尾：编辑态放行（2026-09-18 用户定）
       return;
     }
   }
@@ -4198,37 +4450,25 @@ document.addEventListener('keydown', (e) => {
       return;
     }
   }
-  if ((e.altKey) && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'm') { e.preventDefault(); const b = document.getElementById('btn-hide-done'); if (b && !b.disabled && !b.classList.contains('disabled')) setHideDone(!state.hideDone); return; } // Option+Cmd+M 隐藏/显示次要 Minor 节点（原 Cmd+H，2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'm') { e.preventDefault(); toggleDoneOfSelected(); return; } // Cmd+M 标记/取消 Minor（原 Cmd+Enter，2026-08-30）
+  const hkAct = nmMatchCanvasHotkey(e); // 键位表命中的动作（迁移过的动作走它；未迁移的写死键在后面分支）
+  const hkHost = (!hkAct && state.canvasHotkeys && state.canvasHotkeys.host && state.canvasHotkeys.host[nmEventHotkey(e)]) || null; // 宿主命令的键（如切换源文件/导图视图）
+  if (hkAct) { e.preventDefault(); runCanvasAction(hkAct); return; } // 用户在原生页绑的键**永远最先派发**（改键 = 他的意思；写死键只做没绑时的兜底，2026-09-18 实踩：派发太靠后被写死分支截胡 → 命令"没反应"）
+  if (hkHost) { e.preventDefault(); vscode.postMessage({ type: 'execCommand', id: hkHost }); return; } // 宿主命令的桥（如「切换源文件 / 导图视图」）
+  // ↓ 以下全是**写死键兜底**（未注册成命令、不给自定义的动作）：用户绑定的键已在上面拦截
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
-  else if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); nodeMenuAction('bold'); }  // Cmd+B：节点级加粗（2026-08-22 加，之前只有 tooltip 没实现）
-  else if ((e.metaKey || e.ctrlKey) && e.key === 'c') { e.preventDefault(); copySelectedNode(); }
-  else if ((e.metaKey || e.ctrlKey) && e.key === 'x') { e.preventDefault(); cutSelectedNode(); }
-  else if (e.shiftKey && e.key === 'Enter') { e.preventDefault(); editNoteOfSelected(); }      // Shift+Enter：新建/编辑备注（2026-08-21 改）
-  else if ((e.altKey) && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') { e.preventDefault(); const b = document.getElementById('btn-now-side'); if (b && !b.disabled) setShowNow(!state.showNow); return; } // Option+Cmd+N 只显示/显示所有当前关注 Now（2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); toggleNowOfSelected(); return; } // Cmd+N 标记/取消 Now（原 Cmd+I，2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r') { e.preventDefault(); nodeMenuAction('red'); return; }   // Cmd+R 节点标红（2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); nodeMenuAction('yellow'); return; } // Cmd+Y 节点标黄（2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') { e.preventDefault(); if (state.selectedId) drillInto(state.selectedId); return; } // Cmd+E 进入当前节点（下钻，2026-08-30）
-  else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); const bl = document.getElementById('btn-locate'); if (bl) bl.click(); return; } // Cmd+P 定位循环（原 Cmd+K，2026-08-30）
+  else if ((e.metaKey || e.ctrlKey) && e.key === 'c') { e.preventDefault(); copySelectedNode(); } // 复制节点：写死键（未迁移，Mod+C 与系统复制撞车不给默认）
+  else if ((e.metaKey || e.ctrlKey) && e.key === 'x') { e.preventDefault(); cutSelectedNode(); } // 剪切节点：写死键（未迁移）
+  // ⌘E（下钻）/ ⌘P（定位循环）的写死键已删（2026-09-18 用户定：这两个命令已注册进官方快捷键页，
+  // 写死内容不再保留 —— 要键位去官方页绑一次）。⌘Z/⌘C/⌘X、Tab/Enter 等未注册，写死保留。
   else if (e.key === 'Tab') { e.preventDefault(); addChild(); }
   else if (e.key === 'Enter') { e.preventDefault(); addSibling(); }
-  else if (e.key === 'ArrowUp') { // ⬆️ 上方新建同级（预览打开时吞掉，避免误触）
-    if (isPreviewOpen()) { e.preventDefault(); return; }
-    e.preventDefault(); addSiblingAbove();
-  }
-  else if (e.key === 'ArrowDown') { // ↓ 同回车：下方新建同级（预览打开时吞掉）
-    if (isPreviewOpen()) { e.preventDefault(); return; }
-    e.preventDefault(); addSibling();
-  }
-  else if (e.key === 'ArrowLeft') { // ← 预览打开=上一张；否则上探一层加兄弟
-    if (isPreviewOpen()) { e.preventDefault(); stepPreviewImage(-1); return; }
-    e.preventDefault(); addParentSibling();
-  }
-  else if (e.key === 'ArrowRight') { // → 预览打开=下一张；否则同 Tab 新建子节点
-    if (isPreviewOpen()) { e.preventDefault(); stepPreviewImage(1); return; }
-    e.preventDefault(); addChild();
-  }
+  // 方向键 = 选中导航（2026-09-19 用户定：**回到画布内写死**）。原因：注册成命令后它成了全局快捷键，
+  // 源文件视图里按方向键会被截走（实踩：光标动不了）→ 写死在这里，键出不了 iframe，也不再进键位表。
+  // 顺序在用户绑的键之后：谁给别的表态动作绑了裸方向键，仍以用户为准。
+  else if (e.key === 'ArrowUp') { e.preventDefault(); canvasSelectPrevNode(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); canvasSelectNextSibling(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); canvasSelectParent(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); canvasSelectChild(); }
   else if (e.key === 'Escape') { if (isPreviewOpen()) { e.preventDefault(); closeImagePreview(document.getElementById('img-preview')); } } // Esc 关闭预览
   else if (e.key === 'Delete' || e.key === 'Backspace') {
     e.preventDefault();
@@ -4354,7 +4594,7 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'setTheme') { // 设置页切换主题 → 宿主推送到所有打开的视图（即时生效，2026-08-31）
-    applyTheme(msg.value);
+    applyTheme(msg.value); // 类驱动后，深色叠加自动由 .theme-dark × .nm-theme-* 组合表达，无需重放
     return;
   }
   if (msg.type === 'setCenterMode') { // 设置页切换「画布中央」档 → 宿主推送到所有打开的视图（2026-09-16）
@@ -4366,6 +4606,44 @@ window.addEventListener('message', e => {
   if (msg.type === 'setHideHint') { // 设置页切换「隐藏新增页面提示」→ 即时生效（2026-09-01）
     state.hideHint = !!msg.value;
     render();
+    return;
+  }
+  if (msg.type === 'setAddPanel') { // 设置页改「添加面板简化」→ 面板即时重排（2026-09-18）
+    state.addPanel = (msg.value && typeof msg.value === 'object') ? msg.value : null;
+    invalidateAddMenus();
+    // 面板正开着就立刻按新顺序重画（关着的等下次悬浮时自然重建）
+    if (moreMenu && !moreMenu.classList.contains('hidden')) renderMoreMenu();
+    if (moreSubMenu && !moreSubMenu.classList.contains('hidden')) renderMoreSub();
+    syncAddEntryBtn(); // 全关了 → 底部工具条上的「添加」按钮当场收掉
+    return;
+  }
+  if (msg.type === 'setMorePanel') { // 设置页改「更多面板简化」→ 左下菜单即时收掉 / 放回条目（2026-09-18）
+    state.morePanel = (msg.value && typeof msg.value === 'object') ? msg.value : null;
+    updateMoreMenu();
+    return;
+  }
+  if (msg.type === 'setDark') { // 宿主推来的明暗变化（用户切 Obsidian 深浅色 → 画布实时跟随，2026-09-18）
+    applyDarkMode(!!msg.value);
+    return;
+  }
+  if (msg.type === 'setCanvasHotkeys') { // 宿主推来的画布键位表（用户在原生快捷键页改了键 → 触发与提示都跟新表走）
+    state.canvasHotkeys = (msg.value && typeof msg.value === 'object') ? msg.value : { match: {}, disp: {} };
+    refreshCanvasHotkeyTips(); // 已建好的按钮提示重写（styleMenu / 底部工具条只在装载时建一次，会冻结旧键位）
+    updateMoreMenu(); // 撤销 / 重做那两行的快捷键小字当场刷新
+    return;
+  }
+  if (msg.type === 'getSelectedPid') { // 「查看源文件」第一步（2026-09-19）：宿主要「选中节点（没有 → 当前视图根）」的持久 ID
+    const hit = state.selectedId ? findNode(state.tree, state.selectedId) : null;
+    const node = (hit && hit.node) || currentRoot();
+    if (node) {
+      if (!node.persistId) { node.persistId = genPersistId(); pushUndo(); } // 懒分配（与右键复制 AI 定位同源）
+      emitUpdate(); // 无条件发一次：有 ID 也走写盘队列 → 宿主 await 队列后再切，保证 markdown 里搜得到
+    }
+    vscodeApi.postMessage({ type: 'selectedPid', pid: node ? (node.persistId || '') : '' });
+    return;
+  }
+  if (msg.type === 'canvasAction') { // 宿主命令（命令面板 / 原生快捷键在画布外触发）→ 画布内同一份实现
+    runCanvasAction(msg.action);
     return;
   }
   if (msg.type === 'switchView') { // 顶部视图切换按钮点击
@@ -4474,8 +4752,15 @@ window.addEventListener('message', e => {
     if (typeof msg.showNow === 'boolean' && !msg.showNow) setShowNow(false, false, true);
     applyIncoming(msg.text, { filename: msg.filename || '', filePath: msg.filePath || '', drillPid: drillPid, isLink: !!msg.isLink, defaultPid: msg.defaultPid || '' }); // filePath：init 必须透传，否则 state.filePath 空 → 复制 AI 定位路径只剩文件名（2026-09-01 修）
     applyTheme(msg.theme || 'default'); // 主题随 init 下发（2026-08-31）
+    applyDarkMode(!!msg.dark); // 深色模式随 init 下发（跟随 Obsidian 明暗，2026-09-18）
     applyCenterMode(msg.centerMode || 'canvas'); // 画布中央档随 init 下发（2026-09-16）
     state.hideHint = !!msg.hideHint; // 空图新手提示是否隐藏随 init 下发（2026-09-01）
+    state.addPanel = (msg.addPanel && typeof msg.addPanel === 'object') ? msg.addPanel : null; // 「添加」面板顺序/显隐随 init 下发（2026-09-18）
+    state.morePanel = (msg.morePanel && typeof msg.morePanel === 'object') ? msg.morePanel : null; // 左下「更多」菜单的条目显隐随 init 下发（2026-09-18）
+    state.canvasHotkeys = (msg.canvasHotkeys && typeof msg.canvasHotkeys === 'object') ? msg.canvasHotkeys : { match: {}, disp: {} }; // 画布键位表随 init 下发（2026-09-18）
+    refreshCanvasHotkeyTips(); // 底部工具条按钮在装载期就建好了（那时键位表还没到）→ 提示补上键位段
+    updateMoreMenu(); // 名单随 init 到 → 当场按它收 / 放（2026-09-18）
+    invalidateAddMenus(); // 面板内容跟着新配置走，下次悬浮重建
     state.isLink = !!msg.isLink;
     state.isPro = !!msg.isPro; // 是否 Pro（2026-09-04：= licenseState.active，功能权限；试用期内也为 true → 功能不锁）
     state.licenseSource = msg.licenseSource || 'none'; // 'license'=已授权；'trial'/'none'=未授权 → 右上角"激活 Pro"提示按钮显示条件
@@ -4948,6 +5233,14 @@ function enterHistorySnapshot(timestamp, text) {
   // 换快照时的重绘不重新归位，是因为要"记住"用户的操作：缩放倍数、主节点在画面里的位置、下钻位置、显示开关。
   // 这些都跟着"这一次进历史"整体走，退出时由 sandboxRestore 整组还原。
   renderHistoryTree(firstEnter);
+  // 【只在"画面只剩主节点"这一种特殊场景做拉回】（2026-09-18 用户定，此前的无条件居中已撤销——
+  //   换快照记住位置/缩放的锚定行为"几乎完美"，绝不能全动）。特殊场景 = 这一版被差异规则折得只剩
+  //   主节点（state.historyTree.fold，如版本与最新一致 / 只动了主节点），此时主节点可能已被划到边角外：
+  //   完整可见 → 什么都不做；被边缘截断（一半出画）→ 参考折叠逻辑最小平移往画面里收；
+  //   完全出画 → 回自定义中央位（--locate-selected-x/--locate-y，缩放不变）。其余场景一律保持锚定。
+  if (!firstEnter && state.historyTree && state.historyTree.fold) {
+    try { historyRootRecenterIfCollapsed(); } catch (e) { /* 渲染时序异常不阻塞换快照 */ }
+  }
   // 画面只剩主节点一张卡时，横幅下方给一行【常驻】说明 —— 原来是 toast，几秒就消失，想仔细看都不行
   // （2026-09-14 用户定：改成常驻灰字，由 updateHistoryBanner 渲染，切快照 / 退出即消失）。
   // 这个状态 = 根被规则②折起来（⇒ 主节点以下一处【节点文字】差异都没有），所以差异只可能在主节点自己身上。
@@ -5272,17 +5565,42 @@ function updatePreviewNav(pv) {
   }
   nav.querySelector('.img-preview-count').textContent = (imgPreviewIdx + 1) + ' / ' + imgPreviewList.length;
 }
+// 预览列表 = 该节点**实际渲染出来的**图片（顺序与卡片一致：标题里的语法图在前 + 手动粘贴的附件图在后），去重保序。
+// ⚠️ 老 bug（2026-09-19 修）：以前只认 `state.selectedImg.nodeId` → `node.images`，而且是直接把 `findNode()`
+//    的返回值当节点本身用 —— 它返回的是 `{ node, parent, index }`，`.images` 恒为 undefined → 列表恒为一张
+//    → ‹ › 计数条不出现、`stepPreviewImage` 一进来就被 `length <= 1` 挡回，←→ 自然翻不动。
+function nmPreviewImgs(node) {
+  if (!node) return [];
+  const inline = (nmExtractInlineImages(node.title || '').images) || [];
+  const out = [];
+  inline.concat(node.images || []).forEach((p) => { if (p && out.indexOf(p) < 0) out.push(p); });
+  return out;
+}
+// 这张图属于哪个节点（优先看选中的那个，找不到再全树找一圈 —— 双击语法图 / selectedImg 还没指过来也认）
+function nmFindPreviewOwner(relPath, preferId) {
+  if (!relPath || !state.tree) return null;
+  if (preferId) {
+    const r = findNode(state.tree, preferId);
+    if (r && nmPreviewImgs(r.node).indexOf(relPath) >= 0) return r.node;
+  }
+  let hit = null;
+  (function walk(n) {
+    if (hit || !n) return;
+    if (nmPreviewImgs(n).indexOf(relPath) >= 0) { hit = n; return; }
+    (n.children || []).forEach(walk);
+  })(state.tree);
+  return hit;
+}
 function openImagePreview(relPath) {
   if (!relPath) return;
-  // 多图：从选中节点（或 relPath 所在节点）取图片列表，定位到当前这张
+  // 多图：取该节点渲染出来的全部图片，定位到当前这张
   let list = [relPath], idx = 0;
   const sel = state.selectedImg;
-  if (sel && sel.nodeId) {
-    const node = findNode(state.tree, sel.nodeId);
-    if (node && node.images && node.images.length) {
-      const i = node.images.indexOf(relPath);
-      if (i >= 0) { list = node.images.slice(); idx = i; }
-    }
+  const owner = nmFindPreviewOwner(relPath, sel && sel.nodeId);
+  if (owner) {
+    const imgs = nmPreviewImgs(owner);
+    const i = imgs.indexOf(relPath);
+    if (i >= 0) { list = imgs; idx = i; }
   }
   imgPreviewList = list; imgPreviewIdx = idx;
   let overlay = document.getElementById('img-preview');
@@ -5459,6 +5777,23 @@ function computeNowVisible(root) {
   return set;
 }
 // 标题内容（含自身 Minor 的置灰小箭头 / 自身 Now 的蓝色小圆点）；buildCard 与编辑退出还原共用，避免图标在编辑后丢失（2026-08-26）
+// 内联图片语法提取（2026-09-19，P1）：标题里混写的 Obsidian 同款图片语法（![[名字]] / ![](路径)）
+// → 渲染时**抽出来放到节点图片行**（附件图之后），标题只留文字；存储**原样保留**语法不转换 ——
+// 这是内联语法解析层（P1）的第一段，以后双链（P2）/ 块引用嵌入（P3）都走同一条管道加规则即可。
+// 规矩（防误伤，"/您" 教训）：只认**闭合完整**的语法；远程 http(s) 图与 ![[笔记]] 嵌入（非媒体文件）P1 不做，原样保留。
+function nmExtractInlineImages(text) {
+  const images = [];
+  const out = String(text || '').replace(/!\[\[([^\[\]]+)\]\]|!\[[^\]]*\]\(([^)]+)\)/g, (m, wiki, md) => {
+    const p = (wiki ? wiki : md).trim();
+    if (/^https?:/i.test(p)) return m;              // 远程图：P1 不做，原样保留
+    // ⚠️ 判"是不是图"用图片扩展名正则，不能用 isMediaFile() —— 它只含音视频、不含 png/jpg（用户实踩：
+    //    ![[xx.png]] 被当成笔记嵌入放过 → 标题剩「!」+ 双链）。![[笔记]] 嵌入才是 P3。
+    if (wiki && !/\.(png|jpe?g|gif|webp|bmp|tiff?|heic|svg)$/i.test(p)) return m;
+    images.push(p);
+    return '';                                       // 从标题里抽走 → 图片行渲染
+  }).replace(/\s{2,}/g, ' ').trim();                 // 抽走后残留的多空格收紧
+  return { text: out, images };
+}
 function cardTitleInner(node) {
   const selfDone = nodeIsMinor(node);
   const selfNow = nodeIsNow(node);
@@ -5468,7 +5803,7 @@ function cardTitleInner(node) {
   // 分支独立渲染（无标题时独占一行），这里再 emit 一次就会叠成两个 → 仅在有标题时才拼前缀图标。
   return (selfDone && node.title ? '<span class="minor-ico" contenteditable="false">' + renderIcon(minorIconName(), 12) + '</span>' : '')
     + (selfNow && node.title ? '<span class="now-ico" contenteditable="false">' + renderNowPrefix() + '</span>' : '')
-    + renderInline(node.title || '');
+    + renderInline(nmExtractInlineImages(node.title || '').text); // 图片语法已抽到图片行（nmExtractInlineImages），标题只留文字
 }
 // URL 链接 v2：[显示名](https://…)（标准 Markdown）或裸 https://x / www.x / ftp:// / mailto:；点击浏览器打开
 function parseUrlLink(raw) {
@@ -5563,12 +5898,13 @@ function renderInline(text) {
   if (ul) {
     return '<span class="inline-url" data-url="' + escapeHtml(ul.url) + '">' + linkIco('globe') + escMd(ul.display) + '</span>';
   }
-  // 纯文件链接（[显示名](file:///…) 或裸绝对路径）
+  // 纯文件链接：**只认 [显示名](file:///…) 这个我们自己的格式**（2026-09-18 用户定）。
+  // 不再用 detectFilePath 认裸路径 —— 节点文字里随手写 "/您" 这种以斜杠开头的普通文本，
+  // 之前被当成绝对路径渲染成文件链接（误识别）。想要文件链接：选中节点后粘贴路径（我们会转成标准格式），
+  // 或在链接节点里写。裸路径文字从此是纯文字。
   const fl = parseFileLink(t);
-  const fp = fl ? fl.path : detectFilePath(t);
-  if (fp) {
-    const disp = fl ? fl.display : (fp.split(/[\\/]/).pop() || fp);
-    return '<span class="inline-file" data-path="' + escapeHtml(fp) + '">' + linkIco('folder-closed') + escMd(disp) + '</span>';
+  if (fl) {
+    return '<span class="inline-file" data-path="' + escapeHtml(fl.path) + '">' + linkIco('folder-closed') + escMd(fl.display) + '</span>';
   }
   // 混排兜底：按 [[…]] / [名](链接) / 裸 URL 切分，链接段渲染成可点 span（复用 bindInline），其余文字走 escMd。
   // 不认得的写法（如残缺 [[xx）按纯文字，不吞字；落盘不变——标题仍是原文，只是渲染差异。
@@ -5657,7 +5993,7 @@ function setHideDone(on, persist, skipRender) {
     b.innerHTML = renderIcon(on ? 'frame-eye-closed' : 'frame-eye-open', 18); // 2026-08-26：用户自定义图标（Frame / Frame-1），关闭态蓝色由 .active-hide 提供
     b.style.color = '';
     b.classList.toggle('active-hide', on);
-    b.dataset.tip = on ? T('tb.showMinor') : T('tb.hideMinor');
+    b.dataset.tip = (on ? T('tb.showMinor') : T('tb.hideMinor')) + nmKeySuffix('hideMinor', '{Mod} + {Alt} + M');
   }
   if (persist !== false && !state.historyMode) vscode.postMessage({ type: 'setHideDone', value: !!on }); // 沙盒里不持久化
   if (skipRender) return; // 只写状态与按钮图标，不重建树（init 建树前预置过滤开关用）
@@ -5701,7 +6037,19 @@ function setShowNow(on, persist, skipRender) {
       // （子树没差异 → 规则②照样把 Now 折起 = Now 的最小态；有差异 → 展开到差异节点）。
       // 用户 2026-09-14 定："先按 Now 把要显示的显示出来，Now 之后的子节点再按差异来开"。
       if (state.historyMode) applyDiffOnlyFold(now);
-      else now.fold = true; // 进入「只看当前关注」：仅折 Now 自身（最小态，画面只剩 Now 一行），子孙保持原始折叠态；
+      else {
+        // 2026-09-18 用户定：不再一刀切全折（之前 now.fold=true 画面只剩 Now 一行，不友好）。
+        // 按 Now 子树规模智能展开：前两层节点总数 < 16 → 展开到第二层级（第三层起折起）；
+        // ≥ 16 → 只展开第一层级（第二层起保持折叠）。
+        const l1 = now.children || [];
+        const l2Count = l1.reduce((n, c) => n + ((c && c.children) ? c.children.length : 0), 0);
+        now.fold = false; // 两种情况 Now 自身都展开（没子节点时展开与否视觉相同）
+        if (l1.length + l2Count < 16) {
+          l1.forEach(c => { if (c) c.fold = false; }); // 第一层展开 → 第二层可见
+          l1.forEach(c => { ((c && c.children) || []).forEach(g => { if (g) g.fold = true; }); }); // 第三层起折起
+        }
+        // ≥16：直接子节点保持原始折叠态（多数为折起 → 只见第一层级）
+      }
       // 点 Now 展开后子节点按原状显示（不逐层续折），任意层级都可在 nowVisibleSet 内展开查看/编辑。
     });
     emitUpdate(); // 落盘 fold 变化
@@ -5738,7 +6086,7 @@ function updateNowSideBtn() {
   } else {
     const on = state.showNow;
     b.innerHTML = renderNowIcon(on ? 'sideOn' : 'side');
-    wrap.dataset.tip = on ? T('tb.nowShowAll') : T('tb.nowOnly');
+    wrap.dataset.tip = (on ? T('tb.nowShowAll') : T('tb.nowOnly')) + nmKeySuffix('showNow', '{Mod} + {Alt} + N');
   }
 }
 // 默认路径按钮状态：当前页面路径 vs 保存的默认路径（两态：置灰 / 蓝色点击返回）
@@ -5802,8 +6150,8 @@ const MORE_PATH_HINT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill
   const tipMap = {
     undo: T('tb.undo'),
     redo: T('tb.redo'),
-    locate: T('tb.locate'),
-    hide: T('tb.minorToggle'),
+    locate: T('tb.locate') + nmKeySuffix('locate', '{Mod} + P'),
+    hide: T('tb.minorToggle') + nmKeySuffix('hideMinor'),
     more: T('common.more'),
   };
   b.dataset.tip = tipMap[k];
@@ -5864,9 +6212,34 @@ function foldRun(mode, lvl) {
   }
   render(); // render 内会调 updateFoldBar 重发状态
 }
+// 历史模式专属：快照只剩主节点时，把出画/被截断的主节点收进画面（2026-09-18 用户定）。
+// 与 viewFoldLocate 同一套三分判据，但**只**被"快照折得只剩主节点"这个特殊场景调用；
+// 缩放全程不变，persistNow 在历史模式是空操作。
+function historyRootRecenterIfCollapsed() {
+  const root = state.historyTree;
+  const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
+  if (!el) return;
+  const vr = viewMap.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const fullyIn = r.left >= vr.left && r.right <= vr.right && r.top >= vr.top && r.bottom <= vr.bottom;
+  if (fullyIn) return; // 完整可见：什么都不做
+  const partial = r.right > vr.left && r.left < vr.right && r.bottom > vr.top && r.top < vr.bottom;
+  if (partial) {
+    // 一半出画：最小平移往画面里收，留 12px 边距（与折叠逻辑同参）
+    let dx = 0, dy = 0;
+    if (r.left < vr.left) dx = vr.left + 12 - r.left; else if (r.right > vr.right) dx = vr.right - 12 - r.right;
+    if (r.top < vr.top) dy = vr.top + 12 - r.top; else if (r.bottom > vr.bottom) dy = vr.bottom - 12 - r.bottom;
+    panX += dx / zoom; panY += dy / zoom;
+  } else {
+    // 完全出画：回自定义中央位（缩放不变）
+    const c = worldCenter(el);
+    panX = vr.width * cfgNum('--locate-selected-x', 0.5) / zoom - c.x;
+    panY = vr.height * cfgNum('--locate-y', 0.5) / zoom - c.y;
+  }
+  applyTreeTransform(); drawEdges();
+}
 // view 折叠落位（2026-09-15）：在 render + 锚定补偿之后调用，按主节点卡片可见性三分处理（缩放全程不变）。
-function viewFoldLocate() {
-  const root = currentRoot();
+function viewFoldLocate() {  const root = currentRoot();
   const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
   if (!el) { locateCenter(); return; }
   const vr = viewMap.getBoundingClientRect();
@@ -5881,9 +6254,10 @@ function viewFoldLocate() {
     if (r.top < vr.top) dy = vr.top + 12 - r.top; else if (r.bottom > vr.bottom) dy = vr.bottom - 12 - r.bottom;
     panX += dx / zoom; panY += dy / zoom;
   } else {
-    // 完全不在画面里：回标准机位（与定位按钮同参 --locate-first-x / --locate-y，但缩放不变）
+    // 完全不在画面里：回**自定义中央位**（--locate-selected-x / --locate-y，2026-09-18 用户定：
+    // 与定位按钮同一落点；原先用 --locate-first-x，用户描述折叠按钮行为就是"跑到自定义中央"→ 统一）
     const c = worldCenter(el);
-    panX = vr.width * cfgNum('--locate-first-x', 0.25) / zoom - c.x;
+    panX = vr.width * cfgNum('--locate-selected-x', 0.5) / zoom - c.x;
     panY = vr.height * cfgNum('--locate-y', 0.5) / zoom - c.y;
   }
   applyTreeTransform(); drawEdges(); persistNow();
@@ -6597,6 +6971,39 @@ function bindHoverMenu(wrapId, menuId) {
 }
 bindHoverMenu('more-wrap', 'more-menu'); // 「更多」菜单：hover 浮出（路径 4 项已平铺进菜单，2026-09-15 定稿）
 
+// ===== 左下「更多」菜单的条目显隐（2026-09-18，设置页「更多面板简化」）=====
+// 与 main.js 的 MORE_PANEL_TOKENS / MORE_PANEL_LOCKED 一一对应（那边管设置页、这边管渲染）；
+// 顺序还有第三处：宿主 buildFrameHtml 里 #more-menu 的骨架 —— 改顺序要三处一起改。
+// 这个菜单**不可拖**（用户定）→ 骨架写死顺序，这里只按 hidden 名单收 / 放。
+const NM_MORE_ORDER = ['undo', 'redo', 'sep1',
+  'path-back', 'path-fwd', 'path-default', 'path-save', 'save-shortcut', 'sep2',
+  'history', 'save-snapshot', 'sep3',
+  'join-group', 'guide', 'sep4',
+  'hotkeys', 'settings', 'custom-panel'];
+// 锁定项：必须在菜单里、且关不掉（设置页里那几行是「开 + 置灰」）。脏数据里带着它们也一律纠正回来。
+const NM_MORE_LOCKED = ['path-back', 'path-fwd', 'path-default', 'path-save', 'history', 'save-snapshot']; // 「设置与 Bug 提报」2026-09-18 用户定允许关闭
+// 可见条目 = 顺序里没被关掉的（锁定项永远保留）→ 再过一遍分隔线清理
+// （首行 / 末行 / 与前一根相邻都不画，复用「添加面板」那套 nmCleanRows，规则完全一致）
+// 分隔线是**全自动**的（2026-09-18 用户定：设置页里没有它们的开关）→ hidden 里带着 sep 也不算数，
+// 画不画只由「上下有没有东西」决定：撤销 / 重做被关掉时，最上面那根自己就消失了。
+function nmMoreShown() {
+  const raw = (state.morePanel && typeof state.morePanel === 'object') ? state.morePanel : {};
+  const hidden = new Set(Array.isArray(raw.hidden) ? raw.hidden : []);
+  return nmCleanRows(NM_MORE_ORDER.filter(tk => nmIsSep(tk) || !hidden.has(tk) || NM_MORE_LOCKED.indexOf(tk) >= 0));
+}
+// 应用到静态骨架：条目挂 .hidden（CSS `#more-menu .mm.hidden` 收掉），分隔线按 data-sep 定位
+function updateMoreMenu() {
+  const menu = document.getElementById('more-menu');
+  if (!menu) return;
+  const shown = new Set(nmMoreShown());
+  NM_MORE_ORDER.forEach((tk) => {
+    const el = nmIsSep(tk)
+      ? menu.querySelector('.mm-sep[data-sep="' + tk + '"]')
+      : menu.querySelector('.mm[data-act="' + tk + '"]');
+    if (el) el.classList.toggle('hidden', !shown.has(tk));
+  });
+}
+
 // 三个点菜单（#more-menu）初始化（图 + 文字 + 快捷键）
 (function initMoreMenu() {
   const menu = document.getElementById('more-menu');
@@ -6620,15 +7027,29 @@ document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
     else if (act === 'path-fwd') historyForward();
     else if (act === 'path-default') returnToDefault();
     else if (act === 'path-save') saveAsCurrent();
+    else if (act === 'save-shortcut') { // 「将该视图存为捷径」（2026-09-18）：右键「保存为捷径」的可视化形态 —— 对当前视图的根节点建捷径
+      const r = currentRoot();
+      if (!r) return;
+      if (!r.persistId) { r.persistId = genPersistId(); pushUndo(); emitUpdate(); } // 懒分配（捷径指向的 ID 必须先落盘）
+      showPrompt(T('ctx.bookmark'), T('ctx.bookmarkHint'), (val) => {
+        vscode.postMessage({ type: 'createShortcut', pid: r.persistId, title: r.title || T('common.node'), name: (val || '').trim() });
+      });
+    }
     else if (act === 'toggle-view') switchView();
     else if (act === 'history') vscode.postMessage({ type: 'openHistoryPanel' }); // 交给宿主打开原生「历史记录」面板
     else if (act === 'save-snapshot') manualSaveSnapshot();
     else if (act === 'join-group') openUrl(JOIN_GROUP_URL); // 更多菜单「加入 28 Notes 微信群」（2026-09-07）
     else if (act === 'guide') openUrl(GUIDE_URL); // 更多菜单「使用指南」（2026-09-17：原 about=B 站，改为使用指南飞书文档）
     else if (act === 'settings') { vscode.postMessage({ type: 'log', text: '更多菜单→打开设置请求发出' }); vscode.postMessage({ type: 'openSettings' }); } // 更多菜单「设置与 bug 提报」（2026-09-01）
+    else if (act === 'hotkeys') { vscode.postMessage({ type: 'openHotkeys' }); } // 更多菜单「快捷键」→ 打开原生快捷键页并预填搜索只看本插件（2026-09-18）
+    else if (act === 'custom-panel') { vscode.postMessage({ type: 'openSettings', pagePath: [T('settings.uiSimplify'), T('settings.morePanelSimplify')] }); } // 更多菜单「自定义该面板」→ 设置页「更多面板简化」（与节点侧面板的同名按钮同一套，2026-09-18）
     document.getElementById('more-menu').classList.remove('open');
   };
 });
+updateMoreMenu(); // 按设置页下发的名单收掉被关的条目（含分隔线清理；2026-09-18）
+// 画布重新拿到焦点 → 向宿主要一次最新键位表（用户在原生快捷键页改完键、点回画布 → 立即生效；2026-09-18）
+// 官方没有「改键了」事件，用拉取代替：focus / init 两次拉取已覆盖「改完键回画布」的真实路径。
+window.addEventListener('focus', () => { try { vscode.postMessage({ type: 'getCanvasHotkeys' }); } catch (e) {} });
 // 点击外部关闭 more-menu（hover 模式：移除 .open）
 document.addEventListener('mousedown', (e) => {
   const menu = document.getElementById('more-menu');

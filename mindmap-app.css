@@ -18,7 +18,7 @@
   --pro-cta-top: 16px;        /* 距窗口顶部距离：调大→下移。默认 16px */
   --pro-cta-right: 16px;      /* 距窗口右侧距离：调大→左移。默认 16px */
   --pro-cta-bg: #ffffff;     /* ⚠️ 已失效（2026-09-11 白玻璃移植）：背景改由下方 --ui-bar-a 等控制 */
-  --pro-cta-color:  #0070f5;   /* 试用提示按钮文字色：默认蓝；粉线主题(applyTheme)下被覆盖为 --accent-pink。单独改按钮色改这里 */
+  --pro-cta-color:  var(--accent);   /* 试用提示按钮文字色：默认蓝；粉线主题(applyTheme)下被覆盖为 --accent-pink。单独改按钮色改这里 */
   --pro-cta-fs: 13px;         /* 字号：调大→字更大。默认 13px */
   --pro-cta-px: 14px;         /* 左右内边距：调大→按钮更宽。默认 14px */
   --pro-cta-py: 7px;          /* 上下内边距：调大→按钮更高。默认 7px */
@@ -83,11 +83,11 @@
   --lv1-bg: #f3f3f3e0;          /* 一级节点背景色✅ */
 
   /* ---- 悬停 / 选中外框 ---- */
-  --hover-border: #b5cfff;    /* 悬停外框（一级/普通） */
-  --hover-border-root: #b5cfff; /* 根节点悬停外框 */
-  --sel-root: #0044ff;        /* 根节点选中外框 */
+  --hover-border: color-mix(in srgb, var(--accent) 38%, #fff);    /* 悬停外框（一级/普通） */
+  --hover-border-root: var(--hover-border); /* 根节点悬停外框 */
+  --sel-root: var(--accent);        /* 根节点选中外框 */
   --sel-lv1: #0d72ff;         /* 一级节点选中外框 */
-  --sel-ln: #4263eb;          /* 普通节点选中外框 */
+  --sel-ln: var(--accent);          /* 普通节点选中外框 */
   --sel-radius: 7px;         /* 选中节点圆角（2026-08-28；独立于 --card-radius，选中时视觉更鼓一点）✅ 改完重载插件生效 */
 
   /* ---- Minor 节点（2026-08-25；常驻透明，hover/selected 才显示边框）---- */
@@ -125,11 +125,11 @@
 
   /* ---- 折叠按钮 ---- */
   --fold-size: 17px;          /* 折叠钮直径 ✅（数字多时自动变长成胶囊，不会超出） */
-  --fold-border: #b5cfff;     /* 折叠圆钮边框色 */
-  --fold-color: #4263eb;      /* 折叠图标/数字色 */
+  --fold-border: var(--hover-border);     /* 折叠圆钮边框色 */
+  --fold-color: var(--accent);      /* 折叠图标/数字色 */
 
   /* ---- 框选矩形 ---- */
-  --sel-bg: #234ef9;          /* 框选矩形颜色（左键拖空白框选）✅ */
+  --sel-bg: var(--accent);          /* 框选矩形颜色（左键拖空白框选）✅ */
   --sel-opacity: 0.07;         /* 框选矩形透明度（0=全透明，1=不透明）✅ */
 
   /* ---- 颜色标记（红/黄）---- */
@@ -185,8 +185,10 @@
   --note-bg: #f5f6f8;
   /* 兼容旧名（内部引用，别改） */
   --accent: #0d72ff;
-  --accent-deep: #0044ff;
-  --accent-l1: #4263eb;
+  --accent-rgb: 13, 114, 255;   /* 根蓝的 rgb 三元组（供 rgba(var(--accent-rgb), α) 用）*/
+  --nm-danger: #e5484d;             /* 危险/删除 红的根（embed 删除、白板危险按钮、标红图标共用）*/
+  --accent-deep: var(--accent);
+  --accent-l1: var(--accent);
   --l1-bg: #e8f0ff;
 
   /* ---- 定位调参（2026-08-25，改完重载插件生效）----
@@ -203,6 +205,8 @@
   --center-canvas-x: 0.4;   --center-canvas-y: 0.4;   /* 当前生效的落点（原「画布中央」档）。想更靠上 → y 调小；更靠左 → x 调小 */
   --center-visual-x: 0.3;   --center-visual-y: 0.3;   /* 「视觉中央」档落点：暂时用不到，留着备用 */
   --locate-reset-zoom: 1;     /* 定位/下钻返回是否重置缩放：1=重置100%, 0=保留当前缩放。⚠️ 保留「定位后回到 100%」这个效果，不是 bug；想改就改这个值 */
+  --nm-edge-inset-x: 26px;    /* 右缘落点边距（2026-09-18 用户定可调）：新建/编辑的卡片超出右缘被拉回来时，停在离右缘多远。默认 16px=贴边（旧行为）；调大（如 120px）→ 新建子节点的落点往左收、不那么靠边。改完重载插件生效 */
+  --nm-newchild-y: 0.6;       /* ★ 新建节点防遮挡的目标 Y（2026-09-18 用户定可调，改这里）：新卡被底部工具条盖住时，视图垂直上提，把卡片中心放到「视口高度 × 这个比例」处。0.5=正中；调大→更靠下；调小→更靠上。改完重载插件生效 */
   --locate-reset-pan: 1;      /* 定位/下钻返回是否重置平移：1=重置, 0=保留 */
 
   /* ---- 定位缓动调参（2026-08-30；像视频软件的缓动曲线，调控制点改"先缓后快再缓"的手感）---- */
@@ -228,12 +232,14 @@
   /* 同级预测节点边框（2026-09-01；拖拽预测为同级时，节点本体加一圈=选中边框色的浅/实边框；配 --sib-predict-alpha 调透明度）。
      颜色复用选中边框色（RGB 分量），分根/一级/普通三级；粉线版见 --sib-predict-pink / -ln-pink / -root-pink */
   --sib-predict: 13, 114, 255;        /* 一级节点：= 选中边框 --sel-lv1 (#0d72ff) */
-  --sib-predict-ln: 66, 99, 235;      /* 普通节点：= 选中边框 --sel-ln (#4263eb) */
-  --sib-predict-root: 0, 68, 255;     /* 根节点：= 选中边框 --sel-root (#0044ff) */
+  --sib-predict-ln: 13, 114, 255;      /* 普通节点：= 选中边框 --sel-ln (#4263eb) */
+  --sib-predict-root: 13, 114, 255;     /* 根节点：= 选中边框 --sel-root (#0044ff) */
   --sib-predict-alpha: 1;             /* 同级预测边框透明度：1=不透明（=选中边框实色），可改 0.3~1。改完重载插件生效 */
   --sib-predict-on: 0;                /* 同级预测边框总开关：1=显示边框，0=不显示（=普通节点无边框态，因 .card 默认边框本就 transparent）。改完重载插件生效 */
 
   /* ---- 面包屑调参（2026-08-25，改完重载插件生效）---- */
+  --toast-warn-bg: #fff3cd; --toast-warn-text: #7a5b00; --toast-warn-line: #f0d48a;
+  --toast-info-bg: #e8f4ff; --toast-info-text: #1a4f8b; --toast-info-line: #b8d8f5;
   --crumb-color: #677b97;     /* 面包屑字色 + 分隔符 > 颜色（默认灰，和原 --muted 一致） */
 
   /* ══ 浮层外观 · 白玻璃（2026-09-11 从 UI 调教器定稿移植）═══════════════
@@ -292,7 +298,7 @@ body {
   /* 不用 ui-monospace：老版 Obsidian 内核不识别该系统字体关键字；SFMono-Regular 在 macOS 即 SF Mono，同一款字 */
   font-family: SFMono-Regular, Menlo, monospace;
   font-size: 13px; line-height: 1.7;
-  background: #fff; color: var(--text);
+  background: var(--bg); color: var(--text);
 }
 /* ===== 垂直树 ===== */
 /* 树绝对定位在视口原点，位置完全由 transform 决定；树尺寸变化不会推动任何内容（无 flex 居中） */
@@ -302,7 +308,7 @@ body {
    - 每段可点，hover 单段轻微高亮；字略加粗（500，不夸张） */
 #crumb {
   position: fixed; top: 0; left: 0; right: 0; z-index: 15;
-  background: #ffffff;
+  background: var(--bg);
   padding: 5px 16px 5px 12px; font-size: 13px; color: var(--muted);
   display: flex; align-items: center; flex-wrap: wrap;
   padding-right: 48px; /* 给右上角刷新按钮留位（2026-08-21 定） */
@@ -352,7 +358,7 @@ body {
 .card.lv1:hover { border-color: var(--hover-border); }
 .node-row.selected > .card.lv1 { border-color: var(--sel-lv1); }
 /* 普通节点：无颜色属性 → 统一白底（2026-08-22 定：没属性就白底，贝塞尔曲线不透过卡片；红/黄/蓝保持原色） */
-.card.ln { background: #fff; padding: var(--card-pad-ln-top) var(--card-pad-x) var(--card-pad-ln-bottom); }
+.card.ln { background: var(--bg); padding: var(--card-pad-ln-top) var(--card-pad-x) var(--card-pad-ln-bottom); }
 .card.ln:hover { border-color: var(--hover-border); }
 .node-row.selected > .card.ln { border-color: var(--sel-ln); }
 /* 空图使用提示（2026-09-01 定）：相对主节点卡片绝对定位 → 拖动/缩放画布自动跟随；
@@ -492,9 +498,9 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
    加粗项就"把图标本身画粗"一档（renderIcon 的 stroke-width 是 presentation attribute，
    CSS 能盖住）——一眼就能看出"现在是加粗的"，跟按下一个真加粗按钮的感觉一致。 */
 .node-style-menu .mm[data-act="bold"].on .icon { stroke-width: 3.2; }
-.node-style-menu button.color-red .icon { fill: none; stroke: #ff4d4f; stroke-width: 2; }
+.node-style-menu button.color-red .icon { fill: none; stroke: var(--nm-danger); stroke-width: 2; }
 .node-style-menu button.color-yellow .icon { fill: none; stroke: #faad14; stroke-width: 2; }
-.node-style-menu button.color-red.on .icon { fill: #ff4d4f; stroke: #ff4d4f; }
+.node-style-menu button.color-red.on .icon { fill: var(--nm-danger); stroke: var(--nm-danger); }
 .node-style-menu button.color-yellow.on .icon { fill: #faad14; stroke: #faad14; }
 /* 底部「格式」按钮的图标状态（2026-09-17）：图标用 lucide type，**图标自身**反映当前格式 ——
    加粗 = 图标画粗一档；红 / 黄 = 图标换成对应颜色；两者**可叠加**（既粗又是红的，一眼看清）。
@@ -502,7 +508,7 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
    同时这个按钮不再走 .on（那条会把图标刷成主题色，跟"标红/标黄"的表达冲突）。 */
 .node-menu button[data-act="style"] { opacity: 1; }
 .node-menu button[data-act="style"].nm-fmt-bold .icon { stroke-width: 3.4; }
-.node-menu button[data-act="style"].nm-fmt-red .icon { stroke: #ff4d4f; }
+.node-menu button[data-act="style"].nm-fmt-red .icon { stroke: var(--nm-danger); }
 .node-menu button[data-act="style"].nm-fmt-yellow .icon { stroke: #faad14; }
 /* （2026-09-17 删：试做期的 .node-menu button.nm-trial-hidden —— 用户已确认采用「格式」按钮方案，
    原来那个隐藏的红/黄独立按钮已从 JS 里彻底删除，不再需要"隐藏保留"这条规则。） */
@@ -589,7 +595,7 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .card .link {
   font-size: 12px; color: var(--link-color); cursor: pointer;
   margin-top: 3px; flex: 0 1 auto;
-  text-decoration: underline; text-decoration-color: rgba(13,114,255,.35);
+  text-decoration: underline; text-decoration-color: rgba(var(--accent-rgb), .35);
 }
 .card .link:hover { color: var(--sel-lv1); }
 /* 无法识别的链接文本：原样展示（不静默丢弃），用弱化样式提示用户此链接格式不正常、需自行修正 */
@@ -597,13 +603,13 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 /* 标题/备注里内嵌的链接（本文件节点 [[#pid]] / wikilink [[笔记名]]） */
 .inline-link, .inline-wiki {
   color: var(--link-color); cursor: pointer;
-  text-decoration: underline; text-decoration-color: rgba(13,114,255,.35);
+  text-decoration: underline; text-decoration-color: rgba(var(--accent-rgb), .35);
 }
 .inline-link:hover, .inline-wiki:hover { color: var(--sel-lv1); }
 /* 内联 URL 链接 / 内联文件链接，与节点链接同观感 */
-.inline-url { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(13,114,255,.35); }
+.inline-url { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(var(--accent-rgb), .35); }
 .inline-url:hover { color: var(--sel-lv1); }
-.inline-file { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(13,114,255,.35); }
+.inline-file { color: var(--link-color); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(var(--accent-rgb), .35); }
 .inline-file:hover { color: var(--sel-lv1); }
 /* 纯链接节点（无标题）：链接作为主内容显示；链接前缀图标由 JS 注入 .link-ico（lucide，按类型区分） */
 .card .link-main { font-size: 14px; flex: 1 1 auto; margin-top: 0; text-decoration: none; }
@@ -782,7 +788,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 #more-menu {
   position: absolute; left: 100%; top: auto; bottom: -1px; margin-left: 6px;
   z-index: 41;
-  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
   padding: 6px;
   display: none; flex-direction: column; gap: 2px;
   min-width: 180px;
@@ -815,7 +821,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
      配合上面的 max-height 双保险：再长也只会顶到屏的上部，滚动看中间 */
   transform: translateY(var(--now-menu-y)); /* 上下微调（负=上移），嫌偏下就改大负数 */
   z-index: 86; /* 高于左 toolbar 85，不被遮 */
-  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
   padding: 6px;
   /* 2026-09-11 用户定：横排 → 竖排（类似「更多」的子菜单）；条目宽度与节点卡一致（--card-maxw），超宽折行
      align-items 用 stretch（2026-09-11 用户二次澄清：所有条目的悬浮背景条**一样长、拉满容器**，不跟随各自文字） */
@@ -892,6 +898,10 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .mm-label { flex: 1; }
 .mm .kbd { font-size: 11px; opacity: .55; margin-left: 8px; }
 .mm-sep { height: 1px; background: var(--line); margin: 4px 4px; }
+/* 「更多面板简化」（2026-09-18）：被关掉的条目 / 分隔线整个不画。
+   #more-menu 是宿主写死的静态骨架（不像节点面板那样每次重建），所以靠这条把带 .hidden 的收掉 ——
+   本文件其它 .hidden 规则都是逐条 scoped 的（#error-box.hidden 之类），没有全局兜底，必须在这里点名。 */
+#more-menu .mm.hidden, #more-menu .mm-sep.hidden { display: none; }
 .mm-hidden { display: none !important; }
 
 /* 按钮 tooltip 浮动提示（按 data-side 方向；用户 2026-08-21：底部 toast 改向上） */
@@ -1146,7 +1156,7 @@ body.hist-on #pro-cta-wrap { display: none; }
 .wb-btn-ok:hover { filter: brightness(0.92); }   /* 悬停：在原色上加深一点（不要变灰） */
 .wb-btn-ok:active { filter: brightness(0.84); }  /* 按下：再深一档，给点击反馈 */
 .wb-btn-danger { background: #e5484d; border-color: #e5484d; }
-.wb-btn-danger:hover { background: #d23c41; }
+.wb-btn-danger:hover { background: color-mix(in srgb, var(--nm-danger) 88%, #000); }
 
 /* ════════════════════════════════════════════════════════════
    [[ 文件自动补全菜单（2026-08-29）
@@ -1200,8 +1210,8 @@ body.hist-on #pro-cta-wrap { display: none; }
   --pm-cta-bottom: 44px;   /* 激活按钮距窗口底部 */
   --pm-hint-bottom: 16px;  /* 灰字提示距窗口底部 */
   --pm-blue: #0d72ff;
-  --pm-blue-btn: #0070f5;
-  --pm-div: rgba(13,114,255,.14);
+  --pm-blue-btn: var(--accent);
+  --pm-div: rgba(var(--accent-rgb), .14);
   --pm-text: rgba(0,0,0,.72);
   --pm-text-dim: rgba(0,0,0,.5);
 }
@@ -1214,7 +1224,7 @@ body.hist-on #pro-cta-wrap { display: none; }
 }
 .pm-shell .modal-content{ position:relative; width:100%; height:100%; padding:0; overflow:hidden; }
 .pm-shell ::-webkit-scrollbar{ width:8px; }
-.pm-shell ::-webkit-scrollbar-thumb{ background:rgba(13,114,255,.35); border-radius:8px; }
+.pm-shell ::-webkit-scrollbar-thumb{ background:rgba(var(--accent-rgb), .35); border-radius:8px; }
 .pm-shell ::-webkit-scrollbar-track{ background:transparent; }
 
 /* —— 滚动正文（=302 / =299 内容，填满窗口可滚；浮层绝对定位盖其上）—— */
@@ -1230,7 +1240,7 @@ body.hist-on #pro-cta-wrap { display: none; }
 .pm-old{ text-decoration:line-through; color:rgba(0,0,0,.33); font-size:14px; }
 .pm-now{ color:var(--pm-blue-btn); font-size:24px; font-weight:700; }
 .pm-trial{ font-size:12px; color:var(--pm-text-dim); margin:10px 0 0; line-height:1.5; text-align:center; }
-.pm-trial b{ color:rgba(13,114,255,.7); font-weight:600; }
+.pm-trial b{ color:rgba(var(--accent-rgb), .7); font-weight:600; }
 
 .pm-div{ height:1px; background:var(--pm-div); margin:14px 0; }
 .pm-sec{ text-align:center; }
@@ -1249,7 +1259,7 @@ body.hist-on #pro-cta-wrap { display: none; }
   width:30px; height:30px; display:flex; align-items:center; justify-content:center;
   font-size:20px; color:#5d5d5d; cursor:pointer; border-radius:50%; line-height:1;
 }
-.pm-close:hover, .pay-close:hover{ background:rgba(13,114,255,.08); color:var(--pm-blue); }
+.pm-close:hover, .pay-close:hover{ background:rgba(var(--accent-rgb), .08); color:var(--pm-blue); }
 
 /* —— 浮层：白色渐变遮罩（上透明下白，贴窗口底，固定不滚，不挡滚动）——
 .pm-mask, .pay-mask{
@@ -1263,9 +1273,9 @@ body.hist-on #pro-cta-wrap { display: none; }
   position:absolute; left:50%; bottom:var(--pm-cta-bottom); transform:translateX(-50%); z-index:5;
   padding:10px 22px; border:0; border-radius:999px;
   background:var(--pm-blue-btn); color:#fff; font-size:14px; font-weight:600; cursor:pointer;
-  box-shadow:0 2px 10px rgba(0,112,245,.35);
+  box-shadow:0 2px 10px rgba(var(--accent-rgb), .35);
 }
-.pm-cta:hover{ background:#0062d6; }
+.pm-cta:hover{ background:color-mix(in srgb, var(--accent) 80%, #000); }
 
 /* —— 浮层：灰色提示文字（钉底居中，固定不滚）——
 .pm-scrollhint, .pay-scrollhint{
@@ -1279,30 +1289,30 @@ body.hist-on #pro-cta-wrap { display: none; }
 .pay-num{ flex-shrink:0; font-family:"SF Pro Rounded","SF Pro Display",-apple-system,sans-serif; color:var(--pm-blue); font-size:30px; font-weight:800; line-height:1.1; }
 .pay-step-c{ flex:1; min-width:0; }
 .pay-h{ color:var(--pm-blue); font-size:14px; font-weight:600; margin-bottom:8px; }
-.pay-qrbox{ width:230px; height:270px; margin:0 auto; border:1px solid #4263eb; border-radius:16px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.pay-qrbox{ width:230px; height:270px; margin:0 auto; border:1px solid var(--accent); border-radius:16px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .pay-qrbox img{ max-width:100%; max-height:100%; object-fit:contain; }
 .pay-mail{
   margin:2px 0 8px; padding:9px 14px; border:1px dashed var(--pm-blue); border-radius:10px;
-  background:rgba(13,114,255,.05); color:var(--pm-blue); font-weight:600; font-size:13px;
+  background:rgba(var(--accent-rgb), .05); color:var(--pm-blue); font-weight:600; font-size:13px;
   text-align:center; cursor:pointer; user-select:all;
 }
-.pay-mail:hover{ background:rgba(13,114,255,.12); }
+.pay-mail:hover{ background:rgba(var(--accent-rgb), .12); }
 .pay-ol{ margin:4px 0 6px; padding-left:18px; font-size:12px; color:var(--pm-text); line-height:1.7; }
 .pay-note{ font-size:11px; color:#b0b0b0; line-height:1.55; }
 .pay-path{ font-size:12px; color:var(--pm-text); margin-bottom:8px; }
-.pay-shot{ height:280px; display:flex; justify-content:center; border:1px solid #5776ff; border-radius:16px; overflow:hidden; background:#fff; margin-bottom:6px; }
+.pay-shot{ height:280px; display:flex; justify-content:center; border:1px solid var(--accent); border-radius:16px; overflow:hidden; background:#fff; margin-bottom:6px; }
 .pay-shot img{ height:100%; width:auto; object-fit:contain; display:block; }
 .pay-thanks{ margin-top:14px; text-align:center; font-size:12px; color:rgba(255,0,0,.86); }
 
 /* —— 暗色主题 —— */
-.theme-dark .pm-shell{ --pm-text:rgba(232,235,242,.75); --pm-text-dim:rgba(232,235,242,.55); --pm-div:rgba(91,155,255,.18); }
+.theme-dark .pm-shell{ --pm-text:rgba(232,235,242,.75); --pm-text-dim:rgba(232,235,242,.55); --pm-div:rgba(var(--accent-rgb), .18); }
 .theme-dark .pm-shell .modal{ background:#1f2230; border-color:#3a4a6a; }
 .theme-dark .pm-shell .pm-mask, .theme-dark .pay-mask{ background:linear-gradient(180deg, rgba(31,34,48,0) 0%, rgba(31,34,48,.96) 100%); }
 .theme-dark .pm-blue, .theme-dark .pm-sec-h, .theme-dark .pay-h, .theme-dark .pay-num{ color:#5b9bff; }
 .theme-dark .pm-old{ color:rgba(255,255,255,.35); }
 .theme-dark .pm-close, .theme-dark .pay-close{ color:#cfcfcf; }
 .theme-dark .pay-note, .theme-dark .pm-note{ color:#7d8598; }
-.theme-dark .pay-mail{ color:#5b9bff; border-color:#5b9bff; background:rgba(91,155,255,.08); }
+.theme-dark .pay-mail{ color:#5b9bff; border-color:#5b9bff; background:rgba(var(--accent-rgb), .08); }
 .theme-dark .pm-cap{ color:#8a93a6; }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1442,3 +1452,161 @@ body.hist-on #pro-cta-wrap { display: none; }
     transform var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
 }
 .tb .icon { transition: transform var(--ui-btn-anim, 160ms) var(--ui-ease, ease); } /* 折叠按钮展开 / 收起时图标转 90° */
+
+/* ══════════════════════════════════════════════════════════════════
+   深色模式（2026-09-18）：画布根元素挂 .theme-dark 时生效。
+   宿主把 Obsidian 的明暗（body.theme-dark）随 init / setDark 下发，前端切类。
+   规矩：这里**只覆盖 :root 的颜色类令牌**（几何/字号/动画令牌不动）；
+        新代码禁止写裸色值——进 :root 令牌，深色在这里给值。
+   注：feishu/feishuPink 主题走 applyTheme 内联变量（优先级高于类），叠加深色时
+       那几个内联变量仍按浅色调校——已知边界，后续按需补。
+   ══════════════════════════════════════════════════════════════════ */
+.theme-dark {
+  /* 中性色根 */
+  --bg: #1c1c1c;
+  --text: #e6e8eb;
+  --muted: #9aa1a9;
+  --hint-color: #e6e8eb;            /* 配合 --hint-opacity .45 → 深底灰字 */
+  /* 强调蓝根（深色下提亮） */
+  --accent: #5b9bff;
+  --accent-rgb: 91, 155, 255;
+  --link-color: var(--accent);
+  --nm-danger: #ff6b70;
+  /* 节点三态 */
+  --root-bg: #3F8FF7;   /* 蓝线/灰线深色主节点底（2026-09-18 用户定 #3F8FF7；改这里这一个值） */
+  --root-color: #e6e8eb;
+  --lv1-bg: #26282c;
+  --l1-bg: #1f2b40;   /* 拖拽预测父节点底：同一蓝系深色标记 */
+  --edge: #3d424a;
+  --line: #3d424a;
+  --sel: color-mix(in srgb, var(--accent) 16%, #1c1c1c);
+  --sel-opacity: 0.14;
+  --hover-border: color-mix(in srgb, var(--accent) 55%, #1c1c1c);
+  --hover-border-root: var(--hover-border);
+  --fold-border: var(--hover-border);
+  --note-bg: #26282c;
+  /* 标记底色（红/黄/Now） */
+  --color-red: #46232a;
+  --color-yellow: #453a19;
+  --color-now: #26304a;
+  /* Now 紫（深色下提亮） */
+  --now-color: #a78bfa;
+  --now-text-color: #a78bfa;
+  --now-color-dim: #6d5bd0;
+  --now-locate-border: #6d5bd0;
+  /* 图片占位 */
+  --img-missing-bg: #26282c;
+  --img-missing-line: #454a52;
+  --img-missing-fg: #8a919e;
+  /* Minor 置灰系（白虚线在深底同理隐形） */
+  --minor-border-color: #1c1c1c;
+  --minor-hover-color: #4a4f56;
+  --minor-sel-color: #6b7076;
+  --minor-text-color: #6b7076;
+  /* 其它 */
+  --crumb-color: #8a93a6;
+  --pro-cta-hint-color: #8a919e;
+  --pro-cta-border-c: 255, 255, 255;
+  --toast-warn-bg: #3a3320;  --toast-warn-text: #e9d49c;  --toast-warn-line: #57503a;
+  --toast-info-bg: #243047;  --toast-info-text: #9cc0f5;  --toast-info-line: #33507e;
+  /* 历史横幅（浅黄 → 暗金） */
+  --hb-bg: #383113;
+  --hb-line: #57503a;
+  --hb-text: #e9d49c;
+  --hb-btn-line: #57503a;
+  --hb-back-text: #e6e8eb;
+  --hb-note-bg: #3a3526;
+  --hb-note-text: #c9b476;
+  --hb-note-strong-bg: #453d24;
+  --hb-note-strong-line: #5a5233;
+  /* 白玻璃浮层 → 深玻璃 */
+  --ui-bar-border: rgba(255, 255, 255, .12);
+  --ui-edge: 0.06;
+  --ui-shadow-a: 1;
+  --ui-bar-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 30px -10px rgba(0,0,0,.6);
+}
+/* —— 深色下的组件级修正（浅色规则里写死了白/浅色的少数几处）—— */
+.theme-dark #left-toolbar,
+.theme-dark #more-menu,
+.theme-dark #node-more-menu,
+.theme-dark #node-more-sub,
+.theme-dark .node-menu,
+.theme-dark .ctx-menu,
+.theme-dark .toast-below,
+.theme-dark #node-style-menu,
+.theme-dark #now-menu,
+.theme-dark #pro-cta {
+  background-color: rgb(30 32 36 / var(--ui-bar-a, 1));
+  border-color: rgba(255, 255, 255, .12);
+}
+.theme-dark .node-menu button:hover { background: #3a3f45; }
+.theme-dark .toast-below { color: #e6e8eb; }
+.theme-dark .mm-sep, .theme-dark .ctx-sep { background: rgba(255,255,255,.08); }
+.theme-dark #crumb a:hover { background: rgba(255,255,255,.07); }
+.theme-dark #warn-box { background: #3a3320; color: #e9d49c; border-bottom-color: #57503a; }
+.theme-dark #link-suggest { background: #222428; border-color: #3d424a; color: #e6e8eb; }
+.theme-dark #link-suggest .ls-item.on { background: color-mix(in srgb, var(--accent) 18%, #1c1c1c); }
+.theme-dark .tb:disabled, .theme-dark .tb.disabled { color: #5a5f66; }
+.theme-dark #pro-cta-hint { text-shadow: none; color: #9aa1a9; }
+/* —— 深色：白板/网页链接确认对话框 + [[ 建议面板（浅色规则里写死了白底）—— */
+.theme-dark .wb-dialog { background: #222428; border-color: #3d424a; }
+.theme-dark .wb-missing-name, .theme-dark .wb-input { background: #1c1c1c; border-color: #3d424a; color: #e6e8eb; }
+.theme-dark .wb-btn { background: #26282c; border-color: #3d424a; color: #e6e8eb; }
+.theme-dark .wb-btn:not(.wb-btn-ok):not(.wb-btn-danger):hover { background: #31343a; }
+.theme-dark .node-style-menu button.color-yellow .icon { stroke: #ffc53d; }
+.theme-dark .card .embed-del { background: #26282c; border-color: #3d424a; }
+.theme-dark .fold-tag { background: #26282c; border-color: #3d424a; }
+
+/* ══════════════════════════════════════════════════════════════════
+   主题切换：类驱动（2026-09-18 收编，替代 applyTheme 的 JS 内联）。
+   JS 现在只负责往根元素挂/摘 .nm-theme-* 类；所有颜色值住这里。
+   规则：改主题色 → 改对应类的值；深色 × 主题 → 改 .theme-dark.nm-theme-* 组合块。
+   ══════════════════════════════════════════════════════════════════ */
+.nm-theme-feishu {
+  --edge: var(--edge-feishu);
+  --drag-edge-alpha: var(--drag-edge-alpha-feishu);
+}
+.nm-theme-feishuGray {
+  --drag-edge-alpha: var(--drag-edge-alpha-feishuGray);
+}
+.nm-theme-feishuPink {
+  --edge: var(--edge-pink);
+  --root-bg: var(--root-bg-pink);
+  --accent: var(--accent-pink);
+  --sel: var(--sel-pink);
+  --sel-root: var(--sel-root-pink);
+  --sel-lv1: var(--sel-lv1-pink);
+  --sel-ln: var(--sel-ln-pink);
+  --hover-border: var(--hover-border-pink);
+  --hover-border-root: var(--hover-border-root-pink);
+  --drag-edge: var(--drag-edge-pink);
+  --drag-edge-alpha: var(--drag-edge-alpha-feishuPink);
+  --l1-bg: var(--l1-bg-pink);
+  --fold-border: var(--fold-border-pink);
+  --fold-color: var(--fold-color-pink);
+  --pro-cta-color: var(--accent-pink);
+  --sib-predict: var(--sib-predict-pink);
+  --sib-predict-ln: var(--sib-predict-ln-pink);
+  --sib-predict-root: var(--sib-predict-root-pink);
+}
+/* —— 深色 × 粉线：组合选择器（两个类的优先级压过上面所有单类，覆盖 .theme-dark 的蓝色深色值）——
+   原先是 JS 内联（applyPinkDarkInline，已删）；现在改色直接改这里的值。 */
+.theme-dark.nm-theme-feishuPink {
+  --accent: #F06292;
+  --sel-root: #F06292;
+  --sel-lv1: #F06292;
+  --sel-ln: #F06292;
+  --fold-color: #F06292;
+  --pro-cta-color: #F06292;
+  --root-bg: #EB4B63;   /* 粉线深色主节点底（2026-09-18 用户定 #EB4B63；改这里这一个值） */
+  --l1-bg: #33202b;     /* 拖拽预测父节点底 */
+  --sel: #33202b;       /* 菜单/按钮悬停底 */
+  --hover-border: #7a415c;
+  --hover-border-root: #7a415c;
+  --fold-border: #7a415c;
+  --edge: var(--edge-pink);            /* 连线不改暗（用户定：深浅同亮，改浅粉线色深色自动跟） */
+  --drag-edge: 233, 30, 99;
+  --sib-predict: 240, 98, 146;
+  --sib-predict-ln: 240, 98, 146;
+  --sib-predict-root: 214, 60, 106;
+}

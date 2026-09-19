@@ -8,8 +8,7 @@
   /* ── ① 文字徽章（设置页「徽章样式」选“文本”时，思维导图文件右侧的「28 Notes」字）── */
   --shin-mindmap-badge-text: "28 Notes";          /* 文字内容（改英文文案走 i18n.js 更规范） */
   --shin-mindmap-badge-color: #090909;            /* 颜色（想改黑/灰/蓝随便填，如 #626262） */
-  --shin-file-badge-size: 9px;                    /* 字号 */
-  --shin-file-badge-weight: 600;                  /* 粗细：600=半粗、700=粗、bold=粗（semibold 不是合法值，别用） */
+  --shin-file-badge-size: 9px;                    /* 字号 */  --shin-file-badge-weight: 600;                  /* 粗细：600=半粗、700=粗、bold=粗（semibold 不是合法值，别用） */
   --shin-file-badge-stroke: 0.3px;                /* 再粗一格：字体字重到头后靠描边加粗；0=不描边，0.3px=更粗，0.6px=很粗 */
   --shin-file-badge-opacity: 0.3;                   /* 常态透明度：1=不透明，0.5=半透明 */
   --shin-file-badge-opacity-hover: 0.6;             /* 悬停时透明度：0.6=悬停变淡，1=悬停不变 */
@@ -36,9 +35,62 @@
 }
 /* ═══ 自定义区结束 ═════════════════════════════════════════════════ */
 
+/* ═══ 设置页留白自定义区（2026-09-18）══════════════════════════════════════
+   官方声明式布局（setting-group / setting-item）的间距本身就是 CSS 变量，我们只需在
+   本插件页内覆盖这些变量 —— 官方 API 管的是结构，间距归 CSS，完全可以调。
+   改完「禁用再启用 28 Notes 插件」生效（CSS 只在插件启用时读一次）。
+   括号内 = Obsidian 官方默认值（见 Obsidian app.css 的 --setting-items-*）。      */
+:root {
+  --shin-settings-row-pad-y: 20px;   /* 每行的上下留白（官方 20px） */
+  --shin-settings-row-pad-x: 20px;   /* 每行的左右留白（官方 20px） */
+  --shin-settings-group-gap: 24px;   /* 栏与栏（许可证 / 界面 / 更多）之间（官方 24px） */
+  --shin-settings-heading-gap: 16px; /* 栏标题与下面第一行之间（官方 16px） */
+  --shin-morepanel-row-pad-y: 12px;  /* 只管「界面简化 → 更多面板简化」那一页的行距（2026-09-18 用户定：界面上不放控件，改这个值就行） */
+  --shin-addpanel-row-pad-y: 12px;   /* 只管「界面简化 → 添加面板简化」那一页的行距（默认与更多面板一致；也是 CSS 旋钮，自己改） */
+  --shin-uipage-desc-gap: 16px;       /* 「界面简化」里两个二级页入口行：标题与备注小字的间距（官方默认 4px） */
+}
+/* 把上面的值喂给官方变量：只在本插件设置页内生效，不影响别的插件 */
+.shin-settings {
+  --setting-items-padding-y: var(--shin-settings-row-pad-y);
+  --setting-items-padding-x: var(--shin-settings-row-pad-x);
+}
+/* 「更多面板简化」那一页的行：它是**原生二级页**，不在 .shin-settings 子树里（老坑），所以单独点名。
+   选择器写成 .setting-item.xxx（两个类）压过官方的单类声明，不靠加载顺序。 */
+.setting-item.shin-morepanel-row { --setting-items-padding-y: var(--shin-morepanel-row-pad-y); }
+/* 「添加面板简化」那一页的行：同上，单独一个旋钮（两页的行距互不影响）。 */
+.setting-item.shin-addpanel-row { --setting-items-padding-y: var(--shin-addpanel-row-pad-y); }
+/* 「界面简化」里那两个二级页入口行（「更多」/「添加」面板简化）：标题与备注小字的间距。
+   官方 desc 的间距是 padding-top: var(--size-4-1) ≈ 4px，这里放开成旋钮。
+   圈定方式 = 「紧跟在另一个可导航行（mod-navigable）后面的可导航行」+「紧跟可导航行的可导航行」——
+   全插件只有这一对**相邻**的可导航行（父页的「界面简化」入口和「高级」入口都是单独一个，不会命中）。 */
+.setting-item.mod-navigable:has(+ .setting-item.mod-navigable) .setting-item-description,
+.setting-item.mod-navigable + .setting-item.mod-navigable .setting-item-description {
+  padding-top: var(--shin-uipage-desc-gap);
+}
+/* 顶部「预设」行与下面的开关分两块，靠的是官方 type:'group'（JS 里给开关包了一层 group 容器），
+   不靠边距 —— 官方两块卡片之间的间隔就是官方栏间距，跟「添加面板简化」页一致。 */
+.shin-settings .setting-group + .setting-group { margin-top: var(--shin-settings-group-gap); }
+.shin-settings .setting-group .setting-item-heading { margin-bottom: var(--shin-settings-heading-gap); }
+/* ═══ 自定义区结束 ═══════════════════════════════════════════════════════ */
+
 /* 设置页：控件（按钮 / 下拉）与左侧说明文字上下居中（Obsidian 默认贴顶，说明文字长时按钮看着偏上） */
 .shin-settings .setting-item { align-items: center; }
 .shin-settings .setting-item-control { align-items: center; }
+
+/* 「添加面板简化」列表里的减淡行（2026-09-18）：
+   · 分隔线 —— 灰字，跟真正的功能行区分开（它就是条线，不该抢眼）
+   · 空的「添加其他内容」行 —— 淡紫（主题强调色打个折）：下面没内容时它是开不出来的，提示用户「这条现在没作用」 */
+/* 「添加面板简化」列表里的浅色字（2026-09-18）：
+   分隔线行天生浅灰（一眼看出它不是功能项）；二级入口在其下无内容时转淡紫。
+   ⚠️ 不要加 .shin-settings 前缀 —— 原生二级页的容器不带那个类名，一加规则就整条失效。 */
+.setting-item-name.shin-row-dim { color: var(--text-faint); opacity: .75; }
+.setting-item-name.shin-row-dim-accent { color: var(--text-accent); opacity: .45; }
+
+/* 赞助二维码弹窗（2026-09-18）：二维码居中 + 下方一句话 */
+.shin-sponsor-modal { text-align: center; }
+.shin-sponsor-qr { max-width: 260px; border-radius: 8px; display: block; margin: 0 auto; }
+.shin-sponsor-missing { color: var(--text-muted); padding: 12px 0; }
+.shin-sponsor-thanks { margin-top: 12px; color: var(--text-muted); font-size: var(--font-ui-small); }
 
 /* 导图视图容器：去掉 Obsidian 默认 padding，iframe 撑满 */
 .workspace-leaf-content[data-type="28notes-mindmap"] .view-content {
@@ -472,3 +524,23 @@
 .shin-hist-item:hover .shin-hist-more { color: var(--text-muted); }
 .shin-hist-more:hover { color: var(--text-normal); } /* 只改颜色，不加背景 */
 .shin-hist-more .svg-icon { width: 15px; height: 15px; }
+
+/* ===== 深色模式（跟随 Obsidian 明暗）：徽标字换浅色（2026-09-18） =====
+   徽标在宿主文档里，Obsidian 的 body.theme-dark 直接可用；要微调就改这里这一个值。 */
+body.theme-dark {
+  --shin-mindmap-badge-color: #9aa1a9;   /* 文本模式徽标字色 */
+  --shin-file-badge-color: #9aa1a9;      /* 捷径 ↗ 徽标字色 */
+  --shin-badge-icon-url: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M22.5927%2012.0147C22.5927%2014.7781%2020.3465%2017.0243%2017.5822%2017.0243C16.9523%2017.0243%2016.3492%2016.9076%2015.7959%2016.6896C16.3153%2016.4964%2016.7913%2016.215%2017.2092%2015.8661C17.3318%2015.8789%2017.4563%2015.885%2017.5822%2015.885C19.7207%2015.885%2021.4534%2014.1523%2021.4534%2012.0147C21.4534%209.87707%2019.7207%208.14348%2017.5822%208.14348C17.457%208.14348%2017.3332%208.14943%2017.2114%208.16221C16.793%207.81182%2016.3162%207.52923%2015.7959%207.33536C16.3492%207.11699%2016.9523%207%2017.5822%207C20.3465%207%2022.5927%209.25128%2022.5927%2012.0147Z%22%20fill%3D%22%239aa1a9%22%2F%3E%3Cpath%20d%3D%22M14.0096%2017.0243C16.773%2017.0243%2019.0192%2014.7781%2019.0192%2012.0147C19.0192%209.25128%2016.773%207%2014.0096%207C11.2462%207%209%209.25128%209%2012.0147C9%2014.7781%2011.2462%2017.0243%2014.0096%2017.0243ZM14.0096%2015.885C11.872%2015.885%2010.1393%2014.1523%2010.1393%2012.0147C10.1393%209.87707%2011.872%208.14348%2014.0096%208.14348C16.1472%208.14348%2017.8808%209.87707%2017.8808%2012.0147C17.8808%2014.1523%2016.1472%2015.885%2014.0096%2015.885Z%22%20fill%3D%22%239aa1a9%22%2F%3E%3Cpath%20d%3D%22M2%2011.35C1.64101%2011.35%201.35%2011.641%201.35%2012C1.35%2012.359%201.64101%2012.65%202%2012.65L2%2012L2%2011.35ZM2%2012L2%2012.65L10%2012.65L10%2012L10%2011.35L2%2011.35L2%2012Z%22%20fill%3D%22%239aa1a9%22%2F%3E%3C%2Fsvg%3E");
+  /* 图标模式徽标：data-URL 图片的颜色烤在图里（currentColor 在图片内恒为黑），
+     深色必须整张换浅色版 —— 改 --shin-mindmap-badge-color 对它无效（用户实踩） */
+}
+
+/* ===== 「AI 编辑」弹窗（2026-09-18）：说明小字 + 定位文本框 + 右下角复制按钮 ===== */
+.shin-ai-edit-modal .shin-ai-edit-desc { color: var(--text-muted); font-size: var(--font-ui-smaller); margin-bottom: 10px; }
+.shin-ai-edit-modal .shin-ai-edit-box {
+  user-select: text; -webkit-user-select: text;      /* 定位文本要能手动选中（复制按钮之外的兜底） */
+  white-space: pre-wrap; word-break: break-all;
+  background: var(--background-secondary); border: 1px solid var(--background-modifier-border);
+  border-radius: 8px; padding: 10px 12px; font-size: var(--font-ui-smaller); margin: 0 0 12px;
+}
+.shin-ai-edit-modal .shin-ai-edit-btns { display: flex; justify-content: flex-end; }

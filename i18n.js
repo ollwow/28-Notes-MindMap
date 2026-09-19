@@ -32,7 +32,11 @@ var I18N = {
     'mm.saveVersion': '保存此版本', // 菜单项：手动命名保存当前版本快照
     'mm.guide': '使用指南 ↗', // 菜单项：打开使用指南（飞书文档，与设置页「使用教程」同一个链接）
     'mm.joinGroup': '加入微信群 ↗', // 菜单项：跳转飞书 wiki 进群页（2026-09-07）
+    'mm.saveShortcut': '将该视图存为捷径', // 菜单项（2026-09-18）：右键「保存为捷径」的可视化形态，对当前视图根节点建捷径
+    'mm.hotkeys': '快捷键', // 菜单项：打开原生「快捷键」页并预填搜索只看本插件（2026-09-18）
     'mm.settings': '设置与 Bug 提报', // 菜单项：打开插件设置页（2026-09-01）
+    'aiEdit.desc': '复制下面的定位信息，粘贴到其他 AI Agent 里（如 Claude Code、Codex、WorkBuddy 等），AI 就能直接定位到该节点并精准修改。修改时，AI 会自动遵循本插件内置的格式说明。你只需沟通需求，而无需关心格式。', // 「AI 编辑」弹窗顶部说明
+    'aiEdit.copy': '复制并关闭', // 「AI 编辑」弹窗右下角按钮
 
     // ============ 宿主侧通知（屏幕右上角弹条）============
     'display.mindmap': '思维导图', // 标签页标题兜底（视图未绑定文件时；与 common.mindmap 同义，两处独立使用）
@@ -58,11 +62,28 @@ var I18N = {
     'notice.dataAreaGone': '⚠️ 刚删除的是 28 Notes 数据区（图片/历史/AI 契约）：{0} —— 已进废纸篓；误删请立刻放回原路径（仅作者本机提示）', // 数据区顶层目录被删时的告警（2026-09-17）
     'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
     // ---- 命令面板（Cmd+P）与文件右键菜单里显示的命令名（改完要重载插件才变）----
-    'cmd.newMap': '新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图
+    'cmd.newMap': '新建｜新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图
+    'cmd.boldNode': '编辑文本｜加粗节点', // 命令：画布动作（键位在原生快捷键页改，2026-09-18）
+    'cmd.redNode': '编辑节点｜将选中节点标为红色', // 命令：画布动作
+    'cmd.yellowNode': '编辑节点｜将选中节点标为黄色', // 命令：画布动作
+    'cmd.nowNode': '编辑节点｜（不）设为 Now 当前节点', // 命令：画布动作
+    'cmd.minorNode': '编辑节点｜（不）设为 Minor 次要节点', // 命令：画布动作
+    'cmd.editNote': '编辑文本｜节点备注', // 命令：画布动作（默认 Shift+Enter）
+    'cmd.toggleShowNow': '视图整体｜（只）显示 Now 当前节点', // 命令：画布动作（默认 Mod+Alt+N）
+    'cmd.toggleHideMinor': '视图整体｜显示/隐藏 Minor 次要节点', // 命令：画布动作（默认 Mod+Alt+M）
+    'cmd.drillInto': '视图整体｜进入当前节点', // 命令：画布动作（不设默认键：Mod+E 与核心编辑/预览切换撞车）
+    'cmd.locateCycle': '视图定位｜定位循环', // 命令：画布动作（不设默认键：Mod+P 与命令面板撞车）
+    'cmd.toggleSourceView': '视图切换｜源文件/思维导图视图', // 命令：合并原「查看源文件 / 返回思维导图视图」（2026-09-18）
+    'cmd.addSiblingAbove': '新建｜在上方新建同级节点', // 命令：原 ↑ 占用的新建动作（不设默认键，2026-09-18 放给用户）
+    'cmd.addParentSibling': '新建｜在上一层新建同级节点', // 命令：原 ← 占用的新建动作（不设默认键）
+    'cmd.editStart': '编辑操作｜光标插入节点开始处', // 命令：编辑类（不设默认键；光标落最前；编辑中再按 = 只挪光标）
+    'cmd.editEnd': '编辑操作｜光标插入节点末尾处', // 命令：编辑类（不设默认键；光标落最后）
+    'cmd.centerNode': '视图定位｜选中节点定位到画面中央', // 命令：居中类（不设默认键；落点 = app.css 定位调参 --locate-selected-x/--locate-y）
+    'cmd.centerRoot': '视图定位｜主节点定位到画面中央', // 命令：居中类（不设默认键；落点 = --locate-selected-x/--locate-y，与选中节点同一个自定义居中位）
     'cmd.openAsMarkdown': '查看源文件（28 Notes）', // 命令/文件右键菜单：按纯文本打开（豁免导图视图）
     'cmd.openAsMindmap': '返回思维导图视图（28 Notes）', // 命令/文件右键菜单：从纯文本切回导图视图
     // ---- 文件名相关 ----
-    'newMap.name': '未命名思维导图', // 新建导图的默认文件名（重名自动加「 1」「 2」序号）
+    'newMap.name': 'Mind Map', // [已弃用] 新建导图命名已硬编码为 Mind Map N（2026-09-18 用户定：中英文统一，不再走 i18n；键留作兼容）
     'copy.suffix': '-副本', // 「创建副本」的文件名后缀：原文件名 + 这个后缀 + .md
     'snap.beforeRestore': '还原前 · ', // 还原历史版本时自动存的「还原前」快照的命名前缀（后接日期时间）
     'snap.restoredTo': '还原到 · ', // 还原历史版本后自动存的「还原到」快照的命名前缀（后接来源版本的名字或时间）
@@ -79,13 +100,13 @@ var I18N = {
     'settings.langAuto': '跟随 Obsidian', // 语言下拉选项一：跟随客户端语言
     'settings.langZh': '中文', // 语言下拉选项二
     'settings.langEn': 'English', // 语言下拉选项三
-    'settings.theme': '样式', // 主题设置项名称（2026-08-31）
+    'settings.theme': '界面样式', // 主题设置项名称（2026-08-31）
     'settings.themeFeishu': '蓝线', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
     'settings.themeFeishuGray': '灰线', // 主题下拉：飞书灰线
     'settings.themeFeishuPink': '粉线', // 主题下拉：飞书粉线（2026-09-01 新增）
     // 2026-09-17：媒体分目录（images/video/audio）后，清理范围同步扩大 → 文案由「图片」改「附件」
     'cleanup.heading': '清理未使用的附件', // 设置页区块标题（2026-09-16）
-    'cleanup.desc': '为适应编辑时撤回操作，删除带图片/视频等附件的节点时，附件本身不会被直接删除，需手动清理。<br> 建议每半年扫描清理一次。',
+    'cleanup.desc': '删除带图片/视频等附件的节点时，附件不会被直接删除，需手动清理。<br> 建议每半年扫描清理一次。',
     'cleanup.scanBtn': '开始扫描', // 设置页按钮（2026-09-16：名称改由 cleanup.heading 承担「清理未使用的附件」）
     'cleanup.scanning': '正在扫描…', // 扫描进行中按钮文案
     'cleanup.none': '没有找到未使用的附件 ✓', // 扫描结果：零孤儿
@@ -102,6 +123,24 @@ var I18N = {
     'settings.badgeStyleIcon': '28 Notes 图标', // 徽章样式下拉：图标
     'settings.hideHint': '新增页面提示', // 界面简化栏标题（2026-09-01）
     'settings.hideHintDesc': '新增思维导图后，主节点下方会有一行新手提示，可选择隐藏。',
+    // 二级页入口右侧的灰字说明（2026-09-18 用户定：两行都去掉，入口只留标题 + 箭头）
+    'settings.uiSimplify': '界面简化', // 「界面」栏的原生二级页（2026-09-18）：收纳文件类型徽标 / 新增页面提示等
+    'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
+    // ---- 「界面简化」下的两个二级页（2026-09-18）----
+    'settings.morePanelSimplify': '「更多」面板简化', // 左下「更多」菜单的逐项开关（顺序固定，不可拖）
+    'settings.morePanelSimplifyDesc': '指左下角按钮中，···（更多按钮）内操作项',
+    'settings.morePanelNote': '为保证基础使用体验，部分操作按钮不支持关闭。', // 「更多面板」页顶部「预设」那行的备注小字（已不单独占一行）
+    'settings.addPanelSimplify': '「添加」面板简化', // 「添加」面板条目的排序 + 显隐
+    'settings.addPanelSimplifyDesc': '指选中节点后，底部操作按钮中，+（添加按钮）内操作项',
+    'settings.sepRow': '分隔线', // 列表里的分隔线行；三根同名（2026-09-18 用户定：不编号，靠位置区分）
+    'settings.presetRow': '介绍', // 「添加面板简化」与「更多面板简化」页顶部共用的一排一次性动作按钮
+    'settings.presetRowDesc': '全部关闭后，「添加」按钮将会同步隐藏。',
+    'settings.presetDefault': '恢复默认',
+    'settings.presetAllOn': '全部打开',
+    'settings.presetAllOff': '全部关闭',
+    'settings.subEntryRow': '添加其他内容', // 列表里那条"分界线"行
+    'settings.subEntryRowDesc': '▶︎ 此条目以下的按钮，将被折入二级菜单',
+    'settings.addPanelEmpty': '（没有可显示的条目）',
 
 
 
@@ -115,10 +154,11 @@ var I18N = {
     'settings.centerCanvas': '画布中央', // 选项①：视口几何正中心（默认）
     'settings.centerVisual': '视觉中央', // 选项②：保留自定义落点（＝现在的位置，偏左上）
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
-    'settings.sponsor': '赞助开发者', // 赞助项名称
-    'settings.sponsorBtn': '好！', // 展开/收起赞助二维码的按钮文字
+    'settings.sponsor': '赞赏开发者', // 赞助项名称
+    'settings.sponsorBtn': '赞赏 ↗', // 赞助按钮文字（2026-09-18 起点它弹二维码弹窗）
+    'settings.sponsorThanks': '谢谢！', // 赞助弹窗里二维码下方那句话
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
-    'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。<br>添加微信后，你也可咨询加入 28 笔记法插件开发群 / 知识管理交流群。', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
+    'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。或加入群聊 →', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
 
     // ---- 授权（2026-09-02 新增）----
     'license.heading': '许可证', // 设置页许可证区块标题
@@ -201,29 +241,29 @@ var I18N = {
     'tb.foldSel': '折叠附近节点（{Mod} + F）', // 折叠按钮：已选中节点时
     'tb.foldNoSel': '折叠附近节点（需选择节点后操作）（{Mod} + F）', // 折叠按钮：未选中节点时
     'tb.foldDefault': '折叠/展开附近节点（需选择节点后操作）（{Mod} + F）', // 折叠按钮的初始 tooltip（进画面未选中时）
-    'tb.drill': '进入当前节点（{Mod} + E）', // 「进入该节点」按钮：已选中时
-    'tb.drillDefault': '进入当前节点（需选择节点后操作）（{Mod} + E）', // 同按钮初始 tooltip（未选中时）
+    'tb.drill': '进入当前节点', // 「进入该节点」按钮：已选中时（键位段由 nmKeySuffix 动态追加，随改键实时变）
+    'tb.drillDefault': '进入当前节点（需选择节点后操作）', // 同按钮初始 tooltip（未选中时）
     'tb.drillAtRoot': '已在主节点，无需进入', // 选中主节点时：无处可钻，按钮置灰（2026-09-15）
     'tb.selectFirst': '请先选择节点', // 未选中节点时多个按钮的通用兜底提示
     'tb.noMinor': '当前视图没有 Minor 节点', // 当前视图里没有 Minor 节点时，隐藏 Minor 按钮的提示（按钮置灰）
-    'tb.showMinor': '显示 Minor 节点（{Mod} + {Alt} + M）', // 隐藏 Minor 按钮：隐藏中（点此显示）
-    'tb.hideMinor': '隐藏 Minor 节点（{Mod} + {Alt} + M）', // 隐藏 Minor 按钮：显示中（点此隐藏）
+    'tb.showMinor': '显示 Minor 节点', // 隐藏 Minor 按钮：隐藏中（点此显示；键位段动态追加）
+    'tb.hideMinor': '隐藏 Minor 节点', // 隐藏 Minor 按钮：显示中（点此隐藏）
     'tb.nowReadonly': '此按钮在历史页面无法操作', // 历史页里 Now 按钮被禁用的提示
     'tb.noNow': '当前视图没有 Now 节点', // 图里没有任何 Now 节点时 Now 按钮的提示（置灰）
-    'tb.nowShowAll': '取消只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：开启中（点此恢复显示全部）
-    'tb.nowOnly': '只显示 Now 节点 （{Mod} + {Alt} + N）', // 只看 Now 按钮：关闭中（点此只看 Now）
-    'tb.undo': '撤销（{Mod}+Z）', // 撤销按钮 tooltip
-    'tb.redo': '重做（{Mod}+Shift+Z）', // 重做按钮 tooltip
-    'tb.locate': '定位到中心节点（{Mod}+P）', // 定位按钮 tooltip（循环定位下钻路径各层）
-    'tb.minorToggle': '隐藏/显示次要 Minor 节点（{Alt}+{Mod}+M）', // 隐藏/显示 Minor 按钮初始 tooltip
+    'tb.nowShowAll': '取消只显示 Now 节点', // 只看 Now 按钮：开启中（点此恢复显示全部；键位段动态追加）
+    'tb.nowOnly': '只显示 Now 节点', // 只看 Now 按钮：关闭中（点此只看 Now）
+    'tb.undo': '撤销（{Mod}+Z）', // 撤销按钮 tooltip（写死键不给自定义，静态没问题）
+    'tb.redo': '重做（{Mod}+Shift+Z）', // 重做按钮 tooltip（同上）
+    'tb.locate': '定位到中心节点', // 定位按钮 tooltip（键位段动态追加；未绑时回退写死的 Mod+P）
+    'tb.minorToggle': '隐藏/显示次要 Minor 节点', // 隐藏/显示 Minor 按钮初始 tooltip（键位段动态追加）
 
     // ============ 节点工具栏（选中节点时底部弹出的黑色圆条按钮 tooltip）============
-    'nm.bold': '加粗节点（{Mod} + B）',
-    'nm.red': '标为红色（{Mod} + R）', // 标红按钮
-    'nm.yellow': '标为黄色（{Mod} + Y）', // 标黄按钮
-    'nm.note': '添加备注（Shift + Enter）', // 写备注按钮
-    'nm.now': '设为当前关注 Now 节点（{Mod} + N）', // 标记 Now 按钮
-    'nm.minor': '设为次要 Minor 节点（{Mod} + M）', // 标记 Minor 按钮
+    'nm.bold': '加粗节点', // 键位段由画布键位表动态追加（nmKeySuffix），不再写死（2026-09-18）
+    'nm.red': '标为红色', // 标红按钮
+    'nm.yellow': '标为黄色', // 标黄按钮
+    'nm.note': '添加备注', // 写备注按钮（键位段由 nmKeySuffix 动态追加，随改键实时变）
+    'nm.now': '设为当前关注 Now 节点', // 标记 Now 按钮
+    'nm.minor': '设为次要 Minor 节点', // 标记 Minor 按钮
     // 底部菜单最右「更多」（2026-09-17 加）：悬浮弹出的添加类入口。
     // 注：该按钮**刻意不挂提示框**（悬浮时会和弹出的子菜单叠在一起，用户 2026-09-17），
     // 所以原来那条 'nm.more' 文案已删。
@@ -238,6 +278,10 @@ var I18N = {
     // 注：「添加其他内容」与底部「样式」按钮都**有子菜单 → 不挂提示**（会和子菜单叠住），
     // 所以它们的提示文案/短标签已删；说明文案改挂在子菜单那一项上（见 nm.bold / nm.red / nm.yellow）。
     'more.addOther': '添加其他内容',
+    'more.aiEdit': 'AI 编辑', // 添加面板新条目（2026-09-18）：右键「复制 AI 定位」的可视化形态
+    'more.aiEditTip': '点击可复制 AI 定位信息',
+    'more.customPanel': '自定义该面板', // 二级面板底部入口：点开 → 设置页「添加面板简化」
+    'more.customPanelTip': '可选择隐藏部分操作按钮',
     'more.addImage': '添加图片',
     'more.addImageTip': '支持直接粘贴图片', // 用户指定文案
     'more.addVideo': '添加视频',
@@ -309,11 +353,11 @@ var I18N = {
     'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里', // 复制节点链接 悬浮说明
 
     // ============ 折叠层级数字按钮悬停提示（右下角状态栏层级条）============
-    'fold.menuKeep': '「选中节点」折叠到第 {0} 层级（同时外部保持不变）（点击）', // 折叠数字右键第一项 = 选中后的默认左键行为（{0}=按钮数字；2026-09-13 文案用户定）
-    'fold.menuMin': '「选中节点」折叠到第 {0} 层级（同时外部折叠到最简）（Cmd + 点击）', // 折叠数字右键第二项 / Cmd 快捷键（{0}=按钮数字；2026-09-13 文案用户定）
+    'fold.menuKeep': '选中节点 折叠到第 {0} 层级（同时外部保持不变）（点击）', // 折叠数字右键第一项 = 选中后的默认左键行为（{0}=按钮数字；2026-09-13 文案用户定）
+    'fold.menuMin': '选中节点 折叠到第 {0} 层级（同时外部折叠到最简）（Cmd + 点击）', // 折叠数字右键第二项 / Cmd 快捷键（{0}=按钮数字；2026-09-13 文案用户定）
     'fold.level': '折叠到第 {0} 层级', // 悬浮提示·未选中节点（{0}=按钮数字；2026-09-11 文案用户定）
-    'fold.levelKeep': '「选中节点」折叠到第 {0} 层级（同时外部保持不变）', // 悬浮提示·选中节点（不按修饰键 = 默认行为；2026-09-13 用户定）
-    'fold.levelMin': '「选中节点」折叠到第 {0} 层级（同时外部折叠到最简）', // 悬浮提示·选中节点 + 按住 Cmd（2026-09-13 用户定）
+    'fold.levelKeep': '选中节点 折叠到第 {0} 层级', // 悬浮提示·选中节点（不按修饰键 = 默认行为；2026-09-13 用户定）
+    'fold.levelMin': '选中节点 折叠到第 {0} 层级（同时外部折叠到最简）', // 悬浮提示·选中节点 + 按住 Cmd（2026-09-13 用户定）
     'fold.noMore': '暂不可用', // 悬浮提示·置灰的按钮（选中后超出该节点子树层数 / 「+」里全是置灰项；2026-09-13 用户定，后改「暂不可用」）
 
     // ============ 定位菜单（点定位按钮/Now 侧边按钮弹出的目标列表）============
@@ -364,7 +408,7 @@ var I18N = {
     // 点「保存规则」展开的三行小字（带 <br>，必须走 innerHTML；用 text 会把标签当字面量显示出来）
     'hist.rulesText': '编辑时会高频保存历史版本，<br>时间较久的版本会自动删减，<br>手动保存 / 重命名的版本不会自动删减。',
     'hist.noMap': '当前没有打开的思维导图', // 面板空态：没有可跟随的导图（非 28 Notes 文件时列表直接清空，不显示文案）
-    'cmd.openHistory': '打开历史记录面板', // 命令：面板被关掉后的找回入口
+    'cmd.openHistory': '其它｜打开历史记录面板', // 命令：面板被关掉后的找回入口
     'notice.panelFail': '打开右侧历史面板失败', // 右侧栏取不到 leaf 时的提示
 
     // ============ 图片预览 / 图片缺失 ============
@@ -402,6 +446,10 @@ var I18N = {
     'mm.saveVersion': 'Save this version',
     'mm.guide': 'User guide ↗',
     'mm.joinGroup': 'Join WeChat Group ↗',
+    'mm.saveShortcut': 'Save this view as a shortcut',
+    'aiEdit.desc': 'Copy the locator below and paste it into any AI agent — it will open this document and jump straight to the node.',
+    'aiEdit.copy': 'Copy & close',
+    'mm.hotkeys': 'Hotkeys',
     'mm.settings': 'Settings & bug report',
 
     'display.mindmap': 'Mind map',
@@ -424,10 +472,27 @@ var I18N = {
     'notice.openNoteFail': 'Failed to open note: ',
     'notice.copyFailSnap': 'Failed to create a copy: ',
     'notice.githubUnset': 'GitHub link is not configured yet',
-    'cmd.newMap': 'New mind map (28 Notes)',
+    'cmd.newMap': 'New | New mind map (28 Notes)',
+    'cmd.boldNode': 'Text | Bold node',
+    'cmd.redNode': 'Node | Mark the selected node red',
+    'cmd.yellowNode': 'Node | Mark the selected node yellow',
+    'cmd.nowNode': 'Node | (Un)set the selected node as Now',
+    'cmd.minorNode': 'Node | (Un)set the selected node as Minor',
+    'cmd.editNote': 'Text | Node note',
+    'cmd.toggleShowNow': 'View | Show only Now nodes',
+    'cmd.toggleHideMinor': 'View | Show/hide Minor nodes',
+    'cmd.drillInto': 'View | Enter the current node',
+    'cmd.locateCycle': 'Locate | Locate cycle',
+    'cmd.toggleSourceView': 'Toggle | Source / mind-map view',
+    'cmd.addSiblingAbove': 'New | Add a sibling above',
+    'cmd.addParentSibling': 'New | Add a sibling one level up',
+    'cmd.editStart': 'Cursor | Move the caret to the start of the node',
+    'cmd.editEnd': 'Cursor | Move the caret to the end of the node',
+    'cmd.centerNode': 'Locate | Center the selected node (works while editing)',
+    'cmd.centerRoot': 'Locate | Center the root node',
     'cmd.openAsMarkdown': 'View in the Obsidian editor',
     'cmd.openAsMindmap': 'View in the 28 Notes mind map editor',
-    'newMap.name': 'Untitled mind map',
+    'newMap.name': 'Mind Map', // [deprecated] naming is hardcoded as "Mind Map N" now (2026-09-18)
     'copy.suffix': ' copy',
     'snap.beforeRestore': 'Before restore · ',
     'snap.restoredTo': 'Restored to · ',
@@ -442,13 +507,13 @@ var I18N = {
     'settings.langAuto': 'Follow Obsidian',
     'settings.langZh': '中文',
     'settings.langEn': 'English',
-    'settings.theme': 'Style',
+    'settings.theme': 'Interface style',
     'settings.themeFeishu': 'Blue lines',
     'settings.themeFeishuGray': 'Gray lines',
     'settings.themeFeishuPink': 'Pink lines',
     // 2026-09-17: media split into images/video/audio → cleanup now covers all three; wording "images" → "attachments"
     'cleanup.heading': 'Clean up unused attachments',
-    'cleanup.desc': 'To keep your data safe, when you delete a node that contains attachments, the files themselves (images / videos / audio) are never deleted — cleanup is manual.<br> A scan every six months is recommended.',
+    'cleanup.desc': 'When you delete a node that contains attachments (images / videos / audio), the files themselves are not deleted — clean them up manually.<br> A scan every six months is recommended.',
     'cleanup.scanBtn': 'Start scan',
     'cleanup.scanning': 'Scanning…',
     'cleanup.none': 'No unused attachments found ✓',
@@ -467,6 +532,23 @@ var I18N = {
     'settings.badgeStyleIcon': '28 Notes icon',
     'settings.hideHint': 'New-page hint',
     'settings.hideHintDesc': 'After creating a new mind-map, a beginner hint appears below the root node. You can choose to hide it. ',
+    'settings.uiSimplify': 'Interface simplification', // Native sub-page under "Interface" (2026-09-18)
+    'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
+    // ---- Two sub-pages under "Interface simplification" (2026-09-18) ----
+    'settings.morePanelSimplify': '"More" panel simplification',
+    'settings.morePanelSimplifyDesc': 'Items inside the bottom-left "More" (···) button.',
+    'settings.morePanelNote': 'To keep the basics working, some buttons cannot be turned off.', // note on the "Presets" row of the More-panel page
+    'settings.addPanelSimplify': '"Add" panel simplification',
+    'settings.addPanelSimplifyDesc': 'Items inside the "Add" (+) button on a selected node\'s bottom toolbar.',
+    'settings.sepRow': 'Divider',
+    'settings.presetRow': 'About',
+    'settings.presetRowDesc': 'When everything is off, the "Add" button hides as well.',
+    'settings.presetDefault': 'Restore defaults',
+    'settings.presetAllOn': 'Turn everything on',
+    'settings.presetAllOff': 'Turn everything off',
+    'settings.subEntryRow': 'Add other content',
+    'settings.subEntryRowDesc': '▶︎ Buttons below this entry fold into the sub-menu.',
+    'settings.addPanelEmpty': '(No items to show)',
     'settings.hintShow': 'Show hint',
     'settings.hintHide': 'Hide hint',
     'settings.tutorial': 'Tutorial',
@@ -477,10 +559,11 @@ var I18N = {
     'settings.centerCanvas': 'Canvas center',
     'settings.centerVisual': 'Visual center',
     'settings.qrMissing': '(QR code image not found)',
-    'settings.sponsor': 'Sponsor the developer',
-    'settings.sponsorBtn': 'Sure!',
+    'settings.sponsor': 'Tip the developer',
+    'settings.sponsorBtn': 'Tip ↗',
+    'settings.sponsorThanks': 'Thank you!',
     'settings.bug': 'Bugs & feature requests',
-    'settings.bugMd': 'Please submit via the GitHub Issue button on the right.<br>If that\'s inconvenient, you can email ShinContactEM@Gmail.com,<br>or add the developer on WeChat: Hi28Notes.<br><br>After adding the developer on WeChat, you can also join the 28 Notes plugin development / knowledge management group chat.',
+    'settings.bugMd': 'Add the creator on WeChat: Hi28Notes. Or join the group chat →',
 
     // ---- License / paid activation (added 2026-09-02) ----
     'license.heading': 'License',
@@ -562,28 +645,28 @@ var I18N = {
     'tb.foldSel': 'Fold nearby nodes ({Mod} + F)',
     'tb.foldNoSel': 'Fold nearby nodes (select a node first) ({Mod} + F)',
     'tb.foldDefault': 'Fold/unfold nearby nodes (select a node first) ({Mod}+F)',
-    'tb.drill': 'Enter the current node ({Mod} + E)',
-    'tb.drillDefault': 'Enter the current node (select a node first) ({Mod} + E)',
+    'tb.drill': 'Enter the current node',
+    'tb.drillDefault': 'Enter the current node (select a node first)',
     'tb.drillAtRoot': 'Already at the main node',
     'tb.selectFirst': 'Select a node first',
     'tb.noMinor': 'No Minor nodes in the current view',
-    'tb.showMinor': 'Show Minor nodes ({Mod} + {Alt} + M)',
-    'tb.hideMinor': 'Hide Minor nodes ({Mod} + {Alt} + M)',
+    'tb.showMinor': 'Show Minor nodes',
+    'tb.hideMinor': 'Hide Minor nodes',
     'tb.nowReadonly': 'This button is unavailable on the history page',
     'tb.noNow': 'No Now nodes in the current view',
-    'tb.nowShowAll': 'Stop showing Now nodes only ({Mod} + {Alt} + N)',
-    'tb.nowOnly': 'Show Now nodes only ({Mod} + {Alt} + N)',
+    'tb.nowShowAll': 'Stop showing Now nodes only',
+    'tb.nowOnly': 'Show Now nodes only',
     'tb.undo': 'Undo ({Mod}+Z)',
     'tb.redo': 'Redo ({Mod}+Shift+Z)',
-    'tb.locate': 'Locate the central node ({Mod}+P)',
-    'tb.minorToggle': 'Hide/show Minor nodes ({Alt}+{Mod}+M)',
+    'tb.locate': 'Locate the central node',
+    'tb.minorToggle': 'Hide/show Minor nodes',
 
-    'nm.bold': 'Bold the node ({Mod} + B)',
-    'nm.red': 'Mark red ({Mod} + R)',
-    'nm.yellow': 'Mark yellow ({Mod} + Y)',
-    'nm.note': 'Add a note (Shift + Enter)',
-    'nm.now': 'Mark as Now node ({Mod} + N)',
-    'nm.minor': 'Mark as Minor node ({Mod} + M)',
+    'nm.bold': 'Bold the node',
+    'nm.red': 'Mark red',
+    'nm.yellow': 'Mark yellow',
+    'nm.note': 'Add a note',
+    'nm.now': 'Mark as Now node',
+    'nm.minor': 'Mark as Minor node',
     // Bottom bar "More" menu (2026-09-17): hover panel with add-entries.
     // Note: this button intentionally has NO tooltip (it would overlap the panel), so 'nm.more' was removed.
     'more.addChild': 'Add child node',
@@ -593,6 +676,10 @@ var I18N = {
     'more.delNode': 'Delete node',
     'more.delNodeTip': 'Shortcut: Delete',
     'more.addOther': 'More options',
+    'more.aiEdit': 'AI edit',
+    'more.aiEditTip': 'Copy the AI locator, then paste it into any agent to locate and edit this node',
+    'more.customPanel': 'Customize this panel',
+    'more.customPanelTip': 'Choose which buttons to hide',
     'more.addImage': 'Add image',
     'more.addImageTip': 'You can paste an image directly',
     'more.addVideo': 'Add video',
@@ -659,10 +746,10 @@ var I18N = {
     'ctx.copyAILocateTip': 'Let an AI agent quickly locate the node you want to edit',
     'ctx.copyLinkTip': 'Paste into another mind map to jump back here',
 
-    'fold.menuKeep': 'Fold "the selected node" to level {0} (keep everything else unchanged) (click)',
-    'fold.menuMin': 'Fold "the selected node" to level {0} (fold everything else to the minimum) (Cmd + click)',
+    'fold.menuKeep': 'Fold the selected node to level {0} (keep everything else unchanged) (click)',
+    'fold.menuMin': 'Fold the selected node to level {0} (fold everything else to the minimum) (Cmd + click)',
     'fold.level': 'Fold to level {0}',
-    'fold.levelKeep': 'Fold "the selected node" to level {0} (keep everything else unchanged)',
+    'fold.levelKeep': 'Fold the selected node to level {0}',
     'fold.levelMin': 'Fold "the selected node" to level {0} (fold everything else to the minimum)',
     'fold.noMore': 'Temporarily unavailable',
 
@@ -704,7 +791,7 @@ var I18N = {
     'hist.rules': 'Save rules',
     'hist.rulesText': 'Versions are saved frequently while editing.<br>Old versions are thinned out automatically.<br>Manually saved / renamed versions are never thinned out.',
     'hist.noMap': 'No mind map is open',
-    'cmd.openHistory': 'Open history panel',
+    'cmd.openHistory': 'Other | Open history panel',
     'notice.panelFail': 'Failed to open the right sidebar history panel',
 
     'img.prev': 'Previous (left click / ←)',
