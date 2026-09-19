@@ -27,6 +27,7 @@
 
 - **简洁易用**：没有复杂的功能，繁复的界面，如同白纸一般简单；操作方式对齐常规思维导图软件，让你没有任何切换成本，轻松即可上手，思维飞扬。
 - **Obsidian 编辑器**：在 Obsidian 中央编辑器直接编辑，无需另开渲染窗口，所见即所得。
+- **历史功能**：秒级存储历史，数据安全，历史操作可细致回顾。你还可以自行保存版本。查看历史时，只会聚焦差异节点，简洁易用。
 
 
 ![28 Notes MindMap 界面](assets/ui-main.png)
@@ -65,6 +66,7 @@
 - **当下关注 Now 功能**：你可以将当前关注的节点标记为 Now。 然后可以一键只显示当前关注节点。瞬间聚焦重点。
 - **次要 Minor 功能**：你可以将次要的节点标记为 Minor。 然后一键隐藏所有次要 Minor 节点。 瞬间清净。
 - **按层级折叠功能**：右下角有层级数字，点击某个数字，如数字 2，可以一键只显示一二层级。瞬间从迷失到清晰。
+- **视图功能**：你可以在定位按钮里快速跳转 / 编辑 Now 节点，让你的视线从整个思维导图，聚焦到少数视图。
 
 ![只显示 Now](assets/demo-focus.gif)
 
@@ -90,9 +92,9 @@
 
 ### ❹ 专为知识管理优化
 
-- **Obsidian 友好**：支持 Obsidian 原生双链，超大编辑器，和 Obsidian 白板一致的快捷键和使用体验。（部分快捷键开发中）
-- **知识管理友好**：极简，无繁杂。不含连接、概要等功能，利于知识压缩，侧重大批量笔记的知识管理。
-- **28 笔记法思维**：设计理念源自 [28 笔记法](https://space.bilibili.com/481595180)。
+- **高度集成 Obsidian**：支持 Obsidian 原生双链，超大编辑器，超多可自定义快捷键。
+- **知识管理友好**：极简，无繁杂；不含连线、概要等功能，利于知识压缩；侧重大批量笔记的知识管理，20 万字超大型思维导图加载仅需 2S。
+- **连接知识**：支持插入图片、视频、音频、本地文件链接、跨思维导图节点等，多样知识，一处集成。未来将支持更多 Obsidian 双链功能。
 
 ![支持 Obsidian 双链](assets/obsidian-link.png)
 
@@ -110,17 +112,30 @@
 
 ### 基础快捷键
 
-| 操作 | 快捷键 |
-|------|--------|
-| 新建子节点 | `Tab` |
-| 新建同级节点 | `Enter` |
-| 进入当前节点（下钻） | `Cmd + E` |
-| 标记 Now | `Cmd + N` |
-| 标记 Minor | `Cmd + M` |
-| 只显示 Now | `Cmd + Alt + N` |
-| 隐藏/显示 Minor | `Cmd + Alt + M` |
-| 折叠附近节点 | `Cmd + F` |
-| 撤销 / 重做 | `Cmd + Z` / `Cmd + Shift + Z` |
+| 操作 | 默认快捷键 |
+|-|-|
+| 加粗节点 | `Cmd + B` |
+| 将选中节点标为红色 | `Cmd + R` |
+| 将选中节点标为黄色 | `Cmd + Y` |
+| （不）设为 Now 当前节点 | `Cmd + N` |
+| （不）设为 Minor 次要节点 | `Cmd + M` |
+| 节点备注 | `Shift + Return` |
+| （只）显示 Now 当前节点 | `Cmd + Option + N` |
+| 显示/隐藏 Minor 次要节点 | `Cmd + Option + M` |
+| 选择上一个节点 | `↑`（不可自定义） |
+| 选择下一个节点 | `↓`（不可自定义） |
+| 选择母节点 | `←`（不可自定义） |
+| 选择子节点 | `→`（不可自定义） |
+| 进入当前节点 | `Cmd + =` |
+| 定位循环 | `Option + Space` |
+| 在上方新建同级节点 | `Option + Cmd + Up` |
+| 光标插入节点开始 | `Cmd + [` |
+| 光标插入节点末尾 | `Cmd + ]` |
+| 在上一层新建同级节点 | 无默认值，可自设定 |
+| 新建思维导图（28 Notes） | 无默认值，可自设定 |
+| 打开历史记录面板 | 无默认值，可自设定 |
+| 切换源文件 / 思维导图视图 | 无默认值，可自设定 |
+
 
 >  `Cmd` 在Windows 平台为 `Ctrl`。
 
@@ -203,9 +218,8 @@
 
 ## 🗺️ 路线图
 
-- [ ] 细节优化（拖拽预测、动画、上线后用户可能提交的 Bug 修复）
-- [ ] AI 技能
-- [ ] 更多主题（Obsidian / MindNode 风格）
+- [ ] Obsidian 高级双链功能
+- [ ] AI 技能优化
 
 ---
 <br>
@@ -223,24 +237,19 @@
 ## English Documentation
 
 
-
 # 28 Notes MindMap
 
-
-
 - Markdown-based mind maps that AI can read, write, and edit directly.
-- Design inspired by the “[28 Notes](https://space.bilibili.com/481595180)” with one-click focus on key points / hiding of non-essentials.
+- Design inspired by the "[28 Notes Method](https://space.bilibili.com/481595180)", with one-click focus on key points / hiding of non-essentials.
 - Simple, elegant, and easy to use.
 
-![首图](assets/banner.png)
+![banner](https://github.com/user-attachments/assets/562ae41a-8c18-4b9b-9a7f-b6ba9b91514a)
 
 ---
 
-
-
 ## 🧤 Installation
 
-1. Open Obsidian desktop, go to Settings → Community plugins → Community plugins.
+1. Open Obsidian desktop, go to Settings → Third-party plugins → Community plugins.
 2. Search for **28 Notes MindMap**, install and enable it.
 
 ---
@@ -251,7 +260,7 @@
 
 - **Simple & easy to use**: No complex features or cluttered UI — as plain as a blank sheet of paper. The interaction aligns with conventional mind-map software, so you can pick it up with zero switching cost and let your thoughts flow.
 - **Obsidian editor**: Edit directly in Obsidian's central editor, no separate render window needed — what you see is what you get.
-
+- **History**: Snapshots are saved minute by minute, keeping your data safe. You can also save a version manually at any time. While browsing history, only the changed nodes are highlighted — clean and easy to read.
 
 ![28 Notes MindMap interface](assets/ui-main.png)
 
@@ -281,32 +290,33 @@ The biggest pain point of mind maps is that once nodes grow, opening one feels o
 
 28 Notes MindMap introduces many innovative modes to solve this:
 
-- **Now focus**: Mark the node you're currently focused on as Now, then show only that node with one click — instantly zero in on what matters.
+- **Now focus**: Mark the node you're currently focused on as Now, then show only Now nodes with one click — instantly zero in on what matters.
 - **Minor**: Mark secondary nodes as Minor, then hide all Minor nodes with one click — instantly declutter.
 - **Level folding**: Level numbers sit at the bottom-right; click a number (e.g. 2) to show only levels 1–2 — instantly go from lost to clear.
+- **Views**: Inside the locate button you can jump between / edit Now nodes quickly, narrowing your view from the whole mind map down to a handful of views.
 
-![只显示 Now](assets/demo-focus.gif)
+![Show only Now](assets/demo-focus.gif)
 
 *Caption: "Show only what matters" demo*
 
-![折叠第二层级](assets/demo-fold.gif)
+![Fold to level 2](assets/demo-fold.gif)
 
 *Caption: "Fold to level 2" demo*
 
-Additionally, 28 Notes MindMap also supports:
+On top of that, 28 Notes MindMap also supports:
 
 - **Enter node**: Drill into a node with one click, showing only it and its children. Peace and focus amid the noise.
 - **Save as shortcut**: Save a drilled-in node view as a shortcut and reopen it directly next time — pick up exactly where your mind left off.
 
-![进入当前节点](assets/demo-enter.gif)
+![Enter current node](assets/demo-enter.gif)
 
 *Caption: "Enter node" demo*
 
 ### ❹ Optimized for Knowledge Management
 
-- **Obsidian-friendly**: Supports Obsidian native bidirectional links, the large editor, and the same shortcuts / experience as Obsidian Canvas (some shortcuts in development).
-- **Knowledge-management-friendly**: Minimal, no clutter. No connections or summaries — aids knowledge compression, suited to managing large volumes of notes.
-- **28 Notes Method thinking**: Design philosophy from [28 Notes Method](https://space.bilibili.com/481595180).
+- **Deep Obsidian integration**: Supports native Obsidian bidirectional links, the full-size editor, and a large set of customizable shortcuts.
+- **Knowledge-management friendly**: Minimal, no clutter. No connectors or summary frames — better for compressing knowledge; built for managing large volumes of notes, with a 200,000-character mind map loading in about 2 seconds.
+- **Connect knowledge**: Insert images, video, audio, local file links, cross-map node links and more — diverse knowledge, all in one place. More Obsidian link features are on the way.
 
 ![Supports Obsidian bidirectional links](assets/obsidian-link.png)
 
@@ -323,19 +333,31 @@ Additionally, 28 Notes MindMap also supports:
 
 ### Basic shortcuts
 
-| Action | Shortcut |
-|--------|----------|
-| Create child node | `Tab` |
-| Create sibling node | `Enter` |
-| Enter current node (drill down) | `Cmd + E` |
-| Mark Now | `Cmd + N` |
-| Mark Minor | `Cmd + M` |
-| Show only Now | `Cmd + Alt + N` |
-| Hide / show Minor | `Cmd + Alt + M` |
-| Fold nearby nodes | `Cmd + F` |
-| Undo / Redo | `Cmd + Z` / `Cmd + Shift + Z` |
+| Action | Default shortcut |
+|---|---|
+| Bold node | `Cmd + B` |
+| Mark selected node red | `Cmd + R` |
+| Mark selected node yellow | `Cmd + Y` |
+| (Un)set Now | `Cmd + N` |
+| (Un)set Minor | `Cmd + M` |
+| Node note | `Shift + Return` |
+| Show only Now | `Cmd + Option + N` |
+| Show / hide Minor | `Cmd + Option + M` |
+| Select previous node | `↑` (not customizable) |
+| Select next node | `↓` (not customizable) |
+| Select parent node | `←` (not customizable) |
+| Select child node | `→` (not customizable) |
+| Enter current node | `Cmd + =` |
+| Locate cycle | `Option + Space` |
+| Add sibling above | `Option + Cmd + ↑` |
+| Move caret to node start | `Cmd + [` |
+| Move caret to node end | `Cmd + ]` |
+| Add sibling one level up | No default — set your own |
+| New mind map (28 Notes) | No default — set your own |
+| Open history panel | No default — set your own |
+| Toggle source file / mind map view | No default — set your own |
 
->  `Cmd` is `Ctrl` on Windows.
+> `Cmd` is `Ctrl` on Windows; `Option` is `Alt` on Windows.
 
 ---
 
@@ -357,7 +379,7 @@ We use a special pricing model:
 Details:
 
 | Feature | Free | Pro |
-|---------|------|-----|
+|---|---|---|
 | Unlimited map generation | ✅ | ✅ |
 | General editing (add/delete nodes, drag, undo/redo…) | ✅ | ✅ |
 | Enter node / breadcrumb nav | ✅ | ✅ |
@@ -377,9 +399,9 @@ Details:
 - **Early-bird price ¥38** (~~original ¥76~~ → -50%)
 - One-time purchase: buy once, use local features forever
 - Supports activation on **3 devices**
-- Payment & activation: see in Obsidian → 28 Notes → Setting
+- Payment & activation: after installing the plugin, see Obsidian → Settings → 28 Notes → License
 
-> Note: The one-time purchase covers all local features, but excludes possible future online AI-generation services / server-dependent features (noted for clarity only; such features are unlikely, as current AI Agents are simple enough).
+> Note: The one-time purchase covers all local features, but excludes possible future online AI-generation services / server-dependent features (noted for clarity only; such features are unlikely, since current AI Agents are already simple and easy to use).
 
 ---
 
@@ -391,28 +413,27 @@ No. 28 Notes runs fully locally — no data collection, no external API calls.
 
 ### How is it different from other mind-map software / plugins?
 
-- **Others**: proprietary format, AI can't edit directly; features converge
-- **28 Notes**: Markdown format, suited for AI Agents; many innovations
+- **Other mind-map software / plugins**: proprietary formats that AI cannot edit directly; features converge.
+- **28 Notes**: Markdown format, suited for AI Agents; packed with original features.
 
 ### Mobile support?
 
-Desktop only for now. Mobile may come, but no fixed timeline.
+Desktop only for now. Mobile may come, but there is no fixed timeline.
 
 ### Can the activation code move to another computer?
 
-Yes. One code activates up to 3 devices simultaneously. Deactivate on the old device to use it on a new one.
+Yes. One code activates up to 3 devices at the same time. Deactivate on the old device to use it on the new one.
 
 ### Can I let AI edit the map file directly?
 
-Yes! That's exactly the design goal. Select a node, right-click "Copy AI location path", hand it to the Agent, and it can pinpoint and edit precisely. You don't even need to tell the AI what format to follow or add any Skill wrapper — 28 Notes has it considered and embedded already.
+Yes! That's exactly the design goal. Select a node, right-click "Copy AI location path", hand it to the Agent, and it can pinpoint and edit precisely. You don't even need to tell the AI what format to follow or add any Skill wrapper — 28 Notes has already taken care of it.
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Detail polish (drag prediction, animation, post-launch bug fixes)
-- [ ] AI skills
-- [ ] More themes (Obsidian / MindNode style)
+- [ ] Advanced Obsidian link features
+- [ ] AI skills optimization
 
 ---
 
