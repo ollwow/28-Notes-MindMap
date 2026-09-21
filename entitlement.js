@@ -36,7 +36,7 @@ const PRO_LOCKS = {
   fold:            { locked: true,  name: '折叠层级（左侧折叠按钮 + 右下角高级折叠数字）' },
   saveShortcut:    { locked: true,  name: '保存为捷径（右键菜单）' },
   history:         { locked: false, name: '历史记录与版本快照' },
-  premiumThemes:   { locked: false, name: '进阶主题（飞书蓝线/粉线/Obsidian/MindNode）' },
+  premiumThemes:   { locked: false, name: '进阶主题（飞书蓝线 / 粉线）' },
   noteStyle:       { locked: false, name: '备注区颜色与字号自定义' },
   aiPath:          { locked: true,  name: '复制 AI 定位路径' },
 };

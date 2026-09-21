@@ -12,7 +12,8 @@
   --hint-font-size: 12px;     /* 提示文字大小：调大→字更大。默认 12px */
   --hint-line-height: 1.6;    /* 提示行间距：调大→三行之间更松；调小→更紧。默认 1.9 */
   --hint-offset-y: 12px;      /* 提示相对主节点的垂直距离：正值→更靠下；负值→贴得更近（或重叠）。默认 18px */
-  --hint-width: 260px;        /* 提示固定宽度（2026-09-01）：绝对定位宽度不再被主节点卡片宽拖累——卡片很窄时文字不再被压成单字一行。调大→每行能容纳更多字；调小→更紧凑。默认 260px */
+  --hint-width: 260px;        /* 提示的**最小**宽度（2026-09-20 起：只兜底，不再用来折行——盒子宽度按最长那行的自然宽度走，
+                                 所以英文提示再长也不会被折成两行；调大→盒子至少这么宽）。默认 260px */
 
   /* ---- 右上角「激活创新 Pro 版」提示按钮（2026-09-04）---- */
   --pro-cta-top: 16px;        /* 距窗口顶部距离：调大→下移。默认 16px */
@@ -97,11 +98,10 @@
   --minor-sel-color: #b9b9b9;    /* 选中边框色 */
   --minor-text-color: #b9b9b9; /* Minor 节点文字色（默认同 --muted 灰）✅ */
 
-  /* ---- Minor 前缀图标（2026-08-26）：在 4 个里挑 1 个写在这里即可，改完重载插件生效 ----
-     可选：move-down（默认，向下箭头）| chevrons-down（双下chevron）| asterisk（星号 *）| squircle-dashed（虚线方块）
-     写 ICONS 里没有的名字会自动回退 move-down。想加新图标去 app.js 的 ICONS 加路径即可。 */
-  --minor-ico: squircle-dashed;
-  --minor-ico-raise: 1px;        /* Minor 前缀图标上移像素：正值=上提（如 3px），0=不挪；改完重载插件生效 */
+  /* ---- Minor 前缀图标（2026-08-26）：图标名写在这里即可，改完重载插件生效 ----
+     2026-09-20 用户从候选里定下 arrow-down。可选值 = ICONS 里任意存在的图标名（写错回退 move-down）。 */
+  --minor-ico: arrow-down;
+  --minor-ico-raise: 0px;        /* Minor 前缀图标上移像素：正值=上提（如 3px），0=不挪；改完重载插件生效 */
   --minor-ico-stroke: 2.9;      /* Minor 前缀图标描边粗细：调大=加粗（如 3 / 3.5），2≈默认；改完重载插件生效 */
 
   /* ---- Now 前缀图标 + Now 节点视觉（2026-08-27）---- 改完重载插件生效 ----
@@ -112,16 +112,53 @@
   --now-text-color: #8B5CF6;    /* Now 节点整卡字体色 */
   --now-color-dim: #C4B5FD;     /* 定位态「非当前」淡紫色（字 / 图标）*/
   --now-locate-border: #C4B5FD; /* 定位态当前淡紫框 / Now 节点 hover 淡紫框 */
-  --now-ico-size: 12px;
+  --now-ico-size: 14px;
   --now-ico-stroke: 3;
   --now-ico-raise: 0px;
+
+  /* ---- 节点前缀图标（2026-09-20）：**大小 / 悬浮底色框**都在这里调，改完重载插件生效 ----
+     🎚 三个「图标大小」旋钮（各管一种前缀图标，互不影响）：
+        --todo-ico-size   待办图标
+        --minor-ico-size  Minor 图标
+        --now-ico-size    Now 图标（在上面 Now 那一组里）
+     🎚 --todo-ico-pad：待办图标**悬浮底色框**的大小（默认 1px；想点着更舒服就调大，如 3px → 底色框更宽）
+        --todo-ico-radius：底色框圆角；--todo-ico-hover：底色本身
+     --todo-ico-raise / --minor-ico-raise：上移像素（正值上提，用来跟文字视觉中线对齐）。
+     待办图标两条描边分开着色：方框跟 currentColor、对勾跟 --todo-check。
+       卡片上的待办 = **空框**、已完成 = 框 + 勾且整体跟节点一起变灰（那两个写在规则里，不在这里配）。 */
+  --todo-check: #C5CDD9;         /* 待办图标里「对勾」的颜色（兜底；卡片已完成档、工具条已完成档各自会覆盖一次）*/
+  --todo-ico-size: 16px;         /* 🎚 待办前缀图标大小 */
+  --todo-ico-raise: -1.1px;         /* 待办前缀图标上移像素 */
+  --todo-ico-pad: 2px;           /* 🎚 待办图标**悬浮底色框**的大小（调大 = 底色框更宽、更好点）*/
+  --todo-ico-radius: 4px;        /* 悬浮底色框圆角 */
+  --todo-ico-hover: rgba(0, 0, 0, 0.056); /* 待办图标悬浮底色（让人看出可点）*/
+  --minor-ico-size: 14px;        /* 🎚 Minor 前缀图标大小（原来是写死的 12px，2026-09-20 提成旋钮）*/
+  --tb-sep-a: .28;               /* 🎚 底部工具条分隔线的浓度（0 = 看不见，.28 = 默认）。线色固定跟 --text 走，
+                                    深浅色主题自动正确；只调浓度就改这一个数 */
+  --tb-sep-gap: 8px;             /* 🎚 分隔线与左右两个按钮之间的间距（**左右同一个值**，用户 2026-09-21 定：
+                                    一个旋钮同时管两侧；调大 = 线两边更空，调 0 = 贴着按钮）*/
+  /* ---- 母节点「进度百分比」的旋钮（2026-09-21 第七轮用户定：大小 / 颜色 / 左右 / 上下都可调）---- */
+  --todo-pct-size: 11px;         /* 🎚 百分比字号（默认比正文小一号 → "略小字"）*/
+  --todo-pct-color: var(--muted); /* 🎚 百分比颜色（默认灰；想更淡 / 更明显改这里）*/
+  --todo-pct-offset-x: 0px;      /* 🎚 左右位置：正值右移、负值左移 */
+  --todo-pct-offset-y: -1.4px;      /* 🎚 上下位置：正值下移、负值上移（默认 0 = 与文字中线居中）*/
+  --todo-pct-gap: 3px;           /* 与右边图标（待办 / Now / Minor）之间的间距 */
+  --todo-pct-pad-x: 3px;         /* 🎚 悬浮底色框的**左右**内边距（2026-09-21 用户定：小背景左右可调）*/
+  --todo-pct-pad-y: 6px;         /* 🎚 悬浮底色框的**上下**内边距（同上：上下可调）*/
+  --todo-pct-radius: 4px;        /* 悬浮底色框的圆角 */
+  --tb-minor-raise: 0px;         /* 🎚 底部工具条「Minor」按钮里那个图标的上下位移（正值上提 / 负值下移；2026-09-20）*/
 
   /* ---- 文字 / 备注 / 链接 ---- */
   --text: #1f2329;            /* 正文文字色 */
   --muted: #8e959f;           /* 备注 / 完成置灰文字色 */
   --note-font: 12px;          /* 备注字号 */
   --note-gap: 6px;            /* 备注灰竖条到文字的距离 = 编辑备注时光标离竖条的位置（调大=光标往右） */
-  --link-color: #0d72ff;      /* 链接颜色 */
+  /* 链接颜色（2026-09-20 改）：默认 = **Obsidian 的主题色**。画布是 iframe、读不到宿主 CSS 变量，
+     所以由宿主把 Obsidian 当前的链接色/强调色读出来，写成 html 上的内联变量 `--nm-ob-accent` 推下来
+     （见 main.js obsidianAccentColor）；这里只是**兜底**（宿主读不到时用，或用户自己固定颜色）。
+     ⚠️ `--nm-ob-accent` 故意不在这里声明 —— 声明了（哪怕是空值）var() 就会认它、兜底不生效，
+     整条 --link-color 会变成空值。想固定自己的链接色：在你自己的 CSS 片段里给 --link-color 赋值即可（片段后加载，会盖过这里）。 */
+  --link-color: var(--nm-ob-accent, #0d72ff);
 
   /* ---- 折叠按钮 ---- */
   --fold-size: 17px;          /* 折叠钮直径 ✅（数字多时自动变长成胶囊，不会超出） */
@@ -221,9 +258,12 @@
   /* ---- 拖拽落点调参（2026-08-27，改完重载插件生效）---- */
   --auto-scroll-speed: 8;       /* 拖拽到边缘自动滚动速度（每帧像素，默认 8 慢；原 24 太快，嫌慢调大） */
   --drop-child-range: 0.5;      /* 空白区向右「吸附为子节点」的范围倍数：相对 max(被拖卡宽, 目标卡宽)，
-                                 1=右缘外约一个卡宽内算子节点（默认，my-mind 手感）；调大=更容易变子节点（如 2），调小=更容易变兄弟（如 0.5） */
+                                 1=右缘外约一个卡宽内算子节点（默认手感）；调大=更容易变子节点（如 2），调小=更容易变兄弟（如 0.5） */
   --drop-x-reach: 0.5;        /* 空白区目标选择的横向候选范围倍数：相对 max(目标卡宽, 120px)，
                                  只影响「哪些卡片参与 Y 最近竞选」。调大=更远处的卡片也能成为目标（稀疏大图好用），调小=只认眼皮底下的（密集区更稳） */
+  --drop-sticky: 0.08;        /* 落点换挡余量（2026-09-20；卡片内 Y 三段 before/over/after 的判定线是 30%/70%）：
+                                 要越过判定线再多这么多（占卡高的比例）才换挡。0=一碰线就换（边界上会来回横跳，
+                                 预测线的起点在目标卡与它的父卡之间反复切换 = 线一闪上一闪下）；调大=更粘、更不容易换挡 */
   --drop-ind-size: 3px;       /* 兄弟插入指示条粗细（2026-08-28；拖拽时目标节点上/下方出现的蓝色粗边线）：调大=更醒目，改完重载插件生效 ✅ */
   --drag-edge: 13, 114, 255;  /* 拖拽预测曲线颜色 RGB 分量（2026-08-28；拖拽时从未来的父节点连到落点的那根线）。
                                  改这里调颜色，配合 --drag-edge-alpha 调透明度。普通连线颜色见上面「贝塞尔曲线」区的 --edge */
@@ -269,7 +309,8 @@
                                             调小 = 更瘦，调大 = 更胖（按钮大小不变，只变留白）。改完重载插件生效 */
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; color-scheme: light; } /* color-scheme（2026-09-20）：让浏览器画布/滚动条在首帧就用对应色调，
+                                                                 不先画一层白再被 CSS 盖掉（暗色下的白闪来源之一） */
 body {
   font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   color: var(--text);
@@ -362,15 +403,19 @@ body {
 .card.ln:hover { border-color: var(--hover-border); }
 .node-row.selected > .card.ln { border-color: var(--sel-ln); }
 /* 空图使用提示（2026-09-01 定）：相对主节点卡片绝对定位 → 拖动/缩放画布自动跟随；
-   文字换行用 \n + pre-line；参数全在顶部调参区 --hint-*（颜色/明暗/大小/行间距/垂直距离） */
+   文字换行用 \n；参数全在顶部调参区 --hint-*（颜色/明暗/大小/行间距/垂直距离） */
 .start-hint {
   position: absolute;
   top: 100%;              /* 贴卡片下沿 */
   left: 50%;
   transform: translateX(-50%); /* 水平居中于主节点 */
-  /* 2026-09-01 定：给提示固定宽度，不再被主节点卡片宽限制（否则卡片窄时文字被压成单字一行）
-     max-width 90vw 防窄屏溢出；想更紧凑/更松调 --hint-width */
-  width: var(--hint-width);
+  /* 宽度（2026-09-20 改）：原来是「固定 260px」——中文三行刚好放得下，英文那句
+     「Select a child node + Enter to add a sibling node」更长 → 被挤成两行（用户报）。
+     改成 max-content（盒子宽度 = 最长那一行的自然宽度）+ white-space: pre（保留 \n 且**永不自动换行**），
+     空间无限大的画布上没必要折行。--hint-width 退为 min-width：只保证盒子至少这么宽（中文观感不变），
+     不再参与折行判断；max-width 90vw 仍防窄屏溢出。 */
+  width: max-content;
+  min-width: var(--hint-width);
   max-width: 90vw;
   margin-top: var(--hint-offset-y);
   color: var(--hint-color);
@@ -378,7 +423,7 @@ body {
   font-size: var(--hint-font-size);
   line-height: var(--hint-line-height);
   font-weight: normal;
-  white-space: pre-line; text-align: center;
+  white-space: pre; text-align: center;
   pointer-events: none; user-select: none;
 }
 /* 选中/hover 圆角统一走 --sel-radius（2026-08-28 定：两态曲率要一致；调参区可调，不设回落卡片圆角） */
@@ -427,14 +472,21 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .node-row.done > .card { border: 1.5px var(--minor-border-style, dashed) var(--minor-border-color, transparent) !important; }
 .node-row.done > .card:hover { border-color: var(--minor-hover-color, var(--minor-border-color, var(--muted))) !important; }
 .node-row.done.selected > .card { border-color: var(--minor-sel-color, var(--minor-border-color, var(--muted))) !important; }
+/* 已完成待办（2026-09-20）：灰字 + 灰虚线框直接复用上面的 .node-row.done（Done 已并进 done 链），
+   它比 Minor 多出来的就是这个删除线。
+   ⚠️ td-done 也是**连坐**的（2026-09-20 用户定：母节点标了 Done，子树全部加删除线）——
+      由 buildRow 的 td 链往下传，和 done 链并行；`>` 保证只画在本行自己的卡上。 */
+.node-row.td-done > .card .title,
+.node-row.td-done > .card .note,
+.node-row.td-done > .card .link { text-decoration: line-through; }
 /* Minor 节点自身标记：标题前加置灰小箭头，区别于"被祖先 Minor 连坐置灰"的子节点（2026-08-26） */
 .card .minor-ico {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px; color: var(--minor-text-color); flex: none;
+  padding: 1px; flex: none; color: var(--minor-text-color);
   position: relative; top: calc(var(--minor-ico-raise, 0px) * -1); /* 上移微调旋钮（正值上提） */
 }
 .card .title .minor-ico { margin-right: 3px; vertical-align: -2px; }
-.card .minor-ico svg { width: 12px; height: 12px; display: block; stroke-width: var(--minor-ico-stroke, 2); }
+.card .minor-ico svg { width: var(--minor-ico-size, 12px); height: var(--minor-ico-size, 12px); display: block; stroke-width: var(--minor-ico-stroke, 2); }
 /* 节点背景色（行尾注释 color:red/yellow；2026-08-21 定） */
 .card.color-red { background: var(--color-red) !important; color: var(--text) !important; }
 .card.color-yellow { background: var(--color-yellow) !important; color: var(--text) !important; }
@@ -442,6 +494,21 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .card .now-ico { display: inline-flex; color: var(--now-color, #8B5CF6); vertical-align: -2px; position: relative; top: calc(var(--now-ico-raise, 0px) * -1); }
 .card .title .now-ico { margin-right: 3px; }
 .card .now-ico svg { width: var(--now-ico-size, 13px); height: var(--now-ico-size, 13px); display: block; stroke-width: var(--now-ico-stroke, 2); }
+/* 待办前缀图标（2026-09-20）：圆角框 + 对勾，排在最前（用户定「前面是小图标、后面是文字」）。
+   普通节点不显示它；待办 = 框跟节点字色 + 勾淡灰；已完成 = 框与勾都换主题色（.td-on）。 */
+.card .todo-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  /* 🎚 padding = **悬浮底色框**的大小（调大 → 底色框更宽、更好点）；图标尺寸本身靠 --todo-ico-size */
+  padding: var(--todo-ico-pad, 1px); border-radius: var(--todo-ico-radius, 4px); flex: none; cursor: pointer;
+  position: relative; top: calc(var(--todo-ico-raise, 1px) * -1);
+  transition: background var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
+}
+.card .title .todo-ico { margin-right: 3px; vertical-align: -2px; }
+.card .todo-ico svg { width: var(--todo-ico-size, 12px); height: var(--todo-ico-size, 12px); display: block; }
+/* 悬浮给底色：让人一眼看出「这里能点」（2026-09-20 用户要）*/
+.card .todo-ico:hover { background: var(--todo-ico-hover, rgba(0,0,0,.08)); }
+/* 已完成待办：图标**跟着节点一起变灰**（2026-09-20 用户定：不要主题色/线色）*/
+.card .todo-ico.td-on { color: var(--minor-text-color, var(--muted)); --todo-check: var(--minor-text-color, var(--muted)); }
 /* Now 节点：选中后整卡字体（含链接标题）变紫 */
 .card.now { color: var(--now-text-color, #8B5CF6); }
 .card.now .link-main { color: var(--now-text-color, #8B5CF6); }
@@ -640,6 +707,12 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .ctx-ic svg { width: 16px; height: 16px; }
 .ctx-item:hover { background: var(--sel); }
 .ctx-sep { height: 1px; background: var(--line); margin: 3px 0; }
+/* 右键菜单（2026-09-21）：右侧快捷键提示 + 二级菜单
+   提示形态与左下「更多」菜单的 .kbd 一致（小字、半透明）；靠最右（margin-left:auto）。
+   二级菜单贴着父项放（右边优先，放不下翻左边），面板尽量长一点而不是换行。 */
+.ctx-item .kbd { font-size: 11px; opacity: .55; margin-left: auto; padding-left: 14px; display: inline-flex; align-items: center; }
+.ctx-item.ctx-has-sub .kbd { opacity: .45; padding-left: 10px; }
+.ctx-submenu { min-width: 150px; }
 
 /* ===== 折叠按钮（白圆钮/胶囊，默认隐藏、hover 显示；数字多时自动变长） =====
    热区方案（2026-08-21 定）：卡片右侧延伸 26px 的透明热区（::after），
@@ -945,6 +1018,59 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .node-menu button:hover { opacity: 1; background: #2c3137; }
 .node-menu button.on { color: var(--accent); opacity: 1; }
 .node-menu button.on .icon { stroke: currentColor; }
+/* 待办按钮六档（2026-09-21 第五轮定稿）= 节点状态（普通 / 待办 / 完成）× ⌘ 是否按住：
+     普通：空框基础色  → ⌘ 按住：框 + 勾，都基础色（预测：按下去会变成「已完成」）
+     待办：空框主题色  → ⌘ 按住：框主题色 + 勾基础色（用户给的 Frame (1) 那一版）
+     完成：空框主题色  → ⌘ 按住：框 + 勾都主题色
+   刻意不用 .on（通用"激活"语义，只染 .icon 的 stroke、勾到不了）。
+   ⚠️ 六档都写 opacity: 1 —— 按钮基础态是 .85，会把图标压淡（用户报过"外框不够实"）。 */
+.node-menu button.td-plain { opacity: 1; }
+.node-menu button.td-plain-cmd { opacity: 1; --todo-check: currentColor; }
+.node-menu button.td-todo { color: var(--accent); opacity: 1; }
+/* 待办 ⌘ 按住态的勾 = 「基础色」（2026-09-21 修）：
+   原来是写死的白（--nm-ico-plain，那是黑底椭圆时代的遗留）→ 工具栏换成白玻璃后，
+   勾是白线画在白玻璃上 = 彻底看不见，看起来就跟「待办（空框）」一模一样（用户实报）。
+   现在跟 --text（工具栏文字色）走：浅色主题深灰勾、深色主题浅勾，两边都对。 */
+.node-menu button.td-todo-cmd { color: var(--accent); opacity: 1; --todo-check: var(--text); }
+.node-menu button.td-done { color: var(--accent); opacity: 1; }
+.node-menu button.td-done-cmd { color: var(--accent); opacity: 1; --todo-check: var(--accent); }
+/* 底部工具条里的分隔线（2026-09-21 用户定：把「节点级操作」与「＋添加」隔开）
+   ⚠️ 线色**不能写死白色**（初版 rgba(255,255,255,.22)）—— 那是照黑底工具条写的，
+   但工具栏现在走「浮层外观」的白玻璃（浅色主题下是白底），白线画在白底上完全看不见（用户实报）。
+   改成跟 --text（工具栏文字色）同色 + 低透明度：浅色主题深线、深色主题浅线，两边都看得见。
+   浓度旋钮 = --tb-sep-a；左右间距旋钮 = --tb-sep-gap（同一个值同时管两侧，2026-09-21 用户定）。 */
+.node-menu .nm-sep {
+  width: 1px; height: 20px; flex: none;
+  margin: 0 var(--tb-sep-gap, 3px);
+  background: var(--text); opacity: var(--tb-sep-a, .28);
+}
+/* Minor 按钮图标的上下位移（2026-09-20 旋钮：--tb-minor-raise，正值上提 / 负值下移，0=不挪）；
+   卡片里那个 Minor 前缀图标的位移是另一个旋钮 --minor-ico-raise（在顶部调参区），两者互不影响 */
+.node-menu button[data-act="minor"] svg { position: relative; top: calc(var(--tb-minor-raise, 0px) * -1); }
+/* 母节点「进度百分比」（2026-09-21 第七轮定稿，取代原来的圆圈进度环）：
+   灰色略小字 + 鼠标悬浮浅色底 + 上面黑色小框提示（提示走应用的 [data-tip] 机制，由 JS 写入），可点击。
+   四个旋钮在顶部调参区：--todo-pct-size（大小）/ --todo-pct-color（颜色）
+   / --todo-pct-offset-x（左右位置）/ --todo-pct-offset-y（上下位置；默认 0 = 与文字中线对齐）。 */
+.card .title .todo-pct {
+  display: inline-block; flex: none; cursor: pointer;
+  color: var(--todo-pct-color, var(--muted));
+  font-size: var(--todo-pct-size, 11px);
+  line-height: 1;
+  padding: var(--todo-pct-pad-y, 1px) var(--todo-pct-pad-x, 3px);
+  border-radius: var(--todo-pct-radius, 4px);
+  margin-right: var(--todo-pct-gap, 3px);
+  position: relative;
+  left: var(--todo-pct-offset-x, 0px);
+  top: var(--todo-pct-offset-y, 0px);
+  vertical-align: middle;   /* 上下默认居中（用户定） */
+  white-space: nowrap;
+}
+/* 悬浮底色：**所有档位都有**（含 0% —— 0% 照样可点，点了就是「全部设为完成」。
+   ⚠️ 曾短暂做过「0% 不可点 / 无底色」（2026-09-21 上半场），用户当场纠正：0% 点了就该变 100%，已还原。 */
+.card .title .todo-pct:hover { background: var(--todo-ico-hover, rgba(0,0,0,.06)); }
+/* 对勾的着色：卡片里的小图标与工具条按钮共用同一套 class 名，一条规则覆盖两处 */
+.todo-ico svg .td-check,
+.node-menu button .td-check { stroke: var(--todo-check, #C5CDD9); }
 /* 红色/黄色（2026-08-21 定：默认空心外框，选中实心） */
 /* （2026-09-17 删：原来是底部那排独立的「红/黄」两个圆点按钮用的 .node-menu button.color-red/.color-yellow ——
    两个按钮已彻底删除，圆点只出现在「格式」横排子菜单里，色值规则见 .node-style-menu 那几条。） */
@@ -1462,15 +1588,19 @@ body.hist-on #pro-cta-wrap { display: none; }
        那几个内联变量仍按浅色调校——已知边界，后续按需补。
    ══════════════════════════════════════════════════════════════════ */
 .theme-dark {
+  color-scheme: dark;   /* 首帧画布即用深色（见上面 html,body 的注释） */
   /* 中性色根 */
   --bg: #1c1c1c;
   --text: #e6e8eb;
   --muted: #9aa1a9;
+  --todo-check: #6b7280;            /* 待办对勾：深色底用中灰（浅色那档 #C5CDD9 在深底上太亮）*/
+  --todo-ico-hover: rgba(255,255,255,.14); /* 待办图标悬浮底色（深色下用亮色叠）*/
   --hint-color: #e6e8eb;            /* 配合 --hint-opacity .45 → 深底灰字 */
   /* 强调蓝根（深色下提亮） */
   --accent: #5b9bff;
   --accent-rgb: 91, 155, 255;
-  --link-color: var(--accent);
+  /* 链接色：优先跟 Obsidian 主题色（宿主推来的 --nm-ob-accent）；宿主读不到时才退回本主题的 --accent */
+  --link-color: var(--nm-ob-accent, var(--accent));
   --nm-danger: #ff6b70;
   /* 节点三态 */
   --root-bg: #3F8FF7;   /* 蓝线/灰线深色主节点底（2026-09-18 用户定 #3F8FF7；改这里这一个值） */
@@ -1515,6 +1645,13 @@ body.hist-on #pro-cta-wrap { display: none; }
   --hb-text: #e9d49c;
   --hb-btn-line: #57503a;
   --hb-back-text: #e6e8eb;
+  /* 三个按钮的底色：浅色那组是白底（--hb-btn-bg / --hb-primary-bg: #ffffff），
+     深色下如果沿用，浅金字（--hb-text #e9d49c）与近白字（--hb-back-text #e6e8eb）糊在白底上
+     几乎看不见（2026-09-19 修）。深色下按钮改深底，字色沿用上面那两个就够了。
+     想再调：改这两个底色；字色跟 --hb-text（左/中）、--hb-primary-text（右）走。 */
+  --hb-btn-bg: #26282c;      /* 左「返回编辑」与中「创建副本」的按钮底色 */
+  --hb-primary-bg: #26282c;  /* 右「将此版本设为最新版本」的按钮底色（默认与左两个一致） */
+  --hb-primary-text: #e9d49c; /* 右按钮字色（不覆盖会沿用浅色的深棕 #7a5c12，在深底上看不见） */
   --hb-note-bg: #3a3526;
   --hb-note-text: #c9b476;
   --hb-note-strong-bg: #453d24;
@@ -1544,6 +1681,8 @@ body.hist-on #pro-cta-wrap { display: none; }
 .theme-dark .mm-sep, .theme-dark .ctx-sep { background: rgba(255,255,255,.08); }
 .theme-dark #crumb a:hover { background: rgba(255,255,255,.07); }
 .theme-dark #warn-box { background: #3a3320; color: #e9d49c; border-bottom-color: #57503a; }
+/* 历史横幅按钮：深底上 hover 要"提亮"（浅色那条 brightness(.96) 是压暗，深底上等于没反馈） */
+.theme-dark #hist-banner .hb-btn:hover { filter: brightness(1.18); }
 .theme-dark #link-suggest { background: #222428; border-color: #3d424a; color: #e6e8eb; }
 .theme-dark #link-suggest .ls-item.on { background: color-mix(in srgb, var(--accent) 18%, #1c1c1c); }
 .theme-dark .tb:disabled, .theme-dark .tb.disabled { color: #5a5f66; }

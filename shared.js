@@ -36,9 +36,20 @@ function kindOfText(text) {
 
 // 新建思维导图模板（ai 字段 = 给 AI 的软提醒，读者只有 AI，插件不读；路径必须完整相对路径）
 // 2026-09-02 AI 指令区重构：入口统一指向 AI/index.md（指令清单+规则），格式契约挪到 AI/spec.md
+// 2026-09-20：ai 提示**按语言两版**——新建那一刻取一次写进文件，之后切语言不回改存量文件（避免文字变来变去出错）。
+//   文案与 i18n 的 fm.ai 保持一致（那边是界面语言表，这边是「纯函数模块」不能依赖 i18n，故各留一份）。
 const SPEC_PATH = '28Notes-Files/AI/spec.md';
 const AI_INDEX_PATH = '28Notes-Files/AI/index.md';
-const MINDMAP_FM = '---\n28notes: mindmap\nai: 改本文件前先读 ' + AI_INDEX_PATH + '，严格按其指引操作，否则文件打开可能会出现严重乱码\n---\n';
+const FM_AI_TEXT = {
+  zh: '改本文件前先读 ' + AI_INDEX_PATH + '，严格按其指引操作，否则文件打开可能会出现严重乱码',
+  en: 'Before editing this file, read ' + AI_INDEX_PATH + ' and follow it strictly — otherwise the file may show garbled content when opened',
+};
+// 按语言取 frontmatter（lang 不认识就按中文）
+function mindmapFm(lang) {
+  const ai = FM_AI_TEXT[lang === 'en' ? 'en' : 'zh'];
+  return '---\n28notes: mindmap\nai: ' + ai + '\n---\n';
+}
+const MINDMAP_FM = mindmapFm('zh'); // 兼容常量：老调用点 / 自检用（中文版）
 const MINDMAP_TEMPLATE = MINDMAP_FM + '- 未命名\n';
 
 // 捷径文件内容（target = vault 相对路径；node = 节点 persistId，不是文字路径——同名节点靠文字定位会串）
@@ -52,6 +63,19 @@ function sanitizeAttachmentName(name) {
     .replace(/\s+/g, '_')
     .replace(/#|\||\^|:|%%|\[\[|\]\]/g, '_');
 }
+// 笔记 / 捷径文件名净化（2026-09-20 定）：与附件名规则唯一的区别是**中间的空格保留**。
+// 例：节点「我的 项目 计划」→ 捷径文件「我的 项目 计划.md」，而不是「我的_项目_计划.md」。
+// 只去掉首尾空白（那是误敲的），换行 / 制表符不该出现在文件名里 → 折成空格。
+// 禁字符（文件系统不允许或 Obsidian 链接语法冲突的）→ 下划线：# | ^ : * ? " < > [ ] / \
+// 注意别动 sanitizeAttachmentName：附件名一律空格→下划线是历史行为，改了会让已有引用失配。
+function sanitizeFileName(name) {
+  return String(name || '')
+    .replace(/[\r\n\t]+/g, ' ')        // 换行 / 制表 → 空格
+    .replace(/[#|^:*?"<>[\]/\\]+/g, '_') // 禁字符 → 下划线
+    .replace(/\s+$|^\s+/g, '')         // 去首尾空白（中间的不动）
+    .replace(/\.+$/, '');              // 去末尾的点（部分系统不允许以点结尾）
+}
+
 // 保留原名 + 追加随机串（4 位），防同名覆盖
 function uniqueAttachmentName(name) {
   const clean = sanitizeAttachmentName(name);
@@ -99,7 +123,7 @@ function findOrphanAttachmentNames(candidates, bigText) {
 
 module.exports = {
   splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText,
-  SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE,
-  buildMmlinkText, sanitizeAttachmentName, uniqueAttachmentName,
+  SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE, mindmapFm,
+  buildMmlinkText, sanitizeAttachmentName, sanitizeFileName, uniqueAttachmentName,
   ATTACH_DIR, attachmentLookupVariants, findOrphanAttachmentNames,
 };

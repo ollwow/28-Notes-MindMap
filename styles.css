@@ -20,7 +20,11 @@
   --shin-file-badge-color: var(--text-faint);     /* 捷径 ↗ 颜色（改这个才是捷径颜色！①的颜色走 --shin-mindmap-badge-color） */
 
   /* ── ③ 图标徽章（设置页「徽章样式」选“图标”时，思维导图文件右侧的 Ribbon 小 logo）── */
-  --shin-badge-icon-size: 22px;                   /* 图标大小 */
+  --shin-badge-icon-size: 19px;                   /* 图标大小（画的尺寸）。原默认 22px 比文件行的文字还高，
+                                                     会把整行撑胖；16px 与文字同量级，行高由文字决定，不再撑行。想大就往上调，
+                                                     又不想撑行就把下面的 box-height 调小（图标会溢出盒子显示、行高不变） */
+  --shin-badge-icon-box-height: 16px;             /* 图标占的「盒子高度」= 真正影响行高的那个值（默认 = 尺寸）。
+                                                     例：size:22px + box-height:14px → 图标画 22px，行只占 14px，不再把行撑高 */
   --shin-badge-icon-opacity: .3;                  /* 图标常态透明度：1=不透明，0.3=很淡 */
   --shin-badge-icon-opacity-hover: 0.6;           /* 图标悬停时透明度（淡图标悬停变清晰） */
   --shin-badge-icon-offset-x: 0px;               /* 图标水平位置：正→右移，负→左移（默认 0 = 贴右，与 Obsidian 原生 .nav-file-tag 一致；
@@ -45,8 +49,9 @@
   --shin-settings-row-pad-x: 20px;   /* 每行的左右留白（官方 20px） */
   --shin-settings-group-gap: 24px;   /* 栏与栏（许可证 / 界面 / 更多）之间（官方 24px） */
   --shin-settings-heading-gap: 16px; /* 栏标题与下面第一行之间（官方 16px） */
-  --shin-morepanel-row-pad-y: 12px;  /* 只管「界面简化 → 更多面板简化」那一页的行距（2026-09-18 用户定：界面上不放控件，改这个值就行） */
-  --shin-addpanel-row-pad-y: 12px;   /* 只管「界面简化 → 添加面板简化」那一页的行距（默认与更多面板一致；也是 CSS 旋钮，自己改） */
+  --shin-morepanel-row-pad-y: 20px;  /* 🎚「更多面板简化」那两个开关的行距（2026-09-21 用户反馈「有点挤」→ 12px 提到 16px；
+                                        嫌紧/松都改这一个数，界面上不放控件） */
+  --shin-addpanel-row-pad-y: 16px;   /* 🎚「添加面板简化」那一页的行距（默认与更多面板一致；该页已删，旋钮留着不碍事） */
   --shin-uipage-desc-gap: 16px;       /* 「界面简化」里两个二级页入口行：标题与备注小字的间距（官方默认 4px） */
 }
 /* 把上面的值喂给官方变量：只在本插件设置页内生效，不影响别的插件 */
@@ -54,7 +59,8 @@
   --setting-items-padding-y: var(--shin-settings-row-pad-y);
   --setting-items-padding-x: var(--shin-settings-row-pad-x);
 }
-/* 「更多面板简化」那一页的行：它是**原生二级页**，不在 .shin-settings 子树里（老坑），所以单独点名。
+/* 「更多面板简化」那两行的行距：2026-09-21 起它不再是二级页（直接摊在「界面简化」里、包在一个 group 里），
+   所以仍然**不在** .shin-settings 的直系行集合里（group 里的行由官方渲染）→ 照样单独点名。
    选择器写成 .setting-item.xxx（两个类）压过官方的单类声明，不靠加载顺序。 */
 .setting-item.shin-morepanel-row { --setting-items-padding-y: var(--shin-morepanel-row-pad-y); }
 /* 「添加面板简化」那一页的行：同上，单独一个旋钮（两页的行距互不影响）。 */
@@ -102,6 +108,9 @@
   height: 100%;
   border: 0;
   display: block;
+  /* 2026-09-20：换文件会销毁旧 iframe 重建新的，那几毫秒里框内是空的 —— 不垫底色就露出浏览器默认白，
+     暗色模式下就是「闪一下白」。跟着 Obsidian 的编辑区底色走，明暗都对。 */
+  background: var(--background-primary);
 }
 
 /* 隐藏 28Notes-Files 附件文件夹（v2 §3.6：不用 . 前缀——Obsidian 忽略点号文件夹会导致不索引、图片渲染不出） */
@@ -544,3 +553,12 @@ body.theme-dark {
   border-radius: 8px; padding: 10px 12px; font-size: var(--font-ui-smaller); margin: 0 0 12px;
 }
 .shin-ai-edit-modal .shin-ai-edit-btns { display: flex; justify-content: flex-end; }
+
+/* ===== 「高级样式设计」小窗（2026-09-20 用户定）：三处微调，全在这里改 =====
+   ① 三行文字与右侧控件**垂直居中**：官方 `.setting-item` 是 `align-items: flex-start`（从 app 内 CSS 读到），
+      而色块比一行文字高 → 左文字看着偏上。中心对齐后视觉才齐。
+   ② 标题与第一行拉开一点：官方 `.modal-title` 只有上内边距，贴着第一行显得挤。
+      嫌多/嫌少改这一个数（用官方尺寸变量，跟随主题）。
+   ③ 控件顺序（↺ 恢复默认 在前、色块在后）是在 main.js 里调挂载顺序实现的，不在 CSS。 */
+.shin-palette-modal .setting-item { align-items: center; }
+.shin-palette-modal .modal-title { margin-bottom: var(--size-4-3, 12px); }

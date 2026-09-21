@@ -62,12 +62,20 @@ var I18N = {
     'notice.dataAreaGone': '⚠️ 刚删除的是 28 Notes 数据区（图片/历史/AI 契约）：{0} —— 已进废纸篓；误删请立刻放回原路径（仅作者本机提示）', // 数据区顶层目录被删时的告警（2026-09-17）
     'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
     // ---- 命令面板（Cmd+P）与文件右键菜单里显示的命令名（改完要重载插件才变）----
-    'cmd.newMap': '新建｜新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图
+    'cmd.newMap': '新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图（2026-09-20 去掉「新建｜」前缀：Ribbon 悬停时前缀多余）
     'cmd.boldNode': '编辑文本｜加粗节点', // 命令：画布动作（键位在原生快捷键页改，2026-09-18）
     'cmd.redNode': '编辑节点｜将选中节点标为红色', // 命令：画布动作
     'cmd.yellowNode': '编辑节点｜将选中节点标为黄色', // 命令：画布动作
     'cmd.nowNode': '编辑节点｜（不）设为 Now 当前节点', // 命令：画布动作
     'cmd.minorNode': '编辑节点｜（不）设为 Minor 次要节点', // 命令：画布动作
+    // 待办两条命令（2026-09-20）：普通节点分别进「待办」「已完成」档，之后都在两档之间循环
+    // 2026-09-20 三次定稿：待办**只剩这一条命令**，语义 = 纯开关（普通 ↔ 待办），与底部按钮完全同款。
+    // （原来第二条 ⌘⌥L「设为已完成…」已删 —— 用户定：没必要；id canvas-todo 保持不变，用户自绑的键不失效）
+    'cmd.todoNode': '编辑节点｜（不）设为待办 Todo 节点',
+    'cmd.todoDoneNode': '编辑节点｜（不）设为完成 Done 节点', // 2026-09-20 第三轮新增：⌥⌘L，与按钮 ⌥+点击同款
+    'cmd.copyNodeLink': '其它｜复制节点链接', // 2026-09-21 由右键菜单注册成命令（⌥⌘C）
+    'cmd.copyAILocate': '其它｜复制 AI 定位路径', // 同上（⌥⌘A）
+    'cmd.saveShortcut': '视图整体｜保存为捷径', // 同上（⌘/；对当前视图的主节点建捷径）
     'cmd.editNote': '编辑文本｜节点备注', // 命令：画布动作（默认 Shift+Enter）
     'cmd.toggleShowNow': '视图整体｜（只）显示 Now 当前节点', // 命令：画布动作（默认 Mod+Alt+N）
     'cmd.toggleHideMinor': '视图整体｜显示/隐藏 Minor 次要节点', // 命令：画布动作（默认 Mod+Alt+M）
@@ -104,9 +112,19 @@ var I18N = {
     'settings.themeFeishu': '蓝线', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
     'settings.themeFeishuGray': '灰线', // 主题下拉：飞书灰线
     'settings.themeFeishuPink': '粉线', // 主题下拉：飞书粉线（2026-09-01 新增）
+    // 画布明暗 + 背景色（2026-09-20）：设置页「界面样式」左边那个调色板小按钮弹出来的小窗
+    'palette.tip': '高级样式设计',
+    'palette.title': '高级样式设计',
+    'palette.mode': '明暗模式',
+    'palette.modeFollow': '跟随界面',
+    'palette.modeLight': '浅色模式',
+    'palette.modeDark': '暗色模式',
+    'palette.bgLight': '自定义背景色｜浅色模式',
+    'palette.bgDark': '自定义背景色｜暗色模式',
+    'palette.resetTip': '恢复默认（{0}）',
     // 2026-09-17：媒体分目录（images/video/audio）后，清理范围同步扩大 → 文案由「图片」改「附件」
     'cleanup.heading': '清理未使用的附件', // 设置页区块标题（2026-09-16）
-    'cleanup.desc': '删除带图片/视频等附件的节点时，附件不会被直接删除，需手动清理。<br> 建议每半年扫描清理一次。',
+    'cleanup.desc': '为支持删除后撤回操作，<br> 删除带图片/视频等附件的节点时，附件不会被直接删除，需手动清理。<br> 建议每半年扫描清理一次。',
     'cleanup.scanBtn': '开始扫描', // 设置页按钮（2026-09-16：名称改由 cleanup.heading 承担「清理未使用的附件」）
     'cleanup.scanning': '正在扫描…', // 扫描进行中按钮文案
     'cleanup.none': '没有找到未使用的附件 ✓', // 扫描结果：零孤儿
@@ -126,11 +144,13 @@ var I18N = {
     // 二级页入口右侧的灰字说明（2026-09-18 用户定：两行都去掉，入口只留标题 + 箭头）
     'settings.uiSimplify': '界面简化', // 「界面」栏的原生二级页（2026-09-18）：收纳文件类型徽标 / 新增页面提示等
     'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
-    // ---- 「界面简化」下的两个二级页（2026-09-18）----
-    'settings.morePanelSimplify': '「更多」面板简化', // 左下「更多」菜单的逐项开关（顺序固定，不可拖）
-    'settings.morePanelSimplifyDesc': '指左下角按钮中，···（更多按钮）内操作项',
-    'settings.morePanelNote': '为保证基础使用体验，部分操作按钮不支持关闭。', // 「更多面板」页顶部「预设」那行的备注小字（已不单独占一行）
-    'settings.addPanelSimplify': '「添加」面板简化', // 「添加」面板条目的排序 + 显隐
+    'settings.motion': '动效', // 高级页（2026-09-20）：节点位移过渡的开关，默认开
+    'settings.motionDesc': '如果交互时出现卡顿，可关闭动效以减少性能消耗。',
+    // ---- 「界面简化」页里的两个分组标题（2026-09-21 改版：不再进二级页，直接摊在这一页）----
+    'settings.general': '通用', // 分组标题一：文件类型徽标 / 新增页面提示
+    'settings.morePanelSimplify': '更多面板简化', // 分组标题二：左下「更多」菜单那两个可选条目的开关
+    'settings.morePanelNote': '为保证基础使用体验，部分操作按钮不支持关闭。', // 备用说明（2026-09-21 起这一页不再显示备注，键先留着）
+    'settings.addPanelSimplify': '「添加」面板简化', // ⚠️ 已废弃（该页 2026-09-21 删除）：键留着防旧引用报错
     'settings.addPanelSimplifyDesc': '指选中节点后，底部操作按钮中，+（添加按钮）内操作项',
     'settings.sepRow': '分隔线', // 列表里的分隔线行；三根同名（2026-09-18 用户定：不编号，靠位置区分）
     'settings.presetRow': '介绍', // 「添加面板简化」与「更多面板简化」页顶部共用的一排一次性动作按钮
@@ -225,6 +245,11 @@ var I18N = {
     // ============ 导图画面：节点图标 / 折叠箭头 / 备注等悬停提示 ============
     'tip.minorIcon': '此节点已次要 Minor（置灰）', // Minor 节点标题前小图标的悬停提示
     'tip.nowIcon': '此节点已标记 Now', // Now 节点标题前小圆点的悬停提示
+    'tip.todoIconTodo': '待办：点击小图标标记为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20）
+    'tip.todoIconDone': '已完成：点击小图标标记为待办',
+    // 母节点「进度百分比」的黑框提示（2026-09-21 第七轮）：**按"点击之后会变成什么"说**
+    'tip.todoPctDone': '点击设为：全部完成',     // 进度未满 100%（**含 0%**：0% 点了就是全部设为完成，2026-09-21 用户定）
+    'tip.todoPctUndone': '点击设为：全部未完成', // 100% 时（"回到全都未完成"的出口，不然做完就回不去）
     'tip.unfold': '点击展开', // 节点右侧折叠箭头悬停提示（折叠态）
     'tip.fold': '点击折叠', // 节点右侧折叠箭头悬停提示（展开态）
     'tip.editNote': '双击编辑备注', // 备注行（灰竖条文字）悬停提示
@@ -245,9 +270,9 @@ var I18N = {
     'tb.drillDefault': '进入当前节点（需选择节点后操作）', // 同按钮初始 tooltip（未选中时）
     'tb.drillAtRoot': '已在主节点，无需进入', // 选中主节点时：无处可钻，按钮置灰（2026-09-15）
     'tb.selectFirst': '请先选择节点', // 未选中节点时多个按钮的通用兜底提示
-    'tb.noMinor': '当前视图没有 Minor 节点', // 当前视图里没有 Minor 节点时，隐藏 Minor 按钮的提示（按钮置灰）
-    'tb.showMinor': '显示 Minor 节点', // 隐藏 Minor 按钮：隐藏中（点此显示；键位段动态追加）
-    'tb.hideMinor': '隐藏 Minor 节点', // 隐藏 Minor 按钮：显示中（点此隐藏）
+    'tb.noMinor': '当前视图无 Minor / Done 节点（不筛选折叠项）', // 置灰判据 = **看得见的**范围内没有（2026-09-21 起折叠分支不算）
+    'tb.showMinor': '显示 Minor 和 Done 节点', // 隐藏过滤按钮：隐藏中（点此显示；键位段动态追加）
+    'tb.hideMinor': '隐藏 Minor 和 Done 节点', // 隐藏过滤按钮：显示中（点此隐藏）
     'tb.nowReadonly': '此按钮在历史页面无法操作', // 历史页里 Now 按钮被禁用的提示
     'tb.noNow': '当前视图没有 Now 节点', // 图里没有任何 Now 节点时 Now 按钮的提示（置灰）
     'tb.nowShowAll': '取消只显示 Now 节点', // 只看 Now 按钮：开启中（点此恢复显示全部；键位段动态追加）
@@ -264,6 +289,19 @@ var I18N = {
     'nm.note': '添加备注', // 写备注按钮（键位段由 nmKeySuffix 动态追加，随改键实时变）
     'nm.now': '设为当前关注 Now 节点', // 标记 Now 按钮
     'nm.minor': '设为次要 Minor 节点', // 标记 Minor 按钮
+    // 待办按钮（2026-09-20）：提示两行随选中节点状态换 —— {0}/{1} 是动态键位段（nmKeySuffix）
+    'nm.todoPlainTip': '设为待办节点{0}（按住 {Mod} ：设为已完成）', // 选中普通节点（2026-09-21 第五轮；{Mod} 按平台=⌘/Ctrl）
+    'nm.todoOffTip': '设为普通节点{0}', // 选中待办 / 已完成节点（此时按住 ⌘ 无特殊效果）
+    // 底部一级按钮在设置页「添加面板简化」列表里的行名（2026-09-20 第五轮：底部按钮注册进面板统一排序/显隐）
+    'addPanel.btnStyle': '格式按钮',
+    'addPanel.btnNote': '备注按钮',
+    'addPanel.btnTodo': '待办按钮（Todo）',
+    'addPanel.btnTodoDone': '完成按钮（Done）',
+    'addPanel.btnNow': '当前关注按钮（Now）',
+    'addPanel.btnMinor': '次要按钮（Minor）',
+    'addPanel.btnMore': '添加按钮',
+    'settings.primarySepRow': '主操作分隔线', // 「添加面板简化」列表里的特殊行（2026-09-20 用户定）
+    'settings.primarySepRowDesc': '此条目以上的按钮将会出现在节点底部的一级菜单（最多 8 个）。本行不可关闭，只能上下拖动。',
     // 底部菜单最右「更多」（2026-09-17 加）：悬浮弹出的添加类入口。
     // 注：该按钮**刻意不挂提示框**（悬浮时会和弹出的子菜单叠在一起，用户 2026-09-17），
     // 所以原来那条 'nm.more' 文案已删。
@@ -279,26 +317,36 @@ var I18N = {
     // 所以它们的提示文案/短标签已删；说明文案改挂在子菜单那一项上（见 nm.bold / nm.red / nm.yellow）。
     'more.addOther': '添加其他内容',
     'more.aiEdit': 'AI 编辑', // 添加面板新条目（2026-09-18）：右键「复制 AI 定位」的可视化形态
-    'more.aiEditTip': '点击可复制 AI 定位信息',
+    'more.aiEditTip': '点击复制 AI 定位信息',
     'more.customPanel': '自定义该面板', // 二级面板底部入口：点开 → 设置页「添加面板简化」
     'more.customPanelTip': '可选择隐藏部分操作按钮',
     'more.addImage': '添加图片',
-    'more.addImageTip': '支持直接粘贴图片', // 用户指定文案
+    'more.addImageTip': '支持主流图片格式（可直接粘贴）', // 用户指定文案
     'more.addVideo': '添加视频',
     'more.addVideoTip': '支持主流视频格式',
     'more.addAudio': '添加音频',
     'more.addAudioTip': '支持主流音频格式',
-    'more.addVaultAttach': '添加 Obsidian 仓库附件',
-    'more.addVaultAttachTip': '添加后，可引用库里已有的音视频',
+    'more.addVaultAttach': '添加 Obsidian 附件',
+    'more.addVaultAttachTip': '添加后，可引用库里已有的音视频（可直接粘贴）',
     'more.addVaultAttachHint': '当你在普通笔记粘贴图片 / 视频时，该文件会存入 Obsidian 默认附件文件夹。你可以选择将它的文件名（如 xxx.png）或路径粘进来，思维导图会识别并渲染。（只是建立引用，不会复制文件）',
     'more.addFileLink': '添加本地文件链接',
-    'more.addFileLinkTip': '添加后，点击即可跳转至本地文件',
+    'more.addFileLinkTip': '添加后，点击即可跳转至本地文件（可直接粘贴）',
     'more.addFileLinkHint': '请填写完整文件路径，例如 /Users/…/文件.pdf。（你也可在选中节点时（非编辑状态下），直接粘贴地址）',
     'more.addWiki': '添加双链',
-    'more.addWikiTip': '添加后，可一键跳转至其它页面',
-    'more.addNodeLink': '关联其它节点',
-    'more.addNodeLinkTip': '添加后，可一键跳转至对应节点',
+    'more.addWikiTip': '添加后，可一键跳转至其它页面（快捷键：[[ )', // ⚠️ 末尾「[[ )」是**半角右括号 + 空格**，用户特意这么写的（2026-09-21），别"顺手"改成全角
+    'more.addNodeLink': '添加关联节点',
+    'more.addNodeLinkTip': '添加后，可一键跳转至对应节点（可直接粘贴）',
     'more.addNodeLinkHint': '选中要关联的节点，右键「复制节点链接」，并粘贴至此处即可关联。支持跨思维导图粘贴；支持选中节点后直接粘贴。',
+    // 两个输入框的**预设文字**（2026-09-20 从代码里抽出来）：英文界面曾露出中文「文件」/「文件名」
+    'more.addFileLinkPh': '/Users/…/文件.pdf',
+    'more.addNodeLinkPh': '[[文件名#节点ID]]',
+    // 「建议反馈」行右侧的加群按钮（2026-09-20 从代码里抽出来：英文界面曾只有中文）
+    'settings.joinGroupBtn': '加入群聊 ↗',
+    // Pro / 付费弹窗里的少量固定文案（2026-09-20 抽出）。⚠️ 弹窗正文是设计稿绝对定位的长页，仍为中文（要英文版得单独做一版排版）
+    'pm.scrollHint': '鼠标滚动以向下查看',
+    'pay.shareBtn': '分享免费领会员',
+    'pay.emailCopied': '邮箱已复制',
+    'pay.emailCopyFail': '复制失败，请手动复制',
     'more.addUrlLink': '添加网页链接',
     'more.addUrlLinkTip': '添加后，可一键打开网页',
     'more.urlText': '显示文字',
@@ -322,6 +370,8 @@ var I18N = {
     'toast.bookmarkRelocated': '原捷径节点已被删除 / 更名，已重定位至主节点', // 打开书签但指向的节点已被删（回退到主节点）
     'toast.restored': '已还原到该历史版本（已记成一条新版本；还原前的内容也保留着，随时能找回）', // 历史还原成功后
     'toast.copyCreated': '已创建副本：{0}', // 从历史快照创建副本成功（{0}=新文件名）
+    'toast.histSnapGone': '找不到正在查看的这一版了（它可能已被删除）。回历史记录里重新点一条再试。', // 横幅按钮取不到那一版快照时（2026-09-19；绝不静默）
+    'toast.restoreFinishFail': '这一版已经还原到文件里了，但画布刷新出错 —— 重开这个导图即可看到', // 宿主还原成功、前端收尾抛异常时（2026-09-19）
     'toast.jumpFail': '未找到链接目标（可能已被删除）', // 点节点链接但目标节点已被删
     'toast.histReadonly': '历史页为只读，退出历史页后才能保存当前版本', // 历史页里点「保存此版本」时
     'toast.histNoEdit': '历史界面只读，不能修改内容', // 历史界面里碰到编辑入口时（如定位菜单二次点击改标题）
@@ -344,17 +394,38 @@ var I18N = {
     'ctx.deleteImage': '删除该附件', // 菜单项：把这张图片/视频/音频从节点上移除（2026-09-17 补）
     'more.pickBadType': '只支持图片 / 视频 / 音频，其它格式已跳过', // 选了不支持的格式时提示
     'ctx.drill': '进入当前节点', // 菜单项：下钻把该节点当主节点
+    'ctx.drillTip': '让视图中只显示这一节点内容{0}', // ⚠️ 预埋文案（2026-09-21 用户要求「你先自己预埋」，待用户改）
+    'ctx.bookmarkTip': '保存为新页面，下次可快速进入该视图{0}', // ⚠️ 预埋文案（同上）
+    'ctx.basicOps': '基础操作', // 右键二级菜单（2026-09-21）：剪切 / 复制 / 粘贴 / 删除收在这里
+    'ctx.cut': '剪切',
+    'ctx.copy': '复制',
+    'ctx.paste': '粘贴',
+    'ctx.delete': '删除',
+    'ctx.pasteUseKey': '读不到剪贴板，请用 {Mod}+V 粘贴', // 右键「粘贴」读剪贴板失败时的提示（{Mod} 按平台=⌘/Ctrl）
+    'more.kbdPaste': '粘贴', // 「＋添加」面板各条目右侧的操作提示（2026-09-21 用户定）：直接粘贴即可
+    'more.kbdWiki': '[[', // 双链：打两个方括号触发
+    'more.kbdTab': 'Tab', // 添加子节点
+    'more.kbdEnter': 'Enter', // 添加同级节点
     'ctx.copyLink': '复制节点链接', // 菜单项：复制 [[文件名#pid]] 节点链接
     'ctx.bookmark': '保存为捷径', // 菜单项：为该节点创建书签文件
     'ctx.bookmarkHint': '不写默认为节点名', // 书签命名弹框输入框里的灰色占位提示
     'ctx.editLink': '编辑链接', // 菜单项：双击编辑链接的菜单版（仅文件/URL 链接显示）
     'ctx.copyAILocate': '复制 AI 定位路径', // 菜单项：复制「文件绝对路径 + 节点 ID」，供 AI Agent 定位编辑
-    'ctx.copyAILocateTip': '让 AI Agent 快速定位你要编辑的节点', // 复制 AI 定位路径 悬浮说明
-    'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里', // 复制节点链接 悬浮说明
+    'ctx.copyAILocateTip': '让 AI Agent 快速定位你要编辑的节点{0}', // 复制 AI 定位路径 悬浮说明
+    // 复制给 AI 的定位文案（2026-09-20 用户改版）：**单行 + 【】外框**（用户要「一整块粘贴」，所以不分行），
+    // 路径 / 节点 ID 用占位符填入。两版：node = 带节点 ID（节点右键 / AI 编辑按钮）；file = 只有路径（文件列表右键）。
+    // 语言跟着界面语言（中文界面复制中文、英文界面复制英文）—— AI 读的是文案本身，所以必须跟着走。
+    'aiLocate.node': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 使用节点 id 定位到要编辑的节点，节点 ID 为：{1}；4. 基于用户指令开始编辑】',
+    'aiLocate.file': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 基于用户指令开始编辑】',
+    // 新建导图时预埋进 frontmatter 的两段 AI 提示（2026-09-20）：**新建/首次注入那一刻按当时的语言写死**，
+    // 之后切语言一律不改（存量文件里的文字保持原样 —— 变来变去容易出错，用户定）。
+    'fm.ai': '改本文件前先读 28Notes-Files/AI/index.md，严格按其指引操作，否则文件打开可能会出现严重乱码',
+    'fm.aiLocate': '定位节点：在文件中搜索 id:<节点ID>（节点 ID 形如 <!--id:xxx-->，写在标题行行尾，不是 Obsidian 的 ^块锚点，不要拼到文件路径后面打开）。',
+    'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里{0}', // 复制节点链接 悬浮说明
 
     // ============ 折叠层级数字按钮悬停提示（右下角状态栏层级条）============
     'fold.menuKeep': '选中节点 折叠到第 {0} 层级（同时外部保持不变）（点击）', // 折叠数字右键第一项 = 选中后的默认左键行为（{0}=按钮数字；2026-09-13 文案用户定）
-    'fold.menuMin': '选中节点 折叠到第 {0} 层级（同时外部折叠到最简）（Cmd + 点击）', // 折叠数字右键第二项 / Cmd 快捷键（{0}=按钮数字；2026-09-13 文案用户定）
+    'fold.menuMin': '选中节点 折叠到第 {0} 层级（同时外部折叠到最简）（按住 {Mod} 并点击）', // 折叠数字右键第二项（{0}=按钮数字；{Mod} 按平台=⌘/Ctrl）
     'fold.level': '折叠到第 {0} 层级', // 悬浮提示·未选中节点（{0}=按钮数字；2026-09-11 文案用户定）
     'fold.levelKeep': '选中节点 折叠到第 {0} 层级', // 悬浮提示·选中节点（不按修饰键 = 默认行为；2026-09-13 用户定）
     'fold.levelMin': '选中节点 折叠到第 {0} 层级（同时外部折叠到最简）', // 悬浮提示·选中节点 + 按住 Cmd（2026-09-13 用户定）
@@ -472,12 +543,19 @@ var I18N = {
     'notice.openNoteFail': 'Failed to open note: ',
     'notice.copyFailSnap': 'Failed to create a copy: ',
     'notice.githubUnset': 'GitHub link is not configured yet',
-    'cmd.newMap': 'New | New mind map (28 Notes)',
+    'cmd.newMap': 'New mind map (28 Notes)',
     'cmd.boldNode': 'Text | Bold node',
     'cmd.redNode': 'Node | Mark the selected node red',
     'cmd.yellowNode': 'Node | Mark the selected node yellow',
     'cmd.nowNode': 'Node | (Un)set the selected node as Now',
     'cmd.minorNode': 'Node | (Un)set the selected node as Minor',
+    // Two to-do commands (2026-09-20): a plain node lands on Todo / Done respectively, then both cycle.
+    // Only one to-do command now (2026-09-20): pure toggle, same as the toolbar button.
+    'cmd.todoNode': 'Node | (Un)set as to-do',
+    'cmd.todoDoneNode': 'Node | (Un)set as done',
+    'cmd.copyNodeLink': 'Other | Copy node link',
+    'cmd.copyAILocate': 'Other | Copy AI locate path',
+    'cmd.saveShortcut': 'View | Save as shortcut',
     'cmd.editNote': 'Text | Node note',
     'cmd.toggleShowNow': 'View | Show only Now nodes',
     'cmd.toggleHideMinor': 'View | Show/hide Minor nodes',
@@ -510,10 +588,20 @@ var I18N = {
     'settings.theme': 'Interface style',
     'settings.themeFeishu': 'Blue lines',
     'settings.themeFeishuGray': 'Gray lines',
+    // Canvas light/dark + background (2026-09-20): opened from the palette button left of "Interface style"
+    'palette.tip': 'Advanced styling',
+    'palette.title': 'Advanced styling',
+    'palette.mode': 'Light & dark',
+    'palette.modeFollow': 'Follow UI',
+    'palette.modeLight': 'Light mode',
+    'palette.modeDark': 'Dark mode',
+    'palette.bgLight': 'Custom background｜Light mode',
+    'palette.bgDark': 'Custom background｜Dark mode',
+    'palette.resetTip': 'Restore default ({0})',
     'settings.themeFeishuPink': 'Pink lines',
     // 2026-09-17: media split into images/video/audio → cleanup now covers all three; wording "images" → "attachments"
     'cleanup.heading': 'Clean up unused attachments',
-    'cleanup.desc': 'When you delete a node that contains attachments (images / videos / audio), the files themselves are not deleted — clean them up manually.<br> A scan every six months is recommended.',
+    'cleanup.desc': 'So that deleting can be undone,<br> when you delete a node that contains attachments (images / videos / audio), the files themselves are not deleted — clean them up manually.<br> A scan every six months is recommended.',
     'cleanup.scanBtn': 'Start scan',
     'cleanup.scanning': 'Scanning…',
     'cleanup.none': 'No unused attachments found ✓',
@@ -534,11 +622,13 @@ var I18N = {
     'settings.hideHintDesc': 'After creating a new mind-map, a beginner hint appears below the root node. You can choose to hide it. ',
     'settings.uiSimplify': 'Interface simplification', // Native sub-page under "Interface" (2026-09-18)
     'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
-    // ---- Two sub-pages under "Interface simplification" (2026-09-18) ----
+    'settings.motion': 'Motion', // Under "Advanced" (2026-09-20): node shift transition, on by default
+    'settings.motionDesc': 'If interaction feels laggy, turn motion off to reduce performance cost.',
+    // ---- Two group headings inside "Interface simplification" (2026-09-21: no more sub-page) ----
+    'settings.general': 'General',
     'settings.morePanelSimplify': '"More" panel simplification',
-    'settings.morePanelSimplifyDesc': 'Items inside the bottom-left "More" (···) button.',
-    'settings.morePanelNote': 'To keep the basics working, some buttons cannot be turned off.', // note on the "Presets" row of the More-panel page
-    'settings.addPanelSimplify': '"Add" panel simplification',
+    'settings.morePanelNote': 'To keep the basics working, some buttons cannot be turned off.', // spare note (not shown since 2026-09-21)
+    'settings.addPanelSimplify': '"Add" panel simplification', // DEPRECATED (page removed 2026-09-21); key kept to avoid stale refs
     'settings.addPanelSimplifyDesc': 'Items inside the "Add" (+) button on a selected node\'s bottom toolbar.',
     'settings.sepRow': 'Divider',
     'settings.presetRow': 'About',
@@ -630,6 +720,11 @@ var I18N = {
 
     'tip.minorIcon': 'This node is marked Minor (grayed out)',
     'tip.nowIcon': 'This node is marked Now',
+    'tip.todoIconTodo': 'To-do: click the icon to mark as done', // to-do node prefix icon (2026-09-20)
+    'tip.todoIconDone': 'Done: click the icon to mark as to-do',
+    // Parent progress-percentage tooltip (2026-09-21): phrased as "what clicking will do"
+    'tip.todoPctDone': 'Click to set all as done',    // progress below 100% (including 0%)
+    'tip.todoPctUndone': 'Click to set all as not done', // at 100% — the way back
     'tip.unfold': 'Click to unfold',
     'tip.fold': 'Click to fold',
     'tip.editNote': 'Double-click to edit the note',
@@ -649,9 +744,9 @@ var I18N = {
     'tb.drillDefault': 'Enter the current node (select a node first)',
     'tb.drillAtRoot': 'Already at the main node',
     'tb.selectFirst': 'Select a node first',
-    'tb.noMinor': 'No Minor nodes in the current view',
-    'tb.showMinor': 'Show Minor nodes',
-    'tb.hideMinor': 'Hide Minor nodes',
+    'tb.noMinor': 'No Minor / Done nodes in this view (folded items excluded)', // 中文括号「不筛选折叠项」= 折叠起来的不参与判断
+    'tb.showMinor': 'Show Minor and Done nodes',
+    'tb.hideMinor': 'Hide Minor and Done nodes',
     'tb.nowReadonly': 'This button is unavailable on the history page',
     'tb.noNow': 'No Now nodes in the current view',
     'tb.nowShowAll': 'Stop showing Now nodes only',
@@ -667,6 +762,18 @@ var I18N = {
     'nm.note': 'Add a note',
     'nm.now': 'Mark as Now node',
     'nm.minor': 'Mark as Minor node',
+    // To-do button (2026-09-20): the tip swaps with the selected node's state; {0}/{1} = dynamic key segments
+    'nm.todoPlainTip': 'Click to mark as Todo{0} | Hold {Mod}: mark done',
+    'nm.todoOffTip': 'Set as a plain node{0}',
+    'addPanel.btnStyle': 'Format button',
+    'addPanel.btnNote': 'Note button',
+    'addPanel.btnTodo': 'To-do button (Todo)',
+    'addPanel.btnTodoDone': 'Done button',
+    'addPanel.btnNow': 'Now button',
+    'addPanel.btnMinor': 'Minor button',
+    'addPanel.btnMore': 'Add button',
+    'settings.primarySepRow': 'Primary actions divider',
+    'settings.primarySepRowDesc': 'Buttons above this line appear in the primary toolbar above the node (max 8). This line cannot be turned off — drag it up or down only.',
     // Bottom bar "More" menu (2026-09-17): hover panel with add-entries.
     // Note: this button intentionally has NO tooltip (it would overlap the panel), so 'nm.more' was removed.
     'more.addChild': 'Add child node',
@@ -677,26 +784,36 @@ var I18N = {
     'more.delNodeTip': 'Shortcut: Delete',
     'more.addOther': 'More options',
     'more.aiEdit': 'AI edit',
-    'more.aiEditTip': 'Copy the AI locator, then paste it into any agent to locate and edit this node',
+    'more.aiEditTip': 'Click to copy the AI locator info',
     'more.customPanel': 'Customize this panel',
     'more.customPanelTip': 'Choose which buttons to hide',
     'more.addImage': 'Add image',
-    'more.addImageTip': 'You can paste an image directly',
+    'more.addImageTip': 'Supports common image formats (paste directly)',
     'more.addVideo': 'Add video',
     'more.addVideoTip': 'Supports common video formats',
     'more.addAudio': 'Add audio',
     'more.addAudioTip': 'Supports common audio formats',
     'more.addVaultAttach': 'Add attachment from vault',
-    'more.addVaultAttachTip': 'Reference images / videos already in your vault',
+    'more.addVaultAttachTip': 'Reference images / videos already in your vault (paste directly)',
     'more.addVaultAttachHint': 'When you paste an image / video into a normal note, Obsidian saves the file into its default attachment folder. Paste its file name (e.g. xxx.png) or path here and the mind map will find and render it. (This only creates a reference — the file is not copied.)',
     'more.addFileLink': 'Add local file link',
-    'more.addFileLinkTip': 'Click it later to open the local file',
+    'more.addFileLinkTip': 'Click it later to open the local file (paste directly)',
     'more.addFileLinkHint': 'Enter a file path, e.g. /Users/…/file.pdf. (You can also select a node while not editing and paste the path directly.)',
     'more.addWiki': 'Add wiki link',
-    'more.addWikiTip': 'Click it later to jump to that page',
-    'more.addNodeLink': 'Link another node',
-    'more.addNodeLinkTip': 'Click it later to jump to that node',
+    'more.addWikiTip': 'Click it later to jump to that page (shortcut: [[ )', // trailing "[[ )" = half-width paren + space, intentional (matches zh)
+    'more.addNodeLink': 'Add linked node',
+    'more.addNodeLinkTip': 'Click it later to jump to that node (paste directly)',
     'more.addNodeLinkHint': 'Select the target node in the other mind map, right-click "Copy node link", then paste it here. Works across mind maps; you can also select a node and paste directly.',
+    // Input placeholder presets (2026-09-20): these used to be hard-coded Chinese and leaked into the English UI
+    'more.addFileLinkPh': '/Users/…/file.pdf',
+    'more.addNodeLinkPh': '[[File name#Node ID]]',
+    'settings.joinGroupBtn': 'Join group chat ↗',
+    // A few fixed strings inside the Pro / payment modals (2026-09-20). ⚠️ The payment page body is a designed,
+    // absolutely-positioned Chinese layout and stays Chinese for now (an English version needs its own layout pass).
+    'pm.scrollHint': 'Scroll down to see more',
+    'pay.shareBtn': 'Share to get free membership',
+    'pay.emailCopied': 'Email copied',
+    'pay.emailCopyFail': 'Copy failed — please copy it manually',
     'more.addUrlLink': 'Add web link',
     'more.addUrlLinkTip': 'Enter a display text and a URL. The URL should start with www. / https://, otherwise it may not be recognized.',
     'more.urlText': 'Display text',
@@ -718,6 +835,8 @@ var I18N = {
     'toast.bookmarkRelocated': 'The shortcut node has been deleted or renamed — relocated to the central node',
     'toast.restored': 'Restored to this version (it is saved as a new version; the content before the restore is kept too)',
     'toast.copyCreated': 'Copy created: {0}',
+    'toast.histSnapGone': 'The version you were viewing could not be found (it may have been deleted). Open history and pick a version again.',
+    'toast.restoreFinishFail': 'This version is already restored in the file, but the canvas failed to refresh — reopen this map to see it',
     'toast.jumpFail': 'Link target not found (it may have been deleted)',
     'toast.histReadonly': 'The history page is read-only — exit it before saving the current version',
     'toast.histNoEdit': 'The history view is read-only; content cannot be edited here',
@@ -738,16 +857,35 @@ var I18N = {
     'ctx.deleteImage': 'Remove attachment',
     'more.pickBadType': 'Only image / video / audio files are supported; other formats were skipped',
     'ctx.drill': 'Enter the current node',
+    'ctx.drillTip': 'Show only this node in the view{0}', // {0} = hotkey segment, filled by nmKeySuffix()
+    'ctx.bookmarkTip': 'Save as a new page to jump back into this view later{0}', // {0} = hotkey segment
+    'ctx.basicOps': 'Basic actions',
+    'ctx.cut': 'Cut',
+    'ctx.copy': 'Copy',
+    'ctx.paste': 'Paste',
+    'ctx.delete': 'Delete',
+    'ctx.pasteUseKey': 'Clipboard unavailable — paste with {Mod}+V',
+    'more.kbdPaste': 'Paste',
+    'more.kbdWiki': '[[',
+    'more.kbdTab': 'Tab',
+    'more.kbdEnter': 'Enter',
     'ctx.copyLink': 'Copy node link',
     'ctx.bookmark': 'Save as shortcut',
     'ctx.bookmarkHint': "(Optional — defaults to the node's title)",
     'ctx.editLink': 'Edit link',
     'ctx.copyAILocate': 'Copy AI locate path',
-    'ctx.copyAILocateTip': 'Let an AI agent quickly locate the node you want to edit',
-    'ctx.copyLinkTip': 'Paste into another mind map to jump back here',
+    'ctx.copyAILocateTip': 'Let an AI agent quickly locate the node you want to edit{0}', // {0} = hotkey segment
+    // AI locate text (2026-09-20): single line wrapped in 【】 (user wants to paste it as one block), {0} = path, {1} = node ID.
+    'aiLocate.node': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. Use the node id to locate the node to edit, node ID: {1}; 4. Start editing based on the user\'s instruction】',
+    'aiLocate.file': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. Start editing based on the user\'s instruction】',
+    // Frontmatter AI hints written into a file when it is created / first injected (2026-09-20):
+    // language is taken **at write time** and never rewritten afterwards (switching language must not touch existing files).
+    'fm.ai': 'Before editing this file, read 28Notes-Files/AI/index.md and follow it strictly — otherwise the file may show garbled content when opened',
+    'fm.aiLocate': 'Locate a node: search for id:<node ID> in the file (node IDs look like <!--id:xxx-->, they sit at the end of the heading line — not an Obsidian ^block anchor, and must not be appended to the file path when opening).',
+    'ctx.copyLinkTip': 'Paste into another mind map to jump back here{0}', // {0} = hotkey segment
 
     'fold.menuKeep': 'Fold the selected node to level {0} (keep everything else unchanged) (click)',
-    'fold.menuMin': 'Fold the selected node to level {0} (fold everything else to the minimum) (Cmd + click)',
+    'fold.menuMin': 'Fold the selected node to level {0} (fold everything else to the minimum) (hold {Mod} and click)',
     'fold.level': 'Fold to level {0}',
     'fold.levelKeep': 'Fold the selected node to level {0}',
     'fold.levelMin': 'Fold "the selected node" to level {0} (fold everything else to the minimum)',
@@ -809,14 +947,23 @@ var I18N = {
 var I18N_LANG = (typeof window !== 'undefined' && window.__MM_LANG__ === 'en') ? 'en' : 'zh';
 function setLang(l) { if (I18N[l]) I18N_LANG = l; }
 function getLang() { return I18N_LANG; }
-// 平台键位：文案里 {Mod}/{Alt} 占位 —— Mac 显示 Cmd/Option，Windows/Linux 显示 Ctrl/Alt
+// 平台键位：文案里 {Mod}/{Alt} 占位 —— **Mac 一律换成系统符号**（⌘/⌥/⇧），Windows/Linux 用 Ctrl/Alt 前缀
 // （navigator 覆盖 iframe；process 覆盖宿主 main.js；都没有（test.mjs 沙箱）回退非 Mac，只影响测试取值）
+// 2026-09-21 用户定：Mac 不要写「Cmd / Command」这种字面词，跟系统符号保持一致（fmtHotkey 那一套）；
+// 顺手把含修饰键占位的串里的「+」收掉（「⌘ + X」→「⌘X」），只在含占位符时做，免得误伤正文里的加号。
 var I18N_MAC = (typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(String(navigator.platform || navigator.userAgent || '')))
   || (typeof process !== 'undefined' && process.platform === 'darwin');
-function modStr(s) { // {Mod}/{Alt} → 平台实际键名
-  return String(s)
-    .split('{Mod}').join(I18N_MAC ? 'Cmd' : 'Ctrl')
-    .split('{Alt}').join(I18N_MAC ? 'Option' : 'Alt');
+function modStr(s) { // {Mod}/{Alt} → 平台实际键名 / 符号
+  var out = String(s);
+  var hadPlaceholder = /\{Mod\}|\{Alt\}/.test(out);
+  if (I18N_MAC) {
+    out = out.split('{Mod}').join('⌘').split('{Alt}').join('⌥');
+    out = out.replace(/\bShift\b/g, '⇧');
+    if (hadPlaceholder) out = out.replace(/\s*\+\s*/g, ''); // 只收含占位符的串
+  } else {
+    out = out.split('{Mod}').join('Ctrl').split('{Alt}').join('Alt');
+  }
+  return out;
 }
 function T(key) { // 取文案：当前语言 → zh 回退 → key 兜底；{0}{1}… 占位符替换 + {Mod}/{Alt} 平台键位
   var tbl = I18N[I18N_LANG] || {};
