@@ -99,10 +99,12 @@
   --minor-text-color: #b9b9b9; /* Minor 节点文字色（默认同 --muted 灰）✅ */
 
   /* ---- Minor 前缀图标（2026-08-26）：图标名写在这里即可，改完重载插件生效 ----
-     2026-09-20 用户从候选里定下 arrow-down。可选值 = ICONS 里任意存在的图标名（写错回退 move-down）。 */
-  --minor-ico: arrow-down;
+     可选值 = ICONS 里任意存在的图标名（写错回退双竖线），或 'bars' = 内置的「两条圆头竖线」。
+     2026-09-20 用户从候选里定下 arrow-down；2026-09-22 在调教器里逐个调完，改成两条圆头竖线
+     （形状与位置参数在 mindmap-app.js 的 MINOR_BARS —— 那个不走 ICONS 字典，是现画的）。 */
+  --minor-ico: bars;
   --minor-ico-raise: 0px;        /* Minor 前缀图标上移像素：正值=上提（如 3px），0=不挪；改完重载插件生效 */
-  --minor-ico-stroke: 2.9;      /* Minor 前缀图标描边粗细：调大=加粗（如 3 / 3.5），2≈默认；改完重载插件生效 */
+  --minor-ico-stroke: 2.9;      /* Minor 前缀图标描边粗细（只对 ICONS 里那些描边型图标有效）。双竖线的粗细不走这个旋钮，在 mindmap-app.js 的 MINOR_BARS.w 里 */
 
   /* ---- Now 前缀图标 + Now 节点视觉（2026-08-27）---- 改完重载插件生效 ----
      --now-color：前缀图标颜色；--now-text-color：Now 节点整卡字体色；
@@ -146,6 +148,8 @@
   --todo-pct-pad-x: 3px;         /* 🎚 悬浮底色框的**左右**内边距（2026-09-21 用户定：小背景左右可调）*/
   --todo-pct-pad-y: 6px;         /* 🎚 悬浮底色框的**上下**内边距（同上：上下可调）*/
   --todo-pct-radius: 4px;        /* 悬浮底色框的圆角 */
+  --todo-pct-pct-w: 0.75em;      /* 🎚 百分号那一格的宽度（预留宽度用，宁宽勿窄）：调小 → 更紧凑，太小会让 100% 那一下重新抖 */
+  --todo-pct-pull: 7px;          /* 🎚 整块往左拉多少（正值 = 左移）：收掉左侧多余空间、更贴左；0 = 不拉。2026-09-22 用户自己在实机上试出来的定稿值 7px（我把默认给的 4px 调大了） */
   --tb-minor-raise: 0px;         /* 🎚 底部工具条「Minor」按钮里那个图标的上下位移（正值上提 / 负值下移；2026-09-20）*/
 
   /* ---- 文字 / 备注 / 链接 ---- */
@@ -353,6 +357,17 @@ body {
   padding: 5px 16px 5px 12px; font-size: 13px; color: var(--muted);
   display: flex; align-items: center; flex-wrap: wrap;
   padding-right: 48px; /* 给右上角刷新按钮留位（2026-08-21 定） */
+}
+/* 窗口全屏时的让位（2026-09-22 用户定）：#crumb 是 fixed top:0 —— 贴的是画布文档自己的最上沿，
+   而窗口全屏（非原生）下 macOS 的红绿灯还叠在宿主窗口左上角，正好压住它左边那几个字。
+   做法 = **往右让**（红绿灯本来就在左边，横着躲开最直接）：把左内边距撑大，字整体右移。
+   只有 body.fs-window 生效；桌面全屏（原生全屏）由系统收起红绿灯，路径条保持原样（用户明确要求）。
+   两个旋钮都是「额外再加多少」，改完立即生效：
+     --crumb-fs-indent  往右让多少，默认 70px（红绿灯三个圆连间距大致就这么宽）
+     --crumb-fs-drop    往下降多少，默认 0px（横着躲够了就不用它，需要时再往上加） */
+body.fs-window #crumb {
+  padding-left: calc(12px + var(--crumb-fs-indent, 70px));
+  padding-top: calc(5px + var(--crumb-fs-drop, 2px));
 }
 #crumb.hidden { display: none; }
 #crumb a {
@@ -1059,12 +1074,42 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   padding: var(--todo-pct-pad-y, 1px) var(--todo-pct-pad-x, 3px);
   border-radius: var(--todo-pct-radius, 4px);
   margin-right: var(--todo-pct-gap, 3px);
+  /* 整块往左拉（2026-09-22 用户定）：他说的是「这个按钮跟节点外框左边留了一条距离」，
+     要的是**整块挪过去**（不是把数字靠左 —— 那种改法他明确否了）。**只作用于这个百分比**，
+     其它前缀图标（待办 / Now / Minor）不受影响。
+     --todo-pct-pull：往左拉多少（正值 = 左移），0 = 回原位；嫌不够就加大。
+     用 margin-left 而不是 left：left（--todo-pct-offset-x）只是视觉平移、后面的文字不动，
+     空隙会跑到右边去；margin 才真把这截空间收掉。 */
+  margin-left: calc(-1 * var(--todo-pct-pull, 7px));
   position: relative;
   left: var(--todo-pct-offset-x, 0px);
   top: var(--todo-pct-offset-y, 0px);
   vertical-align: middle;   /* 上下默认居中（用户定） */
   white-space: nowrap;
+  /* 宽度**恒定**（2026-09-22 用户定）：数字从 0% 跳到 100% 时，文本宽了两个字 → 母卡片跟着变宽
+     → 整块画布被推着挪一下，每点一次待办就抖一下。这里把宽度按**最长形态**（"100%"）预留：
+       3ch = 三个数字（tabular-nums 下所有数字同宽，ch = "0" 的宽）
+       + --todo-pct-pct-w = 百分号那一格的宽度（em 计，跟着 --todo-pct-size 一起缩放）
+       + 左右内边距 × 2
+     于是显示几 % 占的宽度都一样，卡片不再变形。
+     ⚠️ 百分号宽度只能估（字体不同略有出入），所以默认值**宁宽勿窄**：略宽只是两侧留白多一点，
+        无副作用；估窄了才会在 100% 那一下重新抖。嫌留白多就把 --todo-pct-pct-w 调小。 */
+  min-width: calc(3ch + var(--todo-pct-pct-w, 0.75em) + var(--todo-pct-pad-x, 3px) * 2);
+  /* 数字**居中**（2026-09-22 用户定，别改）：他要的是「百分数在底色框里居中」这个视觉关系 ——
+     曾经试过改成靠左（想让数字别占前面那截），用户当场叫停：靠左没必要，要的是**整块**往左挪。
+     所以宽度多余的那截就留在两侧，靠下面的 margin-left 把整块往左收。 */
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
+/* ⚠️ 别再用 ::before / ::after 撑宽（2026-09-22 实踩，已撤）：
+   曾在这里放过 `.card .title .todo-pct::before { content: '100%' }` 让它撑到最长形态的**实际**宽度。
+   思路本身是对的，但位置错了 —— 本元素的 [data-tip] 提示框恰好也用 ::before（那个黑色小三角），
+   而 CSS 层叠是**逐属性**比较的：我那条只声明了 content / display / height / overflow / visibility，
+   **没有声明 position** → 悬停时 [data-tip]:hover::before 里的 `position: absolute` 照常生效
+   → 撑宽元素当场脱离文档流 → 宽度回落到 min-width → 卡片缩一点点。
+   （顺带，那个 visibility: hidden 也把提示框的小三角一起藏了。）
+   要**精确**撑宽只能用真实 DOM 子元素（grid 叠放），代价是改动渲染结构与编辑态取值 —— 不值得，
+   宽度误差用上面的 --todo-pct-pct-w 调即可。 */
 /* 悬浮底色：**所有档位都有**（含 0% —— 0% 照样可点，点了就是「全部设为完成」。
    ⚠️ 曾短暂做过「0% 不可点 / 无底色」（2026-09-21 上半场），用户当场纠正：0% 点了就该变 100%，已还原。 */
 .card .title .todo-pct:hover { background: var(--todo-ico-hover, rgba(0,0,0,.06)); }

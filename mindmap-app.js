@@ -349,6 +349,8 @@ const ICONS = {
   'bold': '<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>',
   'circle': '<circle cx="12" cy="12" r="10"/>',
   'circle-dot': '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="1"/>',
+  // 全屏按钮（2026-09-22 用户定，lucide scan）：点击=窗口全屏，Cmd+点击=桌面全屏
+  'scan': '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>',
   // 复制 AI 定位路径（2026-09-01）：lucide astroid 图标，呼应「AI 星体 / 定位节点」语义
   'astroid': '<path d="M12.983 21.186a1 1 0 0 1-1.966 0 10 10 0 0 0-8.203-8.203 1 1 0 0 1 0-1.966 10 10 0 0 0 8.203-8.203 1 1 0 0 1 1.966 0 10 10 0 0 0 8.203 8.203 1 1 0 0 1 0 1.966 10 10 0 0 0-8.203 8.203" />', // 复制 AI 定位路径图标（2026-09-01 改自 lucide astroid，呼应「AI 星体/定位」语义）
   'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
@@ -520,17 +522,46 @@ function linkIco(name, size = 13) {
   return '<span class="' + cls + '">' + renderIcon(name, size) + '</span>';
 }
 // Minor 节点前缀图标（2026-08-26）：名称由 CSS 旋钮 --minor-ico 决定（定义在 app.css 顶部调参区）；
-// 2026-09-20 用户从候选里定下 arrow-down，写了 ICONS 里没有的名字则回退 move-down。
-// 节点级图标 > CSS 旋钮 --minor-ico > 出厂兜底。
-// 节点级图标存行尾注释（`minor:<图标名>`，如 `minor:arrow-down`；老写法 `minor:1` = 用旋钮那个）。
-// 2026-09-20 图标候选实验收尾：底部只留一个按钮（arrow-down）、**不再产出**图标名；
-// 但读取 / 写回照旧支持任意 ICONS 里存在的图标名 —— 存量文件里选过图标的节点能原样读回、原样写回，
-// 否则一读一写就被归一成 minor:1，破坏「往返逐字节不变」这条硬规矩。
-function minorIconName(node) {
-  const own = node && node.minorIco;
-  if (own && ICONS[own]) return own;
+// Minor 图标 = 「两条圆头竖线」（2026-09-22 用户在调教器里逐个调完定稿的那组值）。
+// 参数含义（都在 24 坐标系里）：w = 线的粗细，gap = 两条线中心距，len = 线长；
+//   dx / dy / scale = 位移与缩放（用 transform 做，不动布局）。
+// **两处各一套**（用户明确要求分开调）：
+//   btn  = 选中节点后那排按钮里的 Minor 按钮（18px）
+//   mark = 节点标题前面的小标记（实际渲染尺寸由 CSS 旋钮 --minor-ico-size 控制）
+// 要改形状/位置就改这一处常量，不用动渲染代码。
+const MINOR_BARS = {
+  btn: { w: 2.20, gap: 7.48, len: 16.30, dx: 0, dy: -0.5, scale: 1.10 },
+  mark: { w: 2.30, gap: 7.48, len: 18.90, dx: -1, dy: 0, scale: 1.05 },
+};
+const MINOR_BARS_C = { cx: 12.48, cy: 12.32 }; // 图形中心（沿用原图反算值，保证与用户认可的那版一致）
+// 生成双竖线 svg。
+// ⚠️ 描边必须写**内联 style**，不能写成 SVG 属性：本文件配的 CSS 里有
+//   `.card .minor-ico svg { stroke-width: var(--minor-ico-stroke, 2) }` —— CSS 规则优先于 presentation
+//   attribute，写成 stroke-width="2.3" 会被按回旋钮值，节点前那条怎么调都不变粗（2026-09-22 实踩）。
+function minorBarsSvg(size, which) {
+  const p = MINOR_BARS[which] || MINOR_BARS.mark;
+  const y1 = MINOR_BARS_C.cy - p.len / 2, y2 = MINOR_BARS_C.cy + p.len / 2;
+  const seg = (x) => '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2
+    + '" style="stroke:currentColor;stroke-width:' + p.w + 'px;stroke-linecap:round"/>';
+  const tf = (p.dx || p.dy || p.scale !== 1)
+    ? ' style="transform:translate(' + p.dx + 'px,' + p.dy + 'px) scale(' + p.scale + ');transform-origin:50% 50%"'
+    : '';
+  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" class="icon"' + tf + '>'
+    + seg(MINOR_BARS_C.cx - p.gap / 2) + seg(MINOR_BARS_C.cx + p.gap / 2) + '</svg>';
+}
+// 2026-09-22 第二轮（用户定）：**取消存量兼容** —— 只要是 Minor 节点，外观一律用出厂图标（现为双竖线），
+//   过去写在节点行尾的 `minor:<图标名>`（如 minor:arrow-down）**不再影响显示**。
+//   ⚠️ 但那个字段仍**原样留在文件里、原样写回**（serialize 逻辑不动）—— 不主动改写用户文件内容，
+//   「往返逐字节不变」是硬规矩；只是渲染时不再看它。
+// 出厂图标名来自 CSS 旋钮 --minor-ico（现为 'bars' = 双竖线）；留给将来想整体换图标时用。
+function minorIconName() {
   const v = (getComputedStyle(document.documentElement).getPropertyValue('--minor-ico') || '').trim();
-  return (v && ICONS[v]) ? v : 'move-down';
+  return (v && ICONS[v]) ? v : 'bars';
+}
+// 节点前缀的 Minor 图标。node 参数保留（调用点照旧传），但**不再读 node.minorIco**（见上面 2026-09-22 第二轮）。
+function renderMinorIcon(node, size) {
+  const n = minorIconName();
+  return n === 'bars' ? minorBarsSvg(size, 'mark') : renderIcon(n, size);
 }
 // 解行尾注释里的 minor 值 → { on, ico }：
 //   `minor:1` / `minor:true` = 是 Minor，但图标用 CSS 旋钮 --minor-ico（老写法，也是默认）
@@ -732,7 +763,7 @@ function prependInOrder(el, nodes) {
 //   undo=corner-up-left、redo=corner-up-right、locate=circle-dot、save=refresh-cw
 //   hide=squircle-dashed/off（状态由 setHideDone 决定，已筛选态主题色 .active-hide）、slash=slash、more=more-horizontal
 //   （note/done 两键无人使用，2026-08-27 体检删）
-const ICON_FIXED = { undo: 'corner-up-left', redo: 'corner-up-right', locate: 'circle-dot', save: 'refresh-cw', slash: 'slash', hide: 'squircle-dashed', more: 'more-horizontal' };
+const ICON_FIXED = { undo: 'corner-up-left', redo: 'corner-up-right', locate: 'circle-dot', save: 'refresh-cw', slash: 'slash', hide: 'squircle-dashed', more: 'more-horizontal', full: 'scan' };
 
 // ============ Now 图标（2026-08-27；来源 ~/Desktop/22 Work - AI｜ VSCode MindMap 插件视觉/，已内联、不依赖文件）============
 // 图标形：圆（目标节点）+ 竖线（stem）+ 四角火花（仅侧边按钮有）。四态：
@@ -1731,6 +1762,9 @@ let autoScrollRAF = null;
 let autoScrollDX = 0, autoScrollDY = 0;
 let lastDragX = 0, lastDragY = 0;
 let marqueeRect = null; // 框选矩形（屏幕坐标），自动滚动时复用做节点命中
+// 框选期间的「重画+重判」回调（2026-09-22）：拖到边缘自动滚动时鼠标是**停住**的、不再触发 mousemove，
+// 所以必须由滚动帧来推动 —— 否则框原地不动、内容却滚了很远，看起来就是个固定的长方形（用户实报）。
+let marqueeUpdater = null;
 function stopAutoScroll() {
   if (autoScrollRAF) { cancelAnimationFrame(autoScrollRAF); autoScrollRAF = null; }
   autoScrollDX = 0; autoScrollDY = 0;
@@ -1753,8 +1787,8 @@ function tickAutoScroll() {
       applyDragPreview(state.dragPreview);
       updateDragCurve(state.dragPreview, np.x, np.y);
     }
-    // 框选拖拽中：画面滚了，重新用当前框选矩形命中节点（框固定屏幕、节点滚进框内 → 实时选中）
-    else if (state.marquee && marqueeRect) applyMarqueeSelection(marqueeRect);
+    // 框选拖拽中：画面滚了 → 让框**继续沿滚动方向变长**并重新命中节点（框固定屏幕、节点滚进框内 → 实时选中）
+    else if (state.marquee && marqueeUpdater) marqueeUpdater();
   }
   autoScrollRAF = requestAnimationFrame(tickAutoScroll);
 }
@@ -1820,6 +1854,28 @@ function applyTheme(t) {
   NM_THEME_CLASSES.forEach((c) => cl.remove(c));
   if (t === 'feishu' || t === 'feishuGray' || t === 'feishuPink') cl.add('nm-theme-' + t);
   // 其余值走 CSS :root 默认；深色叠加 = .theme-dark.nm-theme-* 组合选择器（CSS 里），无需任何重放。
+}
+// 全屏档（2026-09-22 用户定）：宿主 toggleFullscreen 下发，init 与 fsMode 消息两处都调这里。
+//   'window'  = 窗口全屏：macOS 的红绿灯仍叠在 Obsidian 窗口左上角，会压住路径条 #crumb
+//               （它是 fixed top:0，贴的是本画布文档的最上沿）→ 加 body.fs-window，
+//               CSS 把「字上面的空白」撑大，整条往下让一点。
+//   'desktop' = 桌面全屏（原生全屏）：系统自己收起红绿灯，路径条**保持原样**（用户明确要求，所以只留类不用）。
+//   ''        = 退出全屏：两个类都摘掉。
+function applyFsMode(mode) {
+  try {
+    document.body.classList.toggle('fs-window', mode === 'window');
+    document.body.classList.toggle('fs-desktop', mode === 'desktop');
+    // 全屏按钮的悬浮提示随档位切换（2026-09-22 用户定稿，三档各一句）：
+    //   非全屏   → 「窗口全屏（按住 ⌘ 点击：桌面全屏）」   点击=窗口全屏 / ⌘+点击=桌面全屏
+    //   窗口全屏 → 「退出全屏模式（按住 ⌘ 点击：桌面全屏）」 点击=退出     / ⌘+点击=升级为桌面全屏
+    //   桌面全屏 → 「退出全屏模式」                        点击与 ⌘+点击 都是退出（所以不再提修饰键）
+    const bf = document.getElementById('btn-full');
+    if (bf) {
+      bf.dataset.tip = mode === 'desktop' ? T('tb.fullscreenExit')
+        : mode === 'window' ? T('tb.fullscreenInWindow')
+          : T('tb.fullscreen');
+    }
+  } catch (_) {}
 }
 function edgeD(x1, y1, x2, y2) {
   const dx = Math.max(20, (x2 - x1) / 2);
@@ -2021,7 +2077,7 @@ function buildCard(node, depth, done) {
     if (!node.title && selfDone) {
       const ico = document.createElement('span');
       ico.className = 'minor-ico'; ico.contentEditable = 'false';
-      ico.innerHTML = renderIcon(minorIconName(node), 12); ico.title = T('tip.minorIcon');
+      ico.innerHTML = renderMinorIcon(node, 12); ico.title = T('tip.minorIcon');
       nodes.push(ico);
     }
     prependInOrder(titleEl, nodes);
@@ -2946,12 +3002,17 @@ viewMap.addEventListener('click', (e) => {
 });
 
 // 框选命中：屏幕坐标矩形 r 与每个 .card 求交，命中即高亮（.selected）；move 与自动滚动时复用
+// 框选命中（2026-09-22 用户定：**扫过即选中，只加不减**）：
+//   旧写法每帧用「当前框」重算每个节点、出框的当场取消 —— 拖到边缘自动滚动时，先框住的节点会被滚出框，
+//   于是「往下滚，上面已选的丢了」（用户实报）。改成只把命中的加上，出框不清；
+//   本轮开始时的残留由 mousedown 里的首次越阈值处统一清一次（见下方 boxShown 分支）。
 function applyMarqueeSelection(r) {
   document.querySelectorAll('.card').forEach(card => {
     const rc = card.getBoundingClientRect();
     const hit = !(rc.right < r.left || rc.left > r.right || rc.bottom < r.top || rc.top > r.bottom);
+    if (!hit) return; // 出框不清：滚动把已选节点带出框时，它仍应保持选中
     const row = card.closest('.node-row');
-    if (row) row.classList.toggle('selected', hit);
+    if (row) row.classList.add('selected');
   });
 }
 // ============ 框选 / 画布平移（空白处拖动：默认平移画布，Cmd/Ctrl+拖动=框选） ============
@@ -2993,21 +3054,48 @@ viewMap.addEventListener('mousedown', (e) => {
   let box = document.getElementById('marquee');
   if (!box) { box = document.createElement('div'); box.id = 'marquee'; document.body.appendChild(box); }
   box.style.display = 'none';
+  // 框选矩形 = 起点 + 终点，**两者的参照系不同**（2026-09-22 用户定，前两版都搞反了）：
+  //   终点（活动边）= 鼠标的**屏幕**位置 —— 贴屏幕，鼠标停在哪就在哪，不动就是不动；
+  //   起点（固定边）= 点击处，但**贴内容** —— 画面滚了它就跟着内容一起移动
+  //                   （往上拖时它会一路跑到屏幕外**下方**，框越拉越长，这才是对的）。
+  // 于是「鼠标停住、画面继续滚」时：框的上边仍钉在鼠标处，下边被起点拖着越拉越长。
+  //
+  // ⚠️ 起点位移必须**从 pan 算**，不能累加 autoScrollDY（2026-09-22 第二版踩的坑）：
+  //   滚动实现在 tickAutoScroll 里是 `panY -= autoScrollDY / zoom`，与 autoScrollDY **反号**；
+  //   上一版写 `startY + 累加的 autoScrollDY` → 起点跟鼠标同向跑，拖一会儿起点就追上终点、两点合一。
+  //   内容点 p 的屏幕位置 = zoom * (pan + p)（见 applyTreeTransform 的 scale 后 translate），
+  //   所以同一个内容点的屏幕位移 = Δpan × zoom，直接读 pan 差值即可，符号天然正确。
+  let lastX = startX, lastY = startY;
+  const panX0 = panX, panY0 = panY; // 按下那一刻的画面原始平移量（起点贴内容的基准）
+  const paintBox = () => {
+    const dz = zoom || 1;
+    const sx = startX + (panX - panX0) * dz; // 起点：内容上那一点随画面平移同步位移
+    const sy = startY + (panY - panY0) * dz;
+    const r1 = {
+      left: Math.min(sx, lastX), top: Math.min(sy, lastY),
+      right: Math.max(sx, lastX), bottom: Math.max(sy, lastY),
+    };
+    box.style.left = r1.left + 'px'; box.style.top = r1.top + 'px';
+    box.style.width = (r1.right - r1.left) + 'px';
+    box.style.height = (r1.bottom - r1.top) + 'px';
+    applyMarqueeSelection(r1); // 实时选中：框一碰到节点立刻高亮（2026-08-21 定：框选时能看清选了哪些）
+    marqueeRect = r1;
+  };
+  // 滚动帧里只需重画：pan 已在 tickAutoScroll 里更新过，paintBox 现读现算，位移自然跟上
+  marqueeUpdater = () => { paintBox(); };
   const move = ev => {
     const dx = Math.abs(ev.clientX - startX), dy = Math.abs(ev.clientY - startY);
-    if (!boxShown && (dx > 5 || dy > 5)) { boxShown = true; box.style.display = 'block'; }
+    if (!boxShown && (dx > 5 || dy > 5)) {
+      boxShown = true; box.style.display = 'block';
+      // 真开始框选（越过 5px 阈值）才清「上一次」的选中残留；此后本轮只加不减（2026-09-22 用户定），
+      // 所以这一清必须放在这里 —— 放在 mousedown 会把「点一下空白=取消选中」的手感改掉。
+      state.multiSelected.clear();
+      state.selectedId = null;
+      refreshSelectionClasses();
+    }
     if (!boxShown) return;
-    const x = Math.min(startX, ev.clientX), y = Math.min(startY, ev.clientY);
-    const r1 = {
-      left: x, top: y,
-      right: Math.max(startX, ev.clientX), bottom: Math.max(startY, ev.clientY)
-    };
-    box.style.left = x + 'px'; box.style.top = y + 'px';
-    box.style.width = r1.right - x + 'px';
-    box.style.height = r1.bottom - y + 'px';
-    // 实时选中：框一碰到节点，立刻高亮（2026-08-21 定：框选时能看清选了哪些）
-    applyMarqueeSelection(r1);
-    marqueeRect = r1;
+    lastX = ev.clientX; lastY = ev.clientY;
+    paintBox();
     // 框选拖到视图边缘 → 自动滚动（复用节点拖拽的 autoScrollOnDrag；2026-08-26）
     autoScrollOnDrag(ev);
   };
@@ -3017,11 +3105,11 @@ viewMap.addEventListener('mousedown', (e) => {
     document.removeEventListener('mouseup', up);
     window.removeEventListener('blur', cancel);
   };
-  const cancel = () => { removeListeners(); box.style.display = 'none'; state.marquee = false; marqueeRect = null; stopAutoScroll(); };
+  const cancel = () => { removeListeners(); box.style.display = 'none'; state.marquee = false; marqueeRect = null; marqueeUpdater = null; stopAutoScroll(); };
   const up = ev => {
     removeListeners();
     box.style.display = 'none';
-    marqueeRect = null; stopAutoScroll();
+    marqueeRect = null; marqueeUpdater = null; stopAutoScroll();
     window.getSelection().removeAllRanges();
     disarmProxy(); // 2026-08-28：框选是多选操作，armed 不适用（框中单节点也视为多选集合）
     if (Math.abs(ev.clientX - startX) < 5 && Math.abs(ev.clientY - startY) < 5) {
@@ -3825,9 +3913,16 @@ function ensureNodeMenu() {
     // 否则（例如从格式面板移到「备注」）面板还开着、按钮自己的黑色提示框又冒出来，两者叠在一起（用户 2026-09-17）。
     // ⚠️ 注册顺序必须在下面那两个"悬浮即开面板"**之前**，否则会把自己刚开的那个又关掉。
     b.addEventListener('mouseenter', () => { hideStyleMenu(); hideMoreMenu(); hideMoreSub(); });
-    // Now / 待办按钮用自定义图标（随选中节点状态换色），不走 ICONS 字典
+    // 待办按钮：⌘ 形态只在鼠标悬停它时显示 → 进出它各重刷一次自己（2026-09-22 用户定）
+    if (it.act === 'todo') {
+      b.addEventListener('mouseenter', () => refreshTodoBtn());
+      b.addEventListener('mouseleave', () => refreshTodoBtn());
+    }
+    // Now / 待办按钮用自定义图标（随选中节点状态换色），不走 ICONS 字典；
+    // Minor 按钮 = 两条圆头竖线（2026-09-22 用户定稿，参数在 MINOR_BARS.btn）
     b.innerHTML = it.act === 'now' ? renderNowIcon('bottom')
-      : it.act === 'todo' ? renderTodoIcon(18) : renderIcon(it.icon, 18);
+      : it.act === 'todo' ? renderTodoIcon(18)
+      : it.act === 'minor' ? minorBarsSvg(18, 'btn') : renderIcon(it.icon, 18);
     b.onclick = e => {
       e.stopPropagation();
       // 「添加」/「样式」：点一下也开面板（悬浮已能开，这里是键盘/触屏兜底），不执行节点级动作
@@ -3922,18 +4017,32 @@ window.addEventListener('blur', () => setCmdHeld(false));
 //   待办节点：空框（主题色）／⌘ 按住 = 框主题色 + 勾基础色（用户给的 Frame (1) 那一版）
 //   完成节点：空框（主题色）／⌘ 按住 = 框 + 勾都主题色
 // node 传 null = 中性态（多选）：基础色空框，提示照常
+// ⚠️ 2026-09-22 用户定：**⌘ 形态只在鼠标悬停在这个按钮上时才显示** —— 以前画布上任何地方按 ⌘ 它就变，
+//    容易分神、也会让人误以为「按 ⌘ 就能改状态」（其实还得点这个按钮）。悬停 + ⌘ 才是真实意图。
 function renderTodoBtn(b, cmd, node) {
   if (!b) return;
   const td = (node && node.todo) || '';
-  const k = nmKeySuffix('todo', '{Mod} + L');
-  b.classList.toggle('td-plain', td === '' && !cmd);
-  b.classList.toggle('td-plain-cmd', td === '' && !!cmd);
-  b.classList.toggle('td-todo', td === 'todo' && !cmd);
-  b.classList.toggle('td-todo-cmd', td === 'todo' && !!cmd);
-  b.classList.toggle('td-done', td === 'done' && !cmd);
-  b.classList.toggle('td-done-cmd', td === 'done' && !!cmd);
-  b.innerHTML = renderTodoIcon(18, !!cmd); // 空框 / 框+勾 由 ⌘ 是否按住决定
+  const k = nmKeySuffix('todo');
+  let cmdOn = !!cmd;
+  if (cmdOn) { try { cmdOn = !!b.matches(':hover'); } catch (_) { cmdOn = false; } }
+  b.classList.toggle('td-plain', td === '' && !cmdOn);
+  b.classList.toggle('td-plain-cmd', td === '' && cmdOn);
+  b.classList.toggle('td-todo', td === 'todo' && !cmdOn);
+  b.classList.toggle('td-todo-cmd', td === 'todo' && cmdOn);
+  b.classList.toggle('td-done', td === 'done' && !cmdOn);
+  b.classList.toggle('td-done-cmd', td === 'done' && cmdOn);
+  b.innerHTML = renderTodoIcon(18, cmdOn); // 空框 / 框+勾 由「⌘ 按住 + 鼠标在本按钮上」共同决定
   b.dataset.tip = td === '' ? T('nm.todoPlainTip', k) : T('nm.todoOffTip', k);
+}
+// 只重刷待办按钮自己（2026-09-22）：⌘ 形态与鼠标所在位置有关，所以鼠标进出它时要重画一次 ——
+// 覆盖「先按住 ⌘ 再移上来」和「先移上来再按 ⌘」两种顺序，两种都立刻出正确形态。
+function refreshTodoBtn() {
+  if (!nodeMenu || nodeMenu.classList.contains('hidden')) return;
+  const b = Array.prototype.find.call(nodeMenu.children, x => x.dataset.act === 'todo');
+  if (!b) return;
+  const multi = state.multiSelected.size > 0;
+  const r = (!multi && state.selectedId) ? findNode(state.tree, state.selectedId) : null;
+  renderTodoBtn(b, nmCmdHeld, r ? r.node : null);
 }
 function hideNodeMenu() {
   if (nodeMenu) nodeMenu.classList.add('hidden');
@@ -5100,7 +5209,7 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
     if (node.id !== currentRoot().id) {
       // 键位段（{0}）走 nmKeySuffix：它自己带平台括号（zh 全角 / en 半角），**没绑键时整体消失** ——
     // 所以文案里别写死「（）」，否则解绑后会留一対空括号。
-    ctxMenu.appendChild(ctxItem(T('ctx.drill'), () => drillInto(node.id), 'log-in', T('ctx.drillTip', nmKeySuffix('drill', '{Mod} + ='))));
+    ctxMenu.appendChild(ctxItem(T('ctx.drill'), () => drillInto(node.id), 'log-in', T('ctx.drillTip', nmKeySuffix('drill'))));
       ctxMenu.appendChild(ctxSep());
     }
     // 基础操作（2026-09-21 用户定）：剪切 / 复制 / 粘贴 / 删除收进二级菜单，父项右侧挂箭头
@@ -5111,11 +5220,11 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
       { label: T('ctx.delete'), fn: () => deleteNode(), icon: 'trash-2', kbd: nmKeyPlain('delete', 'Delete') },
     ], 'clipboard'));
     ctxMenu.appendChild(ctxSep());
-    ctxMenu.appendChild(ctxItem(T('ctx.copyLink'), () => copyNodeLinkOf(node), 'link', T('ctx.copyLinkTip', nmKeySuffix('copyNodeLink', '{Mod} + {Alt} + C'))));
-    const aiLocateItem = ctxItem(T('ctx.copyAILocate'), () => copyAILocateOf(node), 'astroid', T('ctx.copyAILocateTip', nmKeySuffix('copyAILocate', '{Mod} + {Alt} + A')));
+    ctxMenu.appendChild(ctxItem(T('ctx.copyLink'), () => copyNodeLinkOf(node), 'link', T('ctx.copyLinkTip', nmKeySuffix('copyNodeLink'))));
+    const aiLocateItem = ctxItem(T('ctx.copyAILocate'), () => copyAILocateOf(node), 'astroid', T('ctx.copyAILocateTip', nmKeySuffix('copyAILocate')));
     applyProGate(aiLocateItem); // 统一 Pro 拦截（2026-09-04）：未激活 → 悬浮变 ticket + 点击进激活弹窗
     ctxMenu.appendChild(aiLocateItem);
-    const bookmarkItem = ctxItem(T('ctx.bookmark'), () => bookmarkOf(node), 'split', T('ctx.bookmarkTip', nmKeySuffix('saveShortcut', '{Mod} + /')));
+    const bookmarkItem = ctxItem(T('ctx.bookmark'), () => bookmarkOf(node), 'split', T('ctx.bookmarkTip', nmKeySuffix('saveShortcut')));
     applyProGate(bookmarkItem); // 保存为捷径：未激活同样走 Pro 拦截（2026-09-04）
     ctxMenu.appendChild(bookmarkItem);
     // 编辑链接：仅文件/URL 链接（[[file://...]] / [[https://...]]）显示；节点链接 [[标题|ID]] 指向本图节点、由节点系统管理，不在此编辑
@@ -5251,10 +5360,19 @@ function switchView() {
 // 宿主读官方注册表后随 init / setCanvasHotkeys 推来；本文件**不再写死命令类键位**
 // （加粗/标红/标黄/Now/Minor/撤销/重做 已迁移；导航/编辑类键 Tab/Enter/方向/Cmd+C/E/P 等暂未迁移，二期）。
 // 用户在原生页改键后：重新聚焦画布 → focus 时拉一次新表（无官方改键事件，用拉取代替）→ 触发与提示同时跟新。
+// 符号键的 e.code → 「未变形字形」。⚠️ Shift 会改变 e.key：Windows 上 Shift+. = '>'、Shift+, = '<'，
+// 而 macOS 按住 ⌘ 时系统报告**未变形**键名（⌘+Shift+. = '.'）—— 同一个绑定（如 Mod+Shift+.）两边就对不上
+// （实踩 2026-09-22：视图切换 ⌘+Shift+. Mac 能用、Windows 失效）。表里只放「会被 Shift 变形」的符号；
+// Tab / Enter / 方向键的 e.key 各平台稳定，不走表。
+const NM_CODE_KEY = {
+  Period: '.', Comma: ',', Slash: '/', Backslash: '\\', IntlBackslash: '\\',
+  BracketLeft: '[', BracketRight: ']', Minus: '-', Equal: '=', Semicolon: ';', Quote: "'", Backquote: '`',
+};
 function nmEventKey(e) { // 事件键名：优先物理键位 e.code。⚠️ macOS 按住 Option 时 e.key 会变成特殊字符
   const c = String(e.code || ''); //（Option+B = ∆、Option+2 = ™），用 e.key 永远匹配不上带 Alt 的绑定（实踩）。
   if (c.indexOf('Key') === 0) return c.slice(3).toLowerCase(); // KeyB → b
   if (c.indexOf('Digit') === 0) return c.slice(5);             // Digit2 → 2
+  if (NM_CODE_KEY[c]) return NM_CODE_KEY[c];                   // 符号键：挡住 Shift 变形（Windows Ctrl+Shift+. 是 '>' 不是 '.'）
   return e.key ? String(e.key).toLowerCase() : '';             // 其余（Enter/Tab/方向…）退回 key
 }
 function nmEventHotkey(e) { // 键盘事件 → 归一化串（与宿主 normHotkey 同一套规则：mod/alt/shift + 小写键名）
@@ -5297,7 +5415,9 @@ function nmKeySuffix(act, fallback) { // 提示里的键位段：'（⌘B）'（
 // 注意：**保留它和 nmKeySuffix 共用一份取值逻辑**（都走 nmKeyText），别各写一遍 —— 改键实时变这条不能只生效一半。
 function nmKeyPlain(act, fallback) { return nmKeyText(act, fallback); }
 function nmKeyText(act, fallback) {
-  // 该动作没绑键 → 空串（提示里就不显示键位）；给了 fallback（未注册但画布内写死的键，如剪切/复制）→ 用它兜底
+  // 该动作没绑键 → 空串：提示里**连括号一起不显示**（2026-09-18 定格式、2026-09-22 用户重申）。
+  // fallback **只留给画布内写死的键**（剪切/复制/撤销/重做这类不走 Obsidian 绑定、永远有效的）；
+  // 靠命令绑定的动作一律不给 fallback —— 否则用户把键清空后，提示里还会挂着一个按了没反应的键。
   return (state.canvasHotkeys && state.canvasHotkeys.disp && state.canvasHotkeys.disp[act]) || (fallback ? modStr(fallback) : '');
 }
 function runCanvasAction(id) { // 画布动作统一入口：键盘（键位表）/ 宿主命令（canvasAction）/ 菜单按钮 三入口共用
@@ -5484,28 +5604,31 @@ document.addEventListener('keydown', (e) => {
   if (hkAct) { e.preventDefault(); runCanvasAction(hkAct); return; } // 用户在原生页绑的键**永远最先派发**（改键 = 他的意思；写死键只做没绑时的兜底，2026-09-18 实踩：派发太靠后被写死分支截胡 → 命令"没反应"）
   if (hkHost) { e.preventDefault(); vscode.postMessage({ type: 'execCommand', id: hkHost }); return; } // 宿主命令的桥（如「切换源文件 / 导图视图」）
   // ↓ 以下全是**写死键兜底**（未注册成命令、不给自定义的动作）：用户绑定的键已在上面拦截
+  // ⚠️ 这些分支**只消费裸键**（2026-09-22 实踩修 Ctrl+Tab：Tab 分支原来没排除修饰键，Ctrl+Tab 被
+  // addChild() 截胡、转不到宿主 → 「转到下一个标签页」等系统快捷键失灵；Ctrl+Delete 甚至会误删节点）。
+  // 带修饰键的组合键一律落到这条链最后的转发分支（nmHostForwardable → 宿主键位表 / 合成 keydown）。
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
   else if ((e.metaKey || e.ctrlKey) && e.key === 'c') { e.preventDefault(); copySelectedNode(); } // 复制节点：写死键（未迁移，Mod+C 与系统复制撞车不给默认）
   else if ((e.metaKey || e.ctrlKey) && e.key === 'x') { e.preventDefault(); cutSelectedNode(); } // 剪切节点：写死键（未迁移）
   // ⌘E（下钻）/ ⌘P（定位循环）的写死键已删（2026-09-18 用户定：这两个命令已注册进官方快捷键页，
   // 写死内容不再保留 —— 要键位去官方页绑一次）。⌘Z/⌘C/⌘X、Tab/Enter 等未注册，写死保留。
-  else if (e.key === 'Tab') { e.preventDefault(); addChild(); }
-  else if (e.key === 'Enter') { e.preventDefault(); addSibling(); }
+  else if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); addChild(); }
+  else if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); addSibling(); }
   // 方向键 = 选中导航（2026-09-19 用户定：**回到画布内写死**）。原因：注册成命令后它成了全局快捷键，
   // 源文件视图里按方向键会被截走（实踩：光标动不了）→ 写死在这里，键出不了 iframe，也不再进键位表。
   // 顺序在用户绑的键之后：谁给别的表态动作绑了裸方向键，仍以用户为准。
-  else if (e.key === 'ArrowUp') { e.preventDefault(); canvasSelectPrevNode(); }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); canvasSelectNextSibling(); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); canvasSelectParent(); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); canvasSelectChild(); }
+  else if (e.key === 'ArrowUp' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); canvasSelectPrevNode(); }
+  else if (e.key === 'ArrowDown' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); canvasSelectNextSibling(); }
+  else if (e.key === 'ArrowLeft' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); canvasSelectParent(); }
+  else if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); canvasSelectChild(); }
   else if (e.key === 'Escape') { if (isPreviewOpen()) { e.preventDefault(); closeImagePreview(document.getElementById('img-preview')); } } // Esc 关闭预览
-  else if (e.key === 'Delete' || e.key === 'Backspace') {
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && !e.metaKey && !e.ctrlKey && !e.altKey) {
     e.preventDefault();
     // 2026-08-31 修：选中了图片时，删除 = 删这张图（与 Cmd+X 剪切图片同逻辑），不该删掉整个节点
     if (state.selectedImg) removeSelectedImage();
     else deleteNode();
   }
-  else if (e.key === ' ') { // 空格预览：打开↔关闭切换（对齐 macOS 桌面预览习惯，2026-08-26 改为可再按空格关闭）
+  else if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) { // 空格预览：打开↔关闭切换（对齐 macOS 桌面预览习惯，2026-08-26 改为可再按空格关闭）
     e.preventDefault();
     if (isPreviewOpen()) closeImagePreview(document.getElementById('img-preview'));
     else if (state.selectedImg) openImagePreview(state.selectedImg.path);
@@ -5516,7 +5639,9 @@ document.addEventListener('keydown', (e) => {
   // 只有**前面所有分支都没消费**才轮到它（用户绑的画布键 > 宿主命令桥 > 写死键 > 这里）。
   else if (nmHostForwardable(e)) {
     e.preventDefault();
-    vscode.postMessage({ type: 'hostHotkey', key: String(e.key || ''), code: String(e.code || ''), mod: !!(e.metaKey || e.ctrlKey), alt: !!e.altKey, shift: !!e.shiftKey });
+    // key 用 nmEventKey（归一后的键名）：Windows 上 Shift 会把 e.key 变形（Ctrl+Shift+, = '<'），
+    // 原样发出去宿主就对不上绑定（存的是 ','）—— 2026-09-22 修 Windows 符号键失灵的另一半。
+    vscode.postMessage({ type: 'hostHotkey', key: nmEventKey(e), code: String(e.code || ''), mod: !!(e.metaKey || e.ctrlKey), alt: !!e.altKey, shift: !!e.shiftKey });
   }
 });
 
@@ -5638,6 +5763,7 @@ window.addEventListener('message', e => {
     applyTheme(msg.value); // 类驱动后，深色叠加自动由 .theme-dark × .nm-theme-* 组合表达，无需重放
     return;
   }
+  if (msg.type === 'fsMode') { applyFsMode(msg.mode); return; } // 全屏档变化（2026-09-22）：路径条让位见 applyFsMode
   if (msg.type === 'setCenterMode') { // 设置页切换「画布中央」档 → 宿主推送到所有打开的视图（2026-09-16）
     applyCenterMode(msg.value);
     // 切档后立刻按新落点重新定位一次：让用户马上看到位置变化（否则画面不动，会误以为"没生效"）
@@ -5766,6 +5892,7 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'init') {
+    applyFsMode(msg.fsMode || ''); // 全屏档随 init 下发：全屏状态下新开的画布也要立刻给路径条让位（2026-09-22）
     // 2026-09-01 修捷径串状态（共用 iframe 场景）：切换视图前先落盘当前 view 到当前 savedViewKey，
     // 防 B init 改 savedViewKey + reset 模块级 view 后，A 的 view 丢失或被延迟 persist 存到 B 的 key。
     // 首次 init（booted=false）不存；rebind 重建的新 iframe booted=false 也不存（靠 rebindIfNeeded 的 __MM_FLUSH__）。
@@ -6820,7 +6947,8 @@ function openNote(raw) {
 }
 // 文件链接 v2：[显示名](file:///绝对路径)（点击经宿主打开文件）
 function parseFileLink(raw) {
-  const m = String(raw || '').match(/^\[([^\]]*)\]\(file:\/\/([^)]+)\)$/);
+  // 路径段允许一层配对括号（文件名常带括号，如 "Frame (1).svg"；写成 [^)]+ 会在第一个 ) 截断 → 整条认不出）
+  const m = String(raw || '').match(/^\[([^\]]*)\]\(file:\/\/((?:[^()]|\([^()]*\))+)\)$/);
   if (!m) return null;
   let p = m[2].trim();
   if (p.startsWith('localhost/')) p = p.slice('localhost/'.length); // file://localhost/ 等同本地
@@ -6907,7 +7035,7 @@ function computeNowVisible(root) {
 // 规矩（防误伤，"/您" 教训）：只认**闭合完整**的语法；远程 http(s) 图与 ![[笔记]] 嵌入（非媒体文件）P1 不做，原样保留。
 function nmExtractInlineImages(text) {
   const images = [];
-  const out = String(text || '').replace(/!\[\[([^\[\]]+)\]\]|!\[[^\]]*\]\(([^)]+)\)/g, (m, wiki, md) => {
+  const out = String(text || '').replace(/!\[\[([^\[\]]+)\]\]|!\[[^\]]*\]\(((?:[^()]|\([^()]*\))+)\)/g, (m, wiki, md) => {
     const p = (wiki ? wiki : md).trim();
     if (/^https?:/i.test(p)) return m;              // 远程图：P1 不做，原样保留
     // ⚠️ 判"是不是图"用图片扩展名正则，不能用 isMediaFile() —— 它只含音视频、不含 png/jpg（用户实踩：
@@ -6931,7 +7059,7 @@ function cardTitleInner(node) {
   return (node.title && todoPctShown(node) ? todoPctHtml(node) : '')
     + (nodeTodoAny(node) && node.title ? todoIcoHtml(node) : '')
     + (selfNow && node.title ? '<span class="now-ico" contenteditable="false">' + renderNowPrefix() + '</span>' : '')
-    + (selfDone && node.title ? '<span class="minor-ico" contenteditable="false">' + renderIcon(minorIconName(node), 12) + '</span>' : '')
+    + (selfDone && node.title ? '<span class="minor-ico" contenteditable="false">' + renderMinorIcon(node, 12) + '</span>' : '')
     + renderInline(nmExtractInlineImages(node.title || '').text); // 图片语法已抽到图片行（nmExtractInlineImages），标题只留文字
 }
 // URL 链接 v2：[显示名](https://…)（标准 Markdown）或裸 https://x / www.x / ftp:// / mailto:；点击浏览器打开
@@ -6983,7 +7111,9 @@ function openUrl(url) {
 function detectFilePath(text) {
   let t = String(text || '').trim();
   if (!t || t.includes('\n')) return null; // 多行 → 不是单个文件路径
-  const md = t.match(/^\[[^\]]*\]\((file:\/\/[^)]+)\)$/);
+  // ⚠️ 路径段不能写 [^)]+：文件名里带括号是常态（"Frame (1).svg"），会在第一个 ) 处被截断、整条认不出。
+  // 改成允许**一层配对括号**（2026-09-22 用户实踩：粘贴 [Frame (1).svg](file:///…/Frame (1).svg) 没被识别）。
+  const md = t.match(/^\[[^\]]*\]\((file:\/\/(?:[^()]|\([^()]*\))+)\)$/);
   if (md) t = md[1].trim();
   else { const wrap = t.match(/^\[\[(.*)\]\]$/); if (wrap) t = wrap[1].trim(); }
   let p = t.replace(/^file:\/\//, ''); // 去 scheme
@@ -7041,7 +7171,9 @@ function renderInline(text) {
   // 混排切出的链接 token 必须含右括号结尾（parseUrlLink/parseFileLink 都要求 \)$）：
   // 旧正则 URL/file 共用 [^)\s]+ 且不带 \) → token 永远缺右括号 → parse 恒 null → [名](url) 内嵌一直是纯文字（隐藏老 bug）；
   // file 另用 [^)]+（本地路径可含空格，如 "Digital Life"，2026-09-02 实踩：含空格路径内嵌失效）
-  const re = /\[\[[^\[\]]+\]\]|\[[^\[\]]*\]\(file:\/\/[^)]+\)|\[[^\[\]]*\]\((?:https?|ftp):\/\/[^)\s]+\)|\[[^\[\]]*\]\(www\.[^)\s]+\)|mailto:[^)\s]+\)|(?:https?:\/\/|ftp:\/\/|mailto:|www\.)[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
+  // file 另用「一层配对括号」而不是 [^)]+（本地路径可含空格、也常含括号 —— 如 "Frame (1).svg"，
+  // 2026-09-22 实踩：含括号的路径内嵌与纯文件链接都认不出）
+  const re = /\[\[[^\[\]]+\]\]|\[[^\[\]]*\]\(file:\/\/(?:[^()]|\([^()]*\))+\)|\[[^\[\]]*\]\((?:https?|ftp):\/\/[^)\s]+\)|\[[^\[\]]*\]\(www\.[^)\s]+\)|mailto:[^)\s]+\)|(?:https?:\/\/|ftp:\/\/|mailto:|www\.)[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
   let last = 0, m, html = '';
   while ((m = re.exec(text)) !== null) {
     html += escMd(text.slice(last, m.index));
@@ -7139,7 +7271,7 @@ function refreshHideBtn() {
   b.classList.toggle('disabled', !has);   // 置灰：用 .disabled 类、不用 disabled 属性（这样 hover 仍出 tooltip）
   b.classList.toggle('active-hide', on);  // 主题色由 .tb.active-hide 提供
   b.dataset.tip = !has ? T('tb.noMinor')
-    : (on ? T('tb.showMinor') : T('tb.hideMinor')) + nmKeySuffix('hideMinor', '{Mod} + {Alt} + M');
+    : (on ? T('tb.showMinor') : T('tb.hideMinor')) + nmKeySuffix('hideMinor');
 }
 function setHideDone(on, persist, skipRender) {
   // 沙盒化（2026-09-14 用户定）：历史界面里这个开关【可以点】，但只在本界面生效、不落盘；
@@ -7244,7 +7376,7 @@ function updateNowSideBtn() {
   } else {
     const on = state.showNow;
     b.innerHTML = renderNowIcon(on ? 'sideOn' : 'side');
-    wrap.dataset.tip = (on ? T('tb.nowShowAll') : T('tb.nowOnly')) + nmKeySuffix('showNow', '{Mod} + {Alt} + N');
+    wrap.dataset.tip = (on ? T('tb.nowShowAll') : T('tb.nowOnly')) + nmKeySuffix('showNow');
   }
 }
 // 默认路径按钮状态：当前页面路径 vs 保存的默认路径（两态：置灰 / 蓝色点击返回）
@@ -7300,7 +7432,7 @@ const MORE_PATH_HINT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill
   '<path d="M14.3386 6.00005L9.98501 17.9509" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--accent)"/>' +
   '</svg>';
 // 初始化左侧一级菜单按钮图标 + tooltip（undo/redo 已移入更多菜单，2026-08-25；路径按钮 2026-09-15 定稿：删除，入口只在「更多」菜单）
-['locate', 'hide', 'more'].forEach(k => {
+['locate', 'hide', 'more', 'full'].forEach(k => {
   const id = k === 'hide' ? 'btn-hide-done' : 'btn-' + k;
   const b = document.getElementById(id);
   if (!b) return;
@@ -7308,9 +7440,10 @@ const MORE_PATH_HINT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill
   const tipMap = {
     undo: T('tb.undo'),
     redo: T('tb.redo'),
-    locate: T('tb.locate') + nmKeySuffix('locate', '{Mod} + P'),
+    locate: T('tb.locate') + nmKeySuffix('locate'),
     hide: T('tb.minorToggle') + nmKeySuffix('hideMinor'),
     more: T('common.more'),
+    full: T('tb.fullscreen'),
   };
   b.dataset.tip = tipMap[k];
   b.dataset.side = 'right'; // 左侧 toolbar 按钮 → tooltip 向右浮动（避开画布）
@@ -8102,6 +8235,12 @@ applyProGate(document.getElementById('btn-hide-done')); // Pro 拦截（2026-09-
 updatePathMenuBtns(); // 菜单项初始置灰态（「更多」平铺 4 项，函数内有 if 守卫，无按钮时不报错）
 // 更多：纯 hover 浮出（CSS #more-wrap:hover #more-menu），点击不再 toggle（避免 toggleMoreMenu 的 fixed 内联定位覆盖 hover 样式）
 document.getElementById('btn-more').onclick = (e) => { e.stopPropagation(); };
+// 全屏按钮（2026-09-22 用户定）：点击=窗口全屏，Cmd/Ctrl+点击=桌面全屏；循环切换由宿主统一管（toggleFullscreen）
+const btnFull = document.getElementById('btn-full');
+if (btnFull) btnFull.onclick = (e) => {
+  e.stopPropagation();
+  vscodeApi.postMessage({ type: 'fullscreen', mode: (e.metaKey || e.ctrlKey) ? 'desktop' : 'window' });
+};
 // 工具栏 hover 子菜单（more 更多菜单）：JS 控制显隐，mouseleave 延迟 220ms 关闭
 // —— 避免纯 CSS :hover 在「按钮 ↔ 菜单」间隙的死区导致鼠标一移出按钮菜单就消失、点不到。
 // （2026-09-15 定稿：原 fixed/portal 定位分支与 keepAlive 随路径子菜单移入「更多」平铺而删除）

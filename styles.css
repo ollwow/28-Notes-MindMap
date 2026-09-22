@@ -562,3 +562,32 @@ body.theme-dark {
    ③ 控件顺序（↺ 恢复默认 在前、色块在后）是在 main.js 里调挂载顺序实现的，不在 CSS。 */
 .shin-palette-modal .setting-item { align-items: center; }
 .shin-palette-modal .modal-title { margin-bottom: var(--size-4-3, 12px); }
+
+/* ============================================================
+   窗口全屏（2026-09-22 用户定）
+   进入时 main.js 给 body 加 .shin-mm-fullscreen（退出摘掉）；
+   侧边栏由 workspace API 折叠，这里只管官方 API 管不到的界面元素：
+   顶部标签栏（含标签头整行）、左侧功能区图标条、状态栏。
+   值不带变量 —— 全屏就是要盖住一切，. !important 压主题与其它插件的显示规则。
+   ============================================================ */
+body.shin-mm-fullscreen .workspace-tabs.mod-top .workspace-tab-header-container,
+body.shin-mm-fullscreen .workspace-tabs.mod-top .workspace-tab-header-container-inner,
+body.shin-mm-fullscreen .workspace-ribbon,
+body.shin-mm-fullscreen .status-bar { display: none !important; }
+/* 全屏时把"标题栏"收掉 —— 两条都写，因为俩长得都像标题栏：
+   ① `.titlebar` = Obsidian 设置 → 外观 →「显示标签页标题栏」（**没开这个设置时页面上根本没有这个元素**，规则写了也无害）。
+   ② `.view-header` = **每个视图自己的头**：那行「文件名 + 右侧操作按钮」—— 这才是用户 2026-09-22 指的"标题栏"。
+      怎么确认的：社区 Zen 类插件的同类功能隐藏的就是这一行（`View.headerEl` = `.view-header`）；
+      实现是我们自己的 CSS，不依赖任何外部插件。
+   ② 用 `.shin-mm-fs-leaf` 限定在**画布视图**上：宿主进入全屏时给画布视图的 containerEl 加这个类、退出时摘掉
+      （见 main.js 的 toggleFullscreen.setLeafCls），所以全屏期间切到别的视图、或别的 pane 的头部都不受影响。
+   ⚠️ 别和「路径条」搞混：那行 `📥 Inbox › 插件优化 › Backup` 是**画布自己**的 #crumb（在 iframe 里），
+   全屏时是要**保留**的（只做让位），不在这里隐藏。 */
+body.shin-mm-fullscreen .titlebar { display: none !important; }
+.shin-mm-fs-leaf .view-header { display: none !important; }
+
+/* ⚠️ `.view-header` 只允许「整体隐藏」这一种用法（就是上面那条），**别拿它做让位 / 加 padding**：
+   2026-09-22 实测查明，全屏时要让位的那行「📥 Inbox › 插件优化 › Backup」其实是**画布自己写的** #crumb
+   （fixed top:0，在 mindmap-app.js 的 iframe 里），让位规则在 mindmap-app.css 的 `body.fs-window #crumb`。
+   先前在这里给 .titlebar / .view-header 写过两版让位，全是错方向 —— 尤其 `.view-header` 那版
+   会给**所有普通笔记**的视图头也加 padding（误伤），当时已删净。 */
