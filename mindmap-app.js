@@ -1156,7 +1156,7 @@ function countDescendants(node, ancestorDone) {
   if (state.hideDone && ancestorDone) return 0;
   let n = 0;
   for (const c of node.children || []) {
-    const selfDone = nodeIsMinor(c); // 2026-08-27 修：统一走 nodeIsMinor（链接节点的 minor 字段标题为空，正则判断会漏）
+    const selfDone = nodeIsMinor(c) || nodeTodoDone(c); // 2026-09-20 起 Done 待办与 Minor 同待遇（同样被隐藏收走），徽章数字要跟画面一致；2026-08-27 修：统一走 nodeIsMinor（链接节点的 minor 字段标题为空，正则判断会漏）
     const done = ancestorDone || selfDone;
     if (state.hideDone && done) continue;
     n += 1 + countDescendants(c, done);
@@ -1698,6 +1698,7 @@ function render() {
   if (state.selectedId || state.multiSelected.size) showNodeMenu();
   else hideNodeMenu();
   updateNowSideBtn(); // 刷新侧边 Now 按钮的置灰/图标态
+  refreshHideBtn(); // 刷新「隐藏 Minor/Done」按钮三态 —— 标记/取消 Minor、待办完成、撤销等任何走 render 的树变化都要即时反映，不能等下次点画布走 updateToolbar 才刷（2026-09-22 用户报）
   updateFoldBar(); // 2026-08-30：右下角常驻折叠层级条跟随树结构/层级数刷新（折叠操作后层数变化）
   // 历史只读态：render 会重建整棵 DOM，差异标红必须在这里补回来。否则任何一次"只调 render"的
   // 重渲染（折叠条按层折叠、缩放等）都会把红框冲没 —— 原先只有 renderHistoryTree 贴红，漏在这。
@@ -2033,6 +2034,15 @@ function buildRow(node, depth, doneChain, tdChain) {
   }
   return row;
 }
+// 子节点 c 在当前筛选（隐藏 Minor/Done、只看 Now）下是否可见 —— 与 buildRow 顶部的剔除条件同源，
+// 供折叠按钮存废判据复用（只在 depth ≥ 1 的子节点上用，故不判 depth）。parentDone = 父链累计的 done。
+function childVisible(c, parentDone) {
+  if (!c) return false;
+  const doneC = parentDone || nodeIsMinor(c) || nodeTodoDone(c);
+  if (state.hideDone && doneC) return false;
+  if (nowVisibleSet && !nowVisibleSet.has(c.id) && !state.justCreated.has(c.id)) return false;
+  return true;
+}
 function buildCard(node, depth, done) {
   const card = document.createElement('div');
   // 层级类（视觉：根 lv0 蓝底 / 一级 lv1 浅蓝底 / 普通 ln 无背景）+ 颜色 + 完成置灰
@@ -2113,7 +2123,9 @@ function buildCard(node, depth, done) {
     card.appendChild(title);
   }
 
-  if (node.children.length) {
+  // 折叠按钮存废看「筛选后还有没有可见子节点」而非 children.length：隐藏 Minor/Done（或只看 Now）
+  // 把子节点全收走后，折叠按钮点了不会有任何画面变化 → 整个不渲染，这张卡当普通叶子（2026-09-22 用户报）
+  if (node.children.some(c => childVisible(c, done))) {
     const folded = node.fold;
     const foldTag = document.createElement('div');
     foldTag.className = 'fold-tag' + (folded ? ' always' : '');
@@ -5169,6 +5181,7 @@ function copyNodeLinkOf(node) {
   // 文件移动/改名自动跟随（不是硬链接）；粘贴回本文件时「文件名==当前文件」自动识别为同文件跳转（resolveNodeLink）
   ensurePersistId(node);
   vscode.postMessage({ type: 'copyLink', text: '[[' + (state.currentFilename || T('common.untitled')) + '#' + node.persistId + ']]' });
+  toast(T('toast.nodeLinkCopied')); // 右键菜单与命令共用本函数，弹一次两边都覆盖（2026-09-22 用户定）
 }
 function copyAILocateOf(node) {
   // 文案 = i18n 的 'aiLocate.node'（跟着界面语言走）；同时懒注入 ai:/aiLocate: 进文件 frontmatter

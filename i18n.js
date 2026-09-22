@@ -67,7 +67,7 @@ var I18N = {
     'notice.dataLostTitle': '警告！你刚刚删除了 28 Notes Mind Map 隐藏文件！',
     // {0} = 被删的文件夹名；{1} = 本机绝对路径。系统垃圾桶里如果已经有同名文件夹，Obsidian 会给新来的加一串
     // 「时-分-秒-毫秒」后缀（如「AI 23-46-58-575」）—— 文案里把这层说破，用户才不会以为没删成功。
-    'notice.dataLostBody': '28 Notes Mind Map 将历史记录等源文件隐藏，以防止误删。但在极少数情况下（如使用Flexplorer、Notebook Navigator等插件），仍有可能误删此类文件。\n\n我们已监测到刚刚存在误删行为。请到系统垃圾桶中找到「{0}」的文件夹（名字后面可能被系统加了一串数字，比如「{0} 23-46-58-575」，同样是它），并放至此目录：\n{1}',
+    'notice.dataLostBody': '28 Notes Mind Map 将历史记录等源文件隐藏，以防止误删。但在极少数情况下（如使用Flexplorer、Notebook Navigator等插件），仍有可能误删此类文件。\n\n我们已监测到刚刚存在误删行为。请到系统垃圾桶中找到「{0}」的文件夹（名字后面可能被系统加了一串数字，比如「{0} 23-46-58-575」，如是此类情况，请删除数字后放回），并放至此目录：\n{1}',
     'btn.dismiss': '好的',
     'notice.dataGuardBlocked': '已拦截 28 Notes Mind Map 隐藏文件误删行为（{0} 项）',
     'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
@@ -395,6 +395,7 @@ var I18N = {
     'toast.versionDeleted': '已删除该版本', // 删除单条历史版本成功后
     'toast.versionRenamed': '已重命名该版本', // 重命名单条历史版本成功后
     'toast.aiLocateCopied': '已复制，请在 Agent 里粘贴', // 复制 AI 定位路径 成功后
+    'toast.nodeLinkCopied': '已复制，请粘贴至需关联的节点', // 复制节点链接 成功后
 
     // ============ 格式警告（打开文件时顶部的黄色警告条）============
     'warn.root': '第 {0} 行：无法识别（第一行应是中心主题 `- 中心主题`），已原样保留', // {0}=行号
@@ -637,7 +638,7 @@ var I18N = {
     'notice.trashSystem': 'The System Trash',
     'notice.trashNone': '⚠️ Your Settings Use Permanent Deletion — No Copy Was Kept',
     'notice.dataLostTitle': 'Warning! You Just Deleted the 28 Notes Mind Map Hidden Files!',
-    'notice.dataLostBody': '28 Notes Mind Map hides its source files (history records and more) to keep them from being deleted by accident. In rare cases — for example when using plugins such as Flexplorer or Notebook Navigator — they can still be caught in a bulk delete.\n\nWe detected that this just happened. Please open the system trash and find the folder "{0}" (the system may have appended a string of digits to its name, like "{0} 23-46-58-575" — that is still it), then put it back here:\n{1}',
+    'notice.dataLostBody': '28 Notes Mind Map hides its source files (history records and more) to keep them from being deleted by accident. In rare cases — for example when using plugins such as Flexplorer or Notebook Navigator — they can still be caught in a bulk delete.\n\nWe detected that this just happened. Please open the system trash and find the folder "{0}". The system may have appended a string of digits to its name — for example, "{0} 23-46-58-575"; if so, remove that trailing number first. Then move the folder back to:\n{1}',
     'btn.dismiss': 'OK',
     'notice.dataGuardBlocked': 'Blocked an Accidental Deletion of the 28 Notes Mind Map Hidden Files ({0} Items)',
     'notice.aiDocsRestored': 'Rebuilt AI Contract File: {0}',
@@ -876,6 +877,7 @@ var I18N = {
     'toast.versionDeleted': 'Version Deleted',
     'toast.versionRenamed': 'Version Renamed',
     'toast.aiLocateCopied': 'Copied — Paste It into Your AI Agent',
+    'toast.nodeLinkCopied': 'Copied — Paste It on the Node to Link', // node link copied
 
     'warn.root': 'Line {0}: unrecognized (the first line should be the central topic `- Central topic`); kept as-is',
     'warn.tabIndent': 'Line {0}: branches must be indented with Tabs (one Tab per level) and cannot sit at the same level as the central topic; kept as-is',
