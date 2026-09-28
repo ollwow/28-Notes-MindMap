@@ -35,7 +35,7 @@ var I18N = {
     'mm.saveShortcut': '将该视图存为捷径', // 菜单项（2026-09-18）：右键「保存为捷径」的可视化形态，对当前视图根节点建捷径
     'mm.hotkeys': '快捷键', // 菜单项：打开原生「快捷键」页并预填搜索只看本插件（2026-09-18）
     'mm.settings': '设置与 Bug 提报', // 菜单项：打开插件设置页（2026-09-01）
-    'aiEdit.desc': '复制下面的定位信息，粘贴到其他 AI Agent 里（如 Claude Code、Codex、WorkBuddy 等），AI 就能直接定位到该节点并精准修改。修改时，AI 会自动遵循本插件内置的格式说明。你只需沟通需求，而无需关心格式。', // 「AI 编辑」弹窗顶部说明
+    'aiEdit.desc': '复制下面的定位信息，粘贴到其他 AI Agent 里（如 Claude Code、WorkBuddy 等），AI 就能直接定位到对应节点并精准编辑。编辑时，AI 会自动遵循本插件内置的格式说明。你只需沟通需求，而无需关心格式。<br> <br> 我们知道这种操作并不理想。未来将支持连接 AI API key，以在导图内直接操作。', // 「AI 编辑」弹窗顶部说明
     'aiEdit.copy': '复制并关闭', // 「AI 编辑」弹窗右下角按钮
 
     // ============ 宿主侧通知（屏幕右上角弹条）============
@@ -69,7 +69,7 @@ var I18N = {
     // 「时-分-秒-毫秒」后缀（如「AI 23-46-58-575」）—— 文案里把这层说破，用户才不会以为没删成功。
     'notice.dataLostBody': '28 Notes Mind Map 将历史记录等源文件隐藏，以防止误删。但在极少数情况下（如使用Flexplorer、Notebook Navigator等插件），仍有可能误删此类文件。\n\n我们已监测到刚刚存在误删行为。请到系统垃圾桶中找到「{0}」的文件夹（名字后面可能被系统加了一串数字，比如「{0} 23-46-58-575」，如是此类情况，请删除数字后放回），并放至此目录：\n{1}',
     'btn.dismiss': '好的',
-    'notice.dataGuardBlocked': '已拦截 28 Notes Mind Map 隐藏文件误删行为（{0} 项）',
+    'notice.dataGuardBlocked': '已拦截 28 Notes Mind Map 隐藏文件误删行为；如要删除附件，请到「设置 - 高级」内手动清理。',
     'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
     // 全屏（2026-09-22 用户定）：按钮提示 + 两条命令名（均不设默认快捷键，用户自己绑）
     'tb.fullscreen': '窗口全屏（按住 {Mod} 点击：桌面全屏）', // 左侧工具栏全屏按钮悬浮提示（非全屏时）；{Mod} 走 modStr（Mac=⌘ / Win=Ctrl）
@@ -111,6 +111,8 @@ var I18N = {
     'copy.suffix': '-副本', // 「创建副本」的文件名后缀：原文件名 + 这个后缀 + .md
     'snap.beforeRestore': '还原前 · ', // 还原历史版本时自动存的「还原前」快照的命名前缀（后接日期时间）
     'snap.restoredTo': '还原到 · ', // 还原历史版本后自动存的「还原到」快照的命名前缀（后接来源版本的名字或时间）
+    'snap.beforeAiEdit': 'AI 更改前备份', // 点「AI 定位节点」/「AI 编辑」时插件自动存的快照名（2026-09-27）
+                                          // ⚠️ 与 snapshot.py 的 DEFAULT_NAME['zh'] 必须一字不差（AI 外部脚本用同一个名字）
     // ---- 文件列表徽章（左侧文件树里文件名右侧的小字）----
     'badge.bookmark': '↗', // 文件列表里书签文件右侧的小字（触发点在 main.js updateBookmarkBadges：拼进文件树徽章 CSS）
     'badge.mindmap': '28 Notes', // 文件列表里导图文件右侧的小字（同上，main.js updateBookmarkBadges）
@@ -131,10 +133,6 @@ var I18N = {
     // 画布明暗 + 背景色（2026-09-20）：设置页「界面样式」左边那个调色板小按钮弹出来的小窗
     'palette.tip': '高级样式设计',
     'palette.title': '高级样式设计',
-    'palette.mode': '明暗模式',
-    'palette.modeFollow': '跟随界面',
-    'palette.modeLight': '浅色模式',
-    'palette.modeDark': '暗色模式',
     'palette.bgLight': '自定义背景色｜浅色模式',
     'palette.bgDark': '自定义背景色｜暗色模式',
     'palette.resetTip': '恢复默认（{0}）',
@@ -157,19 +155,26 @@ var I18N = {
     'settings.badgeStyleIcon': '28 Notes 图标', // 徽章样式下拉：图标
     'settings.hideHint': '新增页面提示', // 界面简化栏标题（2026-09-01）
     'settings.hideHintDesc': '新增思维导图后，主节点下方会有一行新手提示，可选择隐藏。',
+    // 待办按钮位置（2026-09-23）：默认「右键菜单」——底部工具条只留高频操作，待办不常驻
+    'settings.todoBtn': '待办按钮位置', // 2026-09-23 用户定：不叫「待办按钮」（和右边两个选项连读更顺）
+    'settings.todoBtnDesc': '选择待办按钮触发的位置。（实验性功能，未来可能会调整）',
+    'settings.todoBtnContext': '右键菜单', // ⚠️ 2026-09-24 起**不再是默认档**（默认改成「底部菜单」）；2026-09-23 用户定：要简短
+    'settings.todoBtnBottom': '底部菜单', // **2026-09-24 起为新装默认档**；选中节点后底部那一排按钮里常驻（与 2026-09-23 之前的行为一致）
     // 二级页入口右侧的灰字说明（2026-09-18 用户定：两行都去掉，入口只留标题 + 箭头）
     'settings.uiSimplify': '界面简化', // 「界面」栏的原生二级页（2026-09-18）：收纳文件类型徽标 / 新增页面提示等
     'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
     'settings.motion': '动效', // 高级页（2026-09-20）：节点位移过渡的开关，默认开
     'settings.motionDesc': '如果交互时出现卡顿，可关闭动效以减少性能消耗。',
+    'settings.aiEditBtn': 'AI 编辑按钮', // 高级页（2026-09-28）：左下那颗 AI 按钮的开关；实验性功能，默认关
+    'settings.aiEditBtnDesc': '开启后，会在视图左下角出现 AI 编辑按钮。实验性功能，默认关闭。',
     // ---- 「界面简化」页里的两个分组标题（2026-09-21 改版：不再进二级页，直接摊在这一页）----
     'settings.general': '通用', // 分组标题一：文件类型徽标 / 新增页面提示
-    'settings.morePanelSimplify': '更多面板简化', // 分组标题二：左下「更多」菜单那两个可选条目的开关
+    'settings.morePanelSimplify': '按钮简化', // 分组标题二：左下「更多」菜单那两个可选条目的开关（**2026-09-24 用户改名：原叫「更多面板简化」**）
     'settings.morePanelNote': '为保证基础使用体验，部分操作按钮不支持关闭。', // 备用说明（2026-09-21 起这一页不再显示备注，键先留着）
     'settings.addPanelSimplify': '「添加」面板简化', // ⚠️ 已废弃（该页 2026-09-21 删除）：键留着防旧引用报错
     'settings.addPanelSimplifyDesc': '指选中节点后，底部操作按钮中，+（添加按钮）内操作项',
     'settings.sepRow': '分隔线', // 列表里的分隔线行；三根同名（2026-09-18 用户定：不编号，靠位置区分）
-    'settings.presetRow': '介绍', // 「添加面板简化」与「更多面板简化」页顶部共用的一排一次性动作按钮
+    'settings.presetRow': '介绍', // 「添加面板简化」与「按钮简化」页顶部共用的一排一次性动作按钮
     'settings.presetRowDesc': '全部关闭后，「添加」按钮将会同步隐藏。',
     'settings.presetDefault': '恢复默认',
     'settings.presetAllOn': '全部打开',
@@ -183,7 +188,7 @@ var I18N = {
     'settings.hintShow': '显示提示', // 界面简化下拉：显示
     'settings.hintHide': '隐藏提示', // 界面简化下拉：隐藏
     'settings.tutorial': '使用教程', // 「使用教程」说明的标题（2026-09-01 新增，放在设置页最底部）
-    'settings.tutorialBtn': '查看教程 ↗', // 使用教程右侧按钮文案
+    'settings.tutorialBtn': '查看教程', // 使用教程右侧按钮文案
     'settings.footnote': '更多', // 「更多」节标题（2026-09-16 由「尾注」改名）
     'settings.centerMode': '画布中央', // 定位基准设置项名称（2026-09-16）
     'settings.centerModeDesc': '建议设为视觉中央，更符合人眼视觉。', // 设置项说明文字
@@ -191,10 +196,17 @@ var I18N = {
     'settings.centerVisual': '视觉中央', // 选项②：保留自定义落点（＝现在的位置，偏左上）
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
     'settings.sponsor': '赞赏开发者', // 赞助项名称
-    'settings.sponsorBtn': '赞赏 ↗', // 赞助按钮文字（2026-09-18 起点它弹二维码弹窗）
+    'settings.sponsorBtn': '赞赏', // 赞助按钮文字（2026-09-18 起点它弹二维码弹窗）
     'settings.sponsorThanks': '谢谢！', // 赞助弹窗里二维码下方那句话
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
     'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。或加入群聊 →', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
+    // ---- 设置页底部「Make Something Wonderful」小字（2026-09-27 用户定）----
+    // 灰色小字放在设置页最底，点击弹 Obsidian 系统弹窗、内放 Steve Jobs 2007 年那段话。
+    // 引文保持英文原文（人名引用不翻译）；zh / en 文案内容完全一致。
+    'settings.appreciationLink': 'Make Something Wonderful With ♥︎', // 设置页底部灰色小字
+    'settings.appreciationTitle': 'Make Something Wonderful', // 弹窗标题
+    'settings.appreciationQuoteMd': 'There’s lots of ways to be, as a person. And some people express their deep appreciation in different ways. But one of the ways that I believe people express their appreciation to the rest of humanity is to make something wonderful and put it out there.<br><br>And you never meet the people. You never shake their hands. You never hear their story or tell yours. But somehow, in the act of making something with a great deal of care and love, something’s transmitted there. And it’s a way of expressing to the rest of our species our deep appreciation. So we need to be true to who we are and remember what’s really important to us.', // 弹窗正文（Steve Jobs 2007 年引文，保持原文；落款单独一句）
+    'settings.appreciationSignature': '—Steve, 2007', // 引文落款（单独一行右对齐）
 
     // ---- 授权（2026-09-02 新增）----
     'license.heading': '许可证', // 设置页许可证区块标题
@@ -263,9 +275,7 @@ var I18N = {
     'tip.nowIcon': '此节点已标记 Now', // Now 节点标题前小圆点的悬停提示
     'tip.todoIconTodo': '待办：点击小图标标记为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20）
     'tip.todoIconDone': '已完成：点击小图标标记为待办',
-    // 母节点「进度百分比」的黑框提示（2026-09-21 第七轮）：**按"点击之后会变成什么"说**
-    'tip.todoPctDone': '点击设为：全部完成',     // 进度未满 100%（**含 0%**：0% 点了就是全部设为完成，2026-09-21 用户定）
-    'tip.todoPctUndone': '点击设为：全部未完成', // 100% 时（"回到全都未完成"的出口，不然做完就回不去）
+    'tip.todoIconProgress': '子节点完成进度：{0}%', // 母节点自己是待办 + 有子待办时的合并模式提示（{0} = 只算子节点的完成百分比，2026-09-24）
     'tip.unfold': '点击展开', // 节点右侧折叠箭头悬停提示（折叠态）
     'tip.fold': '点击折叠', // 节点右侧折叠箭头悬停提示（展开态）
     'tip.editNote': '双击编辑备注', // 备注行（灰竖条文字）悬停提示
@@ -296,7 +306,28 @@ var I18N = {
     'tb.undo': '撤销（{Mod}+Z）', // 撤销按钮 tooltip（写死键不给自定义，静态没问题）
     'tb.redo': '重做（{Mod}+Shift+Z）', // 重做按钮 tooltip（同上）
     'tb.locate': '定位到中心节点', // 定位按钮 tooltip（键位段动态追加；未绑时回退写死的 Mod+P）
+    // 定位子菜单（2026-09-28）：分「主节点 / 当前关注 / 选中节点」三段，后两段没内容时用占位项（置灰不可点）
+    'now.none': '无当前关注节点', // 中间那段为空时的占位
+    'now.noSel': '无选中节点', // 最后那段为空时的占位
     'tb.minorToggle': '隐藏/显示次要 Minor 节点', // 隐藏/显示 Minor 按钮初始 tooltip（键位段动态追加）
+    'tb.viewFilter': '视图筛选', // 左下过滤按钮（眼睛）的悬浮提示（2026-09-28：按钮只开二级菜单，不再随过滤状态换文案）
+    // AI 输入条（2026-09-28）：点左下「AI 编辑」→ 底部弹出的输入框。
+    // 关闭叉与加号**不挂**悬浮提示（看图标就懂，用户定），只有发送挂。
+    'aiBar.send': '发送',
+    'aiBar.placeholder': '你想让 AI 做什么？', // 输入框里的灰字，一打字就没（原生 placeholder）
+    // 框上方那行小提示词：说明这次是对谁说话（没选中 / 选中 N 个两档；没选中时不显示叉）
+    'aiBar.hintView': '编辑当前视图',
+    'aiBar.hintOne': '编辑选中节点',
+    'aiBar.hintMultiUnsupported': '暂不支持选中多个节点，已回退至编辑当前视图', // 多选时（2026-09-28 用户定稿文案）；旁边的叉点了取消选中
+    // 「＋」的子菜单与导入弹窗（2026-09-28：本轮只做界面，确认后不做任何操作）
+    'aiBar.import': '导入 AI 网页回答',
+    'aiBar.importTitle': '导入 AI 网页回答',
+    'aiBar.importHint': '请将 AI 回答的分享链接贴至下方，AI Agent 会查看并整理成思维导图格式。（粘贴多个链接时，请以分号分隔开）',
+    'aiBar.importPh': '分享链接：分享 AI 回答时生成的链接',
+    'aiBar.importChip': '导入 AI 回答链接：{0}', // 导入后输入框上方那条小条：{0} = 链接（超长由 CSS 截断）
+    // 左下过滤按钮（眼睛）二级菜单两项的文字标签（2026-09-27 加：菜单项 = 图标 + 文字，与定位菜单同款）
+    'fm.nowFocus': '聚焦当前关注',
+    'fm.hideMinor': '隐藏次要节点',
 
     // ============ 节点工具栏（选中节点时底部弹出的黑色圆条按钮 tooltip）============
     'nm.bold': '加粗节点', // 键位段由画布键位表动态追加（nmKeySuffix），不再写死（2026-09-18）
@@ -305,9 +336,10 @@ var I18N = {
     'nm.note': '添加备注', // 写备注按钮（键位段由 nmKeySuffix 动态追加，随改键实时变）
     'nm.now': '设为当前关注 Now 节点', // 标记 Now 按钮
     'nm.minor': '设为次要 Minor 节点', // 标记 Minor 按钮
+    'nm.add': '添加', // 底部工具条最右「＋」按钮的悬浮提示（2026-09-28：改成点击弹面板后，悬停不再弹面板，提示才挂得上）
     // 待办按钮（2026-09-20）：提示两行随选中节点状态换 —— {0}/{1} 是动态键位段（nmKeySuffix）
     'nm.todoPlainTip': '设为待办节点{0}（按住 {Mod} ：设为已完成）', // 选中普通节点（2026-09-21 第五轮；{Mod} 按平台=⌘/Ctrl）
-    'nm.todoOffTip': '设为普通节点{0}', // 选中待办 / 已完成节点（此时按住 ⌘ 无特殊效果）
+    'nm.todoOffTip': '设为非待办节点{0}', // 选中待办 / 已完成节点（此时按住 ⌘ 无特殊效果）；2026-09-23 用户定：不叫「普通节点」
     // 底部一级按钮在设置页「添加面板简化」列表里的行名（2026-09-20 第五轮：底部按钮注册进面板统一排序/显隐）
     'addPanel.btnStyle': '格式按钮',
     'addPanel.btnNote': '备注按钮',
@@ -357,12 +389,37 @@ var I18N = {
     'more.addFileLinkPh': '/Users/…/文件.pdf',
     'more.addNodeLinkPh': '[[文件名#节点ID]]',
     // 「建议反馈」行右侧的加群按钮（2026-09-20 从代码里抽出来：英文界面曾只有中文）
-    'settings.joinGroupBtn': '加入群聊 ↗',
-    // Pro / 付费弹窗里的少量固定文案（2026-09-20 抽出）。⚠️ 弹窗正文是设计稿绝对定位的长页，仍为中文（要英文版得单独做一版排版）
+    'settings.joinGroupBtn': '加入群聊',
+    // Pro / 付费两个弹窗的文案（2026-09-20 抽出少量固定句；2026-09-27 正文全部抽到这里）。
+    // 版面（哪块在前、间距多大）由 main.js 的 PRO_PAGES 清单决定，这里只管字；改字不用动代码。
+    // 价格 / 邮箱 / 微信号 / 活动链接是**商业参数**，走 main.js 的 PRO_PLAN（不在这里）。
     'pm.scrollHint': '鼠标滚动以向下查看',
     'pay.shareBtn': '分享免费领会员',
+    'pm.shareLink': '（分享免费领会员）', // Pro 弹窗价格那行 ¥38 右边的小字链接（2026-09-24 用户定）：点击跳同一个分享活动页；括号跟语言走（中文全角 / 英文半角）
     'pay.emailCopied': '邮箱已复制',
     'pay.emailCopyFail': '复制失败，请手动复制',
+    'pm.priceLead': '早鸟价优惠', // 价格行开头（后面跟 ¥76 → ¥38）
+    'pm.trialLeft': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。', // {0} = 剩余天数（不足 1 天按 1 天）
+    'pm.trialEnded': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。',
+    'pm.secFreeH': '🌱 了解免费版',
+    'pm.secFreeMarket': '市面上思维导图软件<span class="pm-blue">存在的大多数功能，无限制使用</span>。', // 允许带强调标记
+    'pm.secFreeDim': '无限量生成思维导图、插入图片、备注、Obsidian 双链、本地文件链接、节点链接等。',
+    'pm.secProH': '🪴 了解创新 Pro 版',
+    'pm.secProMarket': '<span class="pm-blue">28 Notes 原创的创新功能</span>，试用期结束后，需激活以使用。',
+    'pm.secProDim': 'Now、Minor、捷径、AI 定位路径、多级折叠等。',
+    'pm.capBefore': '原视图：庞大混乱', // 第一张对比图下的图注
+    'pm.capAfter': '使用创新功能 Now 和 Minor 后：瞬间清晰，聚焦重点',
+    'pm.thanks': '你的支持可以让我持续开发，做出美好的产品，谢谢你！',
+    'pm.note': '本产品为买断制，激活码永久有效，可激活三台设备。（不包含在线生成式 AI 功能）',
+    'pay.h1': '微信扫码支付 {0}', // {0} = 现价（PRO_PLAN.priceNowText，如 ¥38）
+    'pay.emailLead': '将付款截图发送至邮箱：',
+    'pay.step1': '1. 截图需包转账单号（样式如下）',
+    'pay.step2': '2. 发送后，24h 内左右会收到激活码',
+    'pay.alt1': '如不便发送邮件，也可添加开发者微信 {0} 直接激活', // {0} = 微信号
+    'pay.h3': '激活',
+    'pay.path': '在 Obsidian → 设置 → 第三方插件 → 28 Notes 里激活',
+    'pay.alt3': '如遇激活问题，请发送邮件 / 联系开发者微信：{0} 解决',
+    'pay.thanks': '=) 谢谢你的支持！',
     'more.addUrlLink': '添加网页链接',
     'more.addUrlLinkTip': '添加后，可一键打开网页（可直接粘贴）',
     'more.urlText': '显示文字',
@@ -380,6 +437,7 @@ var I18N = {
     'toast.pasteFileLink': '请先选中一个节点，再粘贴文件链接', // 未选中节点就粘贴文件链接时
     'toast.pasteImg': '请先选中一个节点，再粘贴图片', // 未选中节点就粘贴图片时
     'toast.pasteFirst': '请先选中一个节点，再粘贴', // 未选中节点就粘贴普通文本时
+    'toast.pasteEmpty': '剪贴板里没有可粘贴的内容', // 剪贴板是空的（2026-09-23：原来跟上面共用一句"请先选中节点"，指着错的方向）
     'toast.imgSavedNoNode': '图片已保存，但目标节点已不存在', // 粘贴图片存盘成功但目标节点已被删
     'toast.showNowEmpty': '当前视图没有 Now 节点，「只看当前关注」未开启', // 点「只看 Now」但当前视图（当前根范围）没有 now 标记节点（2026-08-31）
     'toast.imgSaveFail': '图片保存失败', // 粘贴图片写盘失败
@@ -414,11 +472,19 @@ var I18N = {
     'ctx.drillTip': '让视图中只显示这一节点内容{0}', // ⚠️ 预埋文案（2026-09-21 用户要求「你先自己预埋」，待用户改）
     'ctx.bookmarkTip': '保存为新页面，下次可快速进入该视图{0}', // ⚠️ 预埋文案（同上）
     'ctx.basicOps': '基础操作', // 右键二级菜单（2026-09-21）：剪切 / 复制 / 粘贴 / 删除收在这里
+    // 右键「待办」行（2026-09-23）：设置项「待办按钮」= 右键档时才有这一行，形态/功能与底部按钮同款
+    'ctx.todoPlain': '设为待办节点', // 选中**普通**节点 + 裸点击
+    'ctx.todoAlt': '设为完成节点', // 选中**普通**节点 + 按住 {Mod}（与底部按钮 ⌘+点击 同款）
+    'ctx.todoOff': '设为非待办节点', // 选中待办 / 已完成节点（按不按 {Mod} 都一样：都是退回普通）
+    'ctx.todoHotkey': '快捷键：{0}', // 悬浮提示里的键位段（没绑键时整段不显示，规则同其它提示）
+    'ctx.todoCmdHint': '（按住 {Mod} ：设为已完成）', // 悬浮提示里「⌘ 可一步设完成」的补充说明
     'ctx.cut': '剪切',
     'ctx.copy': '复制',
     'ctx.paste': '粘贴',
     'ctx.delete': '删除',
     'ctx.pasteUseKey': '读不到剪贴板，请用 {Mod}+V 粘贴', // 右键「粘贴」读剪贴板失败时的提示（{Mod} 按平台=⌘/Ctrl）
+    'ctx.pasteEmptyTip': '剪贴板里没有可粘贴的内容（先复制节点或文字）', // 右键「粘贴」置灰时的悬浮说明（2026-09-23）
+    'ctx.pasteMultiTip': '多选状态下不能粘贴（先选中单个节点）', // 右键「粘贴」在多选时置灰的说明（2026-09-23）
     'more.kbdPaste': '粘贴', // 「＋添加」面板各条目右侧的操作提示（2026-09-21 用户定）：直接粘贴即可
     'more.kbdWiki': '[[', // 双链：打两个方括号触发
     'more.kbdTab': 'Tab', // 添加子节点
@@ -432,8 +498,20 @@ var I18N = {
     // 复制给 AI 的定位文案（2026-09-20 用户改版）：**单行 + 【】外框**（用户要「一整块粘贴」，所以不分行），
     // 路径 / 节点 ID 用占位符填入。两版：node = 带节点 ID（节点右键 / AI 编辑按钮）；file = 只有路径（文件列表右键）。
     // 语言跟着界面语言（中文界面复制中文、英文界面复制英文）—— AI 读的是文案本身，所以必须跟着走。
-    'aiLocate.node': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 使用节点 id 定位到要编辑的节点，节点 ID 为：{1}；4. 基于用户指令开始编辑】',
-    'aiLocate.file': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 基于用户指令开始编辑】',
+    'aiLocate.node': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 快照已由插件自动保存，无需再手动备份（跳过 index.md 的「改文件前」流程，不要再跑 snapshot.py）；4. 使用节点 id 定位到要编辑的节点，节点 ID 为：{1}；5. 基于用户指令开始编辑】',
+    // 非导图文件专用：它顶部没有 FrontMatter 提示、也没有 index.md 可读，所以只留「定位 + 开始编辑」两步（2026-09-23 用户定）
+    'aiLocate.file': '【1. 找到待编辑文档，路径：{0}；2. 基于用户指令开始编辑】',
+    // AI 编辑弹窗（点 AI 输入条的发送）用的**拆句版**（2026-09-28）：按「框里写没写指令 / 有没有导入网页链接」
+    // 拼第 2、5 条。右键「复制 AI 定位路径」仍用上面那条整句 aiLocate.node，行为不变。
+    'aiLocate.nodeHead': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则{1}；3. 快照已由插件自动保存，无需再手动备份（跳过 index.md 的「改文件前」流程，不要再跑 snapshot.py）；4. 使用节点 id 定位到要编辑的节点，节点 ID 为：{2}；',
+    'aiLocate.ruleSuffixImport': '，以及梳理 AI 网页回答的方式', // 拼进第 2 条的 {1}（有导入链接时才加）
+    'aiLocate.askDefault': '5. 基于用户指令开始编辑】', // 框里没写东西、也没导入链接
+    'aiLocate.ask': '5.用户指令：{0}】', // 框里写了指令
+    'aiLocate.askImport': '5.用户指令：梳理 AI 网页回答，网页链接：{0}；具体指令：{1}】', // 有链接 + 框里也写了
+    'aiLocate.askImportNoText': '5.用户指令：梳理 AI 网页回答，网页链接：{0}】', // 只有链接
+    // 文件列表右键 · 目标是 28Notes 导图时用这版（多一步「先存快照」，脚本路径 = {1}）。
+    // 非导图文件仍用上面那版：它没有 frontmatter、读不到 index.md，也不需要快照（脚本认 28notes-id，会直接失败）。
+    'aiLocate.fileMm': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则；3. 快照已由插件自动保存，无需再手动备份（跳过 index.md 的「改文件前」流程，不要再跑 snapshot.py）；4. 基于用户指令开始编辑】',
     // 新建导图时预埋进 frontmatter 的两段 AI 提示（2026-09-20）：**新建/首次注入那一刻按当时的语言写死**，
     // 之后切语言一律不改（存量文件里的文字保持原样 —— 变来变去容易出错，用户定）。
     'fm.ai': '改本文件前先读 28Notes-Files/AI/index.md，严格按其指引操作，否则文件打开可能会出现严重乱码',
@@ -477,7 +555,7 @@ var I18N = {
     'hist.promptTitle': '给这个版本起个名字', // 「保存此版本」弹框标题
     'hist.promptHint': '（可空）', // 「保存此版本」弹框输入框占位提示
     'hist.confirmRestore': '用这一版覆盖当前文件？', // 点「还原此版本」后的确认弹窗文字（⚠️ 弹窗标题走纯文本，别放 <br>）
-    'hist.empty': '还没有历史版本。<br>编辑时会自动存档（内容有变化、且距上一份 ≥20 秒）；也可用画布「更多」菜单里的「保存此版本」手动命名存档。', // 面板/列表没有历史快照时的占位（<br> = 换行）
+    'hist.empty': '无历史版本。<br>编辑时会自动存档，你也可在左下角「更多」菜单里，点击「保存此版本」手动存档。', // 面板/列表没有历史快照时的占位（<br> = 换行）
     'hist.auto': '自动保存', // 自动快照在时间线里的标签（手动命名的显示你起的名字）
     'hist.justNow': '刚刚 · {0}', // 时间线时间：3 分钟内（{0}=时:分）
     'hist.today': '今天', // 时间线时间：当天
@@ -485,16 +563,20 @@ var I18N = {
     'hist.dateMD': '{0} 月 {1} 日', // 时间线时间：同年（{0}=月 {1}=日）
     'hist.dateYMD': '{0} 年 {1} 月 {2} 日', // 时间线时间：跨年（{0}=年 {1}=月 {2}=日）
     'hist.rename': '重命名此版本', // 每条记录「⋯」菜单：给这条版本改名
+    'hist.lock': '锁定此版本', // 「⋯」菜单：锁住这一版（不参与自动清理）——与点条目上的小锁同一动作；「此版本」跟同菜单的重命名 / 删除保持一致
+    'hist.unlock': '取消锁定', // 「⋯」菜单：解锁这一版（重新参与自动清理）
     'hist.delete': '删除此版本', // 每条记录「⋯」菜单：删掉这条版本
     'hist.itemMenu': '更多操作', // 每条记录右侧「⋯」按钮的悬停提示
+    'hist.lockedTip': '已锁定（不会被自动精简）', // 条目上的锁（已锁态）悬停提示
+    'hist.unlockedTip': '锁定此版本（未锁定版本会被自动精简）', // 条目上的锁（未锁态，平时透明、悬停才出现）悬停提示
     'hist.renameTitle': '重命名这个版本', // 重命名弹框标题
     'hist.renameHint': '（留空 = 记为「自动保存」）', // 重命名弹框输入框占位
-    'hist.confirmDelete': '确定删除这条历史版本？删除后插件内无法找回（文件会移入系统废纸篓）。', // 删除版本确认弹窗
+    'hist.confirmDelete': '确定删除？删除后此版本会移入系统废纸篓。', // 删除版本确认弹窗
     // ---- 原生「历史记录」右侧面板（2026-09-14）----
     'hist.panelTitle': '28 Notes Mind Map 历史记录', // 面板标签名 / tooltip / 面板顶部标题
     'hist.rules': '保存规则', // 面板顶部右侧小按钮：点开/收起下面的规则说明
-    // 点「保存规则」展开的三行小字（带 <br>，必须走 innerHTML；用 text 会把标签当字面量显示出来）
-    'hist.rulesText': '编辑时会高频保存历史版本，<br>时间较久的版本会自动删减，<br>手动保存 / 重命名的版本不会自动删减。',
+    // 点「保存规则」展开的说明（走 innerHTML：文案里可能带 <br>，用 text 会把标签当字面量显示出来）
+    'hist.rulesText': '编辑时会高频保留历史版本，后续会自动精简冗余版本（精简至每周 1-7 份）；手动存储 / 重命名 / 锁定的版本不会被自动精简。',
     'hist.noMap': '当前没有打开的思维导图', // 面板空态：没有可跟随的导图（非 28 Notes 文件时列表直接清空，不显示文案）
     'cmd.openHistory': '其它｜打开历史记录面板', // 命令：面板被关掉后的找回入口
     'notice.panelFail': '打开右侧历史面板失败', // 右侧栏取不到 leaf 时的提示
@@ -539,7 +621,7 @@ var I18N = {
     'mm.guide': 'User Guide ↗',
     'mm.joinGroup': 'Join WeChat Group ↗',
     'mm.saveShortcut': 'Save This View as a Shortcut',
-    'aiEdit.desc': 'Copy the locator below and paste it into any AI agent — it will open this document and jump straight to the node.',
+    'aiEdit.desc': 'Copy the locator below and paste it into any AI agent (e.g. Claude Code, WorkBuddy) — it will open the document and jump straight to the node. While editing, the AI will automatically follow this plugin\'s built-in format guide, so you only need to describe what you want.<br> <br> We know this workflow is not ideal. Connecting an AI API key to edit directly inside the map is coming.',
     'aiEdit.copy': 'Copy & Close',
     'mm.hotkeys': 'Hotkeys',
     'mm.settings': 'Settings & Bug Report',
@@ -595,6 +677,8 @@ var I18N = {
     'copy.suffix': ' Copy',
     'snap.beforeRestore': 'Before Restore · ',
     'snap.restoredTo': 'Restored to · ',
+    'snap.beforeAiEdit': 'AI backup before edit', // Snapshot auto-saved when the user clicks "AI locate node" / "AI edit" (2026-09-27)
+                                                  // ⚠️ Must match snapshot.py's DEFAULT_NAME['en'] exactly (the external AI script uses the same name)
     'badge.bookmark': '↗',
     'badge.mindmap': 'Mind Map',
     'menu.newMindmap': 'New Mind Map (28 Notes)',
@@ -612,10 +696,6 @@ var I18N = {
     // Canvas light/dark + background (2026-09-20): opened from the palette button left of "Interface style"
     'palette.tip': 'Advanced Styling',
     'palette.title': 'Advanced Styling',
-    'palette.mode': 'Light & Dark',
-    'palette.modeFollow': 'Follow UI',
-    'palette.modeLight': 'Light Mode',
-    'palette.modeDark': 'Dark Mode',
     'palette.bgLight': 'Custom Background｜Light Mode',
     'palette.bgDark': 'Custom Background｜Dark Mode',
     'palette.resetTip': 'Restore Default ({0})',
@@ -640,7 +720,7 @@ var I18N = {
     'notice.dataLostTitle': 'Warning! You Just Deleted the 28 Notes Mind Map Hidden Files!',
     'notice.dataLostBody': '28 Notes Mind Map hides its source files (history records and more) to keep them from being deleted by accident. In rare cases — for example when using plugins such as Flexplorer or Notebook Navigator — they can still be caught in a bulk delete.\n\nWe detected that this just happened. Please open the system trash and find the folder "{0}". The system may have appended a string of digits to its name — for example, "{0} 23-46-58-575"; if so, remove that trailing number first. Then move the folder back to:\n{1}',
     'btn.dismiss': 'OK',
-    'notice.dataGuardBlocked': 'Blocked an Accidental Deletion of the 28 Notes Mind Map Hidden Files ({0} Items)',
+    'notice.dataGuardBlocked': 'Blocked an Accidental Deletion of the 28 Notes Mind Map Hidden Files. To Delete Attachments, Clean Them up Manually in "Settings - Advanced".',
     'notice.aiDocsRestored': 'Rebuilt AI Contract File: {0}',
     'tb.fullscreen': 'Fullscreen (Hold {Mod} and Click for True Full Screen)',
     'tb.fullscreenInWindow': 'Exit Full Screen (Hold {Mod} and Click for True Full Screen)',
@@ -653,13 +733,20 @@ var I18N = {
     'settings.badgeStyleIcon': '28 Notes Icon',
     'settings.hideHint': 'New-Page Hint',
     'settings.hideHintDesc': 'After creating a new mind-map, a beginner hint appears below the root node. You can choose to hide it. ',
+    // To-Do button placement (2026-09-23): defaults to the context menu — the bottom bar keeps high-frequency actions only
+    'settings.todoBtn': 'To-Do Button Placement',
+    'settings.todoBtnDesc': 'Choose where the To-Do button is triggered. (Experimental feature, may change in the future)',
+    'settings.todoBtnContext': 'Context Menu', // no longer the default as of 2026-09-24 (default moved to Bottom Menu)
+    'settings.todoBtnBottom': 'Bottom Menu', // the new default as of 2026-09-24; pinned in the row shown after selecting a node (behavior before 2026-09-23)
     'settings.uiSimplify': 'Interface Simplification', // Native sub-page under "Interface" (2026-09-18)
     'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
     'settings.motion': 'Motion', // Under "Advanced" (2026-09-20): node shift transition, on by default
     'settings.motionDesc': 'If Interaction Feels Laggy, Turn Motion off to Reduce Performance Cost.',
+    'settings.aiEditBtn': 'AI Edit Button', // Under "Advanced" (2026-09-28): shows the AI button at the bottom-left; experimental, off by default
+    'settings.aiEditBtnDesc': 'Turn this on to show an AI Edit button at the bottom-left of the view. Experimental feature, off by default.',
     // ---- Two group headings inside "Interface simplification" (2026-09-21: no more sub-page) ----
     'settings.general': 'General',
-    'settings.morePanelSimplify': '"More" Panel Simplification',
+    'settings.morePanelSimplify': 'Button Simplification', // renamed 2026-09-24 (was '"More" Panel Simplification')
     'settings.morePanelNote': 'To Keep the Basics Working, Some Buttons Cannot Be Turned off.', // spare note (not shown since 2026-09-21)
     'settings.addPanelSimplify': '"Add" Panel Simplification', // DEPRECATED (page removed 2026-09-21); key kept to avoid stale refs
     'settings.addPanelSimplifyDesc': 'Items Inside the "Add" (+) Button on a Selected Node\'s Bottom Toolbar.',
@@ -675,7 +762,7 @@ var I18N = {
     'settings.hintShow': 'Show Hint',
     'settings.hintHide': 'Hide Hint',
     'settings.tutorial': 'Tutorial',
-    'settings.tutorialBtn': 'View Tutorial ↗',
+    'settings.tutorialBtn': 'View Tutorial',
     'settings.footnote': 'More',
     'settings.centerMode': 'Canvas Center',
     'settings.centerModeDesc': 'Tip: Choose Visual Center — It Fits Natural Eye Movement Better.',
@@ -683,10 +770,17 @@ var I18N = {
     'settings.centerVisual': 'Visual Center',
     'settings.qrMissing': '(QR Code Image Not Found)',
     'settings.sponsor': 'Tip the Developer',
-    'settings.sponsorBtn': 'Tip ↗',
+    'settings.sponsorBtn': 'Tip',
     'settings.sponsorThanks': 'Thank You!',
     'settings.bug': 'Bugs & Feature Requests',
     'settings.bugMd': 'Add the creator on WeChat: Hi28Notes. Or join the group chat →',
+    // ---- Settings page bottom "Make Something Wonderful" link (added 2026-09-27) ----
+    // Small gray line at the bottom of the settings page; click opens a system Modal with Steve Jobs's 2007 quote.
+    // Quote stays in English (do not translate direct quotations); zh / en content are identical.
+    'settings.appreciationLink': 'Make Something Wonderful With ♥︎',
+    'settings.appreciationTitle': 'Make Something Wonderful',
+    'settings.appreciationQuoteMd': 'There’s lots of ways to be, as a person. And some people express their deep appreciation in different ways. But one of the ways that I believe people express their appreciation to the rest of humanity is to make something wonderful and put it out there.<br><br>And you never meet the people. You never shake their hands. You never hear their story or tell yours. But somehow, in the act of making something with a great deal of care and love, something’s transmitted there. And it’s a way of expressing to the rest of our species our deep appreciation. So we need to be true to who we are and remember what’s really important to us.',
+    'settings.appreciationSignature': '—Steve, 2007',
 
     // ---- License / paid activation (added 2026-09-02) ----
     'license.heading': 'License',
@@ -755,9 +849,7 @@ var I18N = {
     'tip.nowIcon': 'This Node Is Marked Now',
     'tip.todoIconTodo': 'To-Do: Click the Icon to Mark as Done', // to-do node prefix icon (2026-09-20)
     'tip.todoIconDone': 'Done: Click the Icon to Mark as To-Do',
-    // Parent progress-percentage tooltip (2026-09-21): phrased as "what clicking will do"
-    'tip.todoPctDone': 'Click to Set All as Done',    // progress below 100% (including 0%)
-    'tip.todoPctUndone': 'Click to Set All as Not Done', // at 100% — the way back
+    'tip.todoIconProgress': 'Child Progress: {0}%', // merged mode: parent is a to-do + has to-do children ({0} = children-only percentage, 2026-09-24)
     'tip.unfold': 'Click to Unfold',
     'tip.fold': 'Click to Fold',
     'tip.editNote': 'Double-Click to Edit the Note',
@@ -787,7 +879,23 @@ var I18N = {
     'tb.undo': 'Undo ({Mod}+Z)',
     'tb.redo': 'Redo ({Mod}+Shift+Z)',
     'tb.locate': 'Locate the Central Node',
+    'now.none': 'No Now Node', // 定位子菜单：中间那段为空时的占位（2026-09-28）
+    'now.noSel': 'No Node Selected', // 定位子菜单：最后那段为空时的占位
     'tb.minorToggle': 'Hide/Show Minor Nodes',
+    'tb.viewFilter': 'View Filter', // 左下过滤按钮（眼睛）的悬浮提示（2026-09-28）
+    'aiBar.send': 'Send', // AI 输入条（2026-09-28）：关闭叉与加号不挂提示，只有发送挂
+    'aiBar.placeholder': 'What do you want AI to do?',
+    'aiBar.hintView': 'Edit Current View',
+    'aiBar.hintOne': 'Edit Selected Node',
+    'aiBar.hintMultiUnsupported': 'Multiple Nodes Not Supported — Editing the Current View Instead',
+    'aiBar.import': 'Import AI Web Answer',
+    'aiBar.importTitle': 'Import AI Web Answer',
+    'aiBar.importHint': 'Paste the share link(s) of the AI answer below — the AI Agent will read them and organize the content into mind map format. (Separate multiple links with a semicolon.)',
+    'aiBar.importPh': 'Share link: the link generated when sharing an AI answer',
+    'aiBar.importChip': 'Imported AI Answer Link, {0}',
+    // 左下过滤按钮（眼睛）二级菜单两项的文字标签（2026-09-27 加，与中文同步）
+    'fm.nowFocus': 'Focus on Now',
+    'fm.hideMinor': 'Hide Minor',
 
     'nm.bold': 'Bold the Node',
     'nm.red': 'Mark Red',
@@ -795,9 +903,10 @@ var I18N = {
     'nm.note': 'Add a Note',
     'nm.now': 'Mark as Now Node',
     'nm.minor': 'Mark as Minor Node',
+    'nm.add': 'Add', // 底部工具条最右「＋」按钮的悬浮提示（2026-09-28）
     // To-do button (2026-09-20): the tip swaps with the selected node's state; {0}/{1} = dynamic key segments
     'nm.todoPlainTip': 'Click to Mark as Todo{0} (Hold {Mod}: Mark Done)',
-    'nm.todoOffTip': 'Mark as a Plain Node{0}',
+    'nm.todoOffTip': 'Mark as a Non-Todo Node{0}', // 2026-09-23: "plain node" renamed to "non-Todo node" (user's wording)
     'addPanel.btnStyle': 'Format Button',
     'addPanel.btnNote': 'Note Button',
     'addPanel.btnTodo': 'To-Do Button (Todo)',
@@ -840,13 +949,37 @@ var I18N = {
     // Input placeholder presets (2026-09-20): these used to be hard-coded Chinese and leaked into the English UI
     'more.addFileLinkPh': '/Users/…/File.Pdf',
     'more.addNodeLinkPh': '[[File Name#Node ID]]',
-    'settings.joinGroupBtn': 'Join Group Chat ↗',
-    // A few fixed strings inside the Pro / payment modals (2026-09-20). ⚠️ The payment page body is a designed,
-    // absolutely-positioned Chinese layout and stays Chinese for now (an English version needs its own layout pass).
+    'settings.joinGroupBtn': 'Join Group Chat',
+    // Copy for the Pro / payment modals (a few lines on 2026-09-20; the full body on 2026-09-27).
+    // Layout (order and spacing) lives in PRO_PAGES in main.js — this file holds the words only.
+    // Price, email, WeChat ID and the share link are business values and live in PRO_PLAN (main.js), not here.
     'pm.scrollHint': 'Scroll Down to See More',
-    'pay.shareBtn': 'Share to Get Free Membership',
+    'pay.shareBtn': 'Share for Free',
+    'pm.shareLink': '(Share to Get Free Membership)', // small link next to ¥38 in the Pro modal (2026-09-24); opens the same share page
     'pay.emailCopied': 'Email Copied',
     'pay.emailCopyFail': 'Copy Failed — Please Copy It Manually',
+    'pm.priceLead': 'Early Bird Price',
+    'pm.trialLeft': 'Your trial has {0} days left. Some creative features will be locked after it ends.', // {0} = days left
+    'pm.trialEnded': 'Your trial has ended. Activate Pro to unlock all features.',
+    'pm.secFreeH': '🌱 What the Free Version Gives You',
+    'pm.secFreeMarket': '<span class="pm-blue">Most features</span> found in mind map tools, all without limits.',
+    'pm.secFreeDim': 'Unlimited mind maps, images, notes, Obsidian links, local file links, node links and more.',
+    'pm.secProH': '🪴 What Pro Adds',
+    'pm.secProMarket': '<span class="pm-blue">The original creative features of 28 Notes</span>, which need activation after the trial.',
+    'pm.secProDim': 'Now, Minor, shortcuts, AI path locating, multi-level folding and more.',
+    'pm.capBefore': 'Before: Large and Messy',
+    'pm.capAfter': 'After Now and Minor: Clear and Focused',
+    'pm.thanks': 'Your support keeps this product growing. Thank you!',
+    'pm.note': 'One-time purchase. The code never expires and works on up to three devices. (Online generative AI features are not included.)',
+    'pay.h1': 'Pay {0} by WeChat QR Code', // {0} = price (PRO_PLAN.priceNowText)
+    'pay.emailLead': 'Send a screenshot of the payment to:',
+    'pay.step1': '1. The screenshot must show the transfer number (sample below)',
+    'pay.step2': '2. The license code arrives within about 24h',
+    'pay.alt1': 'If email is inconvenient, add the developer on WeChat: {0}', // {0} = WeChat ID
+    'pay.h3': 'Activate',
+    'pay.path': 'Obsidian → Settings → Community Plugins → 28 Notes',
+    'pay.alt3': 'Activation trouble? Email us, or reach the developer on WeChat: {0}',
+    'pay.thanks': '=) Thank you for your support!',
     'more.addUrlLink': 'Add Web Link',
     'more.addUrlLinkTip': 'Open the webpage with one click (Paste Directly)',
     'more.urlText': 'Display Text',
@@ -862,6 +995,7 @@ var I18N = {
     'toast.pasteFileLink': 'Select a Node before Pasting a File Link',
     'toast.pasteImg': 'Select a Node before Pasting an Image',
     'toast.pasteFirst': 'Select a Node before Pasting',
+    'toast.pasteEmpty': 'Nothing to Paste in the Clipboard', // empty clipboard (2026-09-23: split off from the "select a node" message)
     'toast.imgSavedNoNode': 'Image Saved, but the Target Node No Longer Exists',
     'toast.showNowEmpty': 'No Now Nodes in the Current View — "Focus on Now" Not Enabled',
     'toast.imgSaveFail': 'Failed to Save the Image',
@@ -894,11 +1028,20 @@ var I18N = {
     'ctx.drillTip': 'Show Only This Node in the View{0}', // {0} = hotkey segment, filled by nmKeySuffix()
     'ctx.bookmarkTip': 'Save as a New Page to Jump Back into This View Later{0}', // {0} = hotkey segment
     'ctx.basicOps': 'Basic Actions',
+    // Context-menu To-Do row (2026-09-23): shown when the "To-Do Button" setting is on the context-menu mode;
+    // same look and behavior as the bottom-bar button.
+    'ctx.todoPlain': 'Mark as Todo Node', // plain node + plain click
+    'ctx.todoAlt': 'Mark as Done Node', // plain node while holding {Mod} (same as {Mod}+click on the bottom button)
+    'ctx.todoOff': 'Mark as Non-Todo Node', // Todo / Done node (holding {Mod} makes no difference: both go back to plain)
+    'ctx.todoHotkey': 'Hotkey: {0}', // hotkey segment of the tip (omitted entirely when no key is bound)
+    'ctx.todoCmdHint': '(Hold {Mod}: Mark as Done)', // extra hint: {Mod}+click sets Done in one go
     'ctx.cut': 'Cut',
     'ctx.copy': 'Copy',
     'ctx.paste': 'Paste',
     'ctx.delete': 'Delete',
     'ctx.pasteUseKey': 'Clipboard Unavailable — Paste with {Mod}+V',
+    'ctx.pasteEmptyTip': 'Nothing to Paste in the Clipboard (Copy a Node or Text First)', // tip shown on the greyed-out Paste row (2026-09-23)
+    'ctx.pasteMultiTip': 'Cannot Paste with Multiple Nodes Selected (Select One Node First)', // Paste is greyed out in multi-select (2026-09-23)
     'more.kbdPaste': 'Paste',
     'more.kbdWiki': '[[',
     'more.kbdTab': 'Tab',
@@ -910,8 +1053,18 @@ var I18N = {
     'ctx.copyAILocate': 'Copy AI Locate Path',
     'ctx.copyAILocateTip': 'Let an AI Agent Quickly Locate the Node You Want to Edit{0}', // {0} = hotkey segment
     // AI locate text (2026-09-20): single line wrapped in 【】 (user wants to paste it as one block), {0} = path, {1} = node ID.
-    'aiLocate.node': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. Use the node id to locate the node to edit, node ID: {1}; 4. Start editing based on the user\'s instruction】',
-    'aiLocate.file': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. Start editing based on the user\'s instruction】',
+    'aiLocate.node': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. A snapshot has already been saved automatically by the plugin — do not back up again (skip the "Before editing" section of index.md and do not run snapshot.py); 4. Use the node id to locate the node to edit, node ID: {1}; 5. Start editing based on the user\'s instruction】',
+    'aiLocate.file': '【1. Find the document to edit, path: {0}; 2. Start editing based on the user\'s instruction】',
+    // Split version used by the AI edit dialog (send button) — 2026-09-28
+    'aiLocate.nodeHead': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly{1}; 3. A snapshot has already been saved automatically by the plugin — do not back up again (skip the "Before editing" section of index.md and do not run snapshot.py); 4. Use the node id to locate the node to edit, node ID: {2}; ',
+    'aiLocate.ruleSuffixImport': ', as well as how to digest an AI web answer',
+    'aiLocate.askDefault': '5. Start editing based on the user\'s instruction】',
+    'aiLocate.ask': '5. User instruction: {0}】',
+    'aiLocate.askImport': '5. User instruction: digest the AI web answer, web link: {0}; specific instruction: {1}】',
+    'aiLocate.askImportNoText': '5. User instruction: digest the AI web answer, web link: {0}】',
+    // File-list right-click · when the target is a 28Notes mindmap, use this one (extra "save a snapshot" step, script path = {1}).
+    // Plain notes keep the shorter version above: they have no frontmatter, can't reach index.md, and don't need a snapshot.
+    'aiLocate.fileMm': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. A snapshot has already been saved automatically by the plugin — do not back up again (skip the "Before editing" section of index.md and do not run snapshot.py); 4. Start editing based on the user\'s instruction】',
     // Frontmatter AI hints written into a file when it is created / first injected (2026-09-20):
     // language is taken **at write time** and never rewritten afterwards (switching language must not touch existing files).
     'fm.ai': 'Before editing this file, read 28Notes-Files/AI/index.md and follow it strictly — otherwise the file may show garbled content when opened',
@@ -954,14 +1107,18 @@ var I18N = {
     'hist.dateMD': '{0}/{1}',
     'hist.dateYMD': '{1}/{2}/{0}',
     'hist.rename': 'Rename This Version',
+    'hist.lock': 'Lock This Version',
+    'hist.unlock': 'Unlock This Version',
     'hist.delete': 'Delete This Version',
     'hist.itemMenu': 'More Actions',
+    'hist.lockedTip': 'Locked (Never Auto-Trimmed)',
+    'hist.unlockedTip': 'Lock This Version (Unlocked Versions Are Auto-Trimmed)',
     'hist.renameTitle': 'Rename This Version',
     'hist.renameHint': '(Empty = "Auto Save")',
-    'hist.confirmDelete': 'Delete this version? It cannot be recovered from the plugin (the file goes to the system trash).',
+    'hist.confirmDelete': 'Delete this version? It will be moved to the system trash.',
     'hist.panelTitle': '28 Notes Mind Map History',
     'hist.rules': 'Save Rules',
-    'hist.rulesText': 'Versions are saved frequently while editing.<br>Old versions are thinned out automatically.<br>Manually saved / renamed versions are never thinned out.',
+    'hist.rulesText': 'Versions are kept frequently while editing; redundant ones are later auto-trimmed (down to 1-7 per week). Manually saved / renamed / locked versions are never auto-trimmed.',
     'hist.noMap': 'No Mind Map Is Open',
     'cmd.openHistory': 'Other | Open History Panel',
     'notice.panelFail': 'Failed to Open the Right Sidebar History Panel',

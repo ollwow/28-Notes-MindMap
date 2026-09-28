@@ -37,6 +37,13 @@
   --pro-cta-hint-color: #808080;  /* 实验（2026-09-16 用户试）：试用提示小字单独用灰色，不跟随主题。深浅直接改这个值（#666 更深 / #aaa 更浅） */
   --pro-cta-hint-opacity: 0.8;    /* 小字透明度：1=不透明；调小→更淡。当前 0.8 —— 灰字本身已偏浅，叠上半透明会更轻，觉得太淡就调到 0.9 / 1 */
 
+  /* ---- 右上角全屏按钮（2026-09-27 加；显隐开关 = main.js 的 SHOW_TB_FULLSCREEN_TOP）---- */
+  --fs-top-right: 10px;   /* 距窗口【右】边：调大→按钮往左移。默认 16px */
+  --fs-top-top: 10px;     /* 距窗口【上】边：调大→按钮往下移。默认 16px */
+  --fs-top-size: 24px;    /* 按钮外框（正方形边长）：默认 34 = 与左下工具栏按钮同大；调大→按钮更大 */
+  --fs-top-ico: 18px;     /* 里面那个图标的大小：默认 18（同左下）；调大→图标更大 */
+  --fs-top-radius: 8px;   /* 圆角：默认 8（同左下按钮） */
+
   /* ---- 提示框 tooltip ---- */
   --tip-offset-x: 14px;       /* 左下角按钮 tooltip（黑色小框）向右浮动的额外偏移：调大→框更远离按钮、避开相邻按钮的遮挡线；调小→更贴近。默认 14px（原 8px，已加大以避开那条线）✅ 改完重载插件生效 */
   --tip-top-box-gap: 10px;     /* 底部工具条 tooltip【黑框】与按钮的间距：调大→框更远离按钮。改完重载插件生效 */
@@ -52,6 +59,9 @@
   --locate-fade-ms: 260ms;      /* 定位暗态↔亮态的渐变时长（纯 CSS）：调大→明暗过渡更慢更柔；调小→更快。重载方式：View → Force Reload */
   --locate-hover-delay-ms: 320; /* 定位按钮【悬停多久才弹子菜单】（毫秒）：鼠标必须停在按钮上这么久，才弹出子菜单并预览定位；没停够就移开（扫过）= 完全不弹、画布也不动。调大→更不容易误触；调小→更灵敏；0=立刻弹（旧行为）。改完需【禁用再启用插件】生效（CSS 与 JS 都只在插件启用时读盘一次） */
   --locate-item-delay-ms: 320;  /* 子菜单条目【悬停多久才定位预览】（毫秒）：鼠标在条目上停够这么久，画布才滚过去预览；扫过不动。调大→更稳不易误触；调小→更灵敏；0=立刻定位（旧行为）。改完需【禁用再启用插件】生效 */
+
+  /* ---- 过滤按钮（眼睛：只显示 Now / 隐藏 Minor+Done 两功能合一，2026-09-27；2026-09-28 起点击弹出）---- */
+  --filter-menu-y: 0px;         /* 二级菜单上下微调（菜单上沿默认与按钮上沿齐平）：正值=下移，负值=上移 */
 
   /* ---- 链接前缀图标（globe / folder-closed / brackets / frame）---- */
   --link-ico-y: -1px;          /* 链接图标上下微调：正值→图标下移，负值→上移；默认 0（与文字居中）。嫌图标高了/低了就改这个。改完重载插件生效 */
@@ -134,22 +144,12 @@
   --todo-ico-pad: 2px;           /* 🎚 待办图标**悬浮底色框**的大小（调大 = 底色框更宽、更好点）*/
   --todo-ico-radius: 4px;        /* 悬浮底色框圆角 */
   --todo-ico-hover: rgba(0, 0, 0, 0.056); /* 待办图标悬浮底色（让人看出可点）*/
+  --todo-ico-done-line: var(--minor-text-color, var(--muted)); /* 🎚 合并模式下「已完成那段」的颜色（沿边框从顶部起顺时针走的那条）；默认 = 已完成置灰色（跟"勾成已完成"那档同色）*/
   --minor-ico-size: 14px;        /* 🎚 Minor 前缀图标大小（原来是写死的 12px，2026-09-20 提成旋钮）*/
   --tb-sep-a: .28;               /* 🎚 底部工具条分隔线的浓度（0 = 看不见，.28 = 默认）。线色固定跟 --text 走，
                                     深浅色主题自动正确；只调浓度就改这一个数 */
   --tb-sep-gap: 8px;             /* 🎚 分隔线与左右两个按钮之间的间距（**左右同一个值**，用户 2026-09-21 定：
                                     一个旋钮同时管两侧；调大 = 线两边更空，调 0 = 贴着按钮）*/
-  /* ---- 母节点「进度百分比」的旋钮（2026-09-21 第七轮用户定：大小 / 颜色 / 左右 / 上下都可调）---- */
-  --todo-pct-size: 11px;         /* 🎚 百分比字号（默认比正文小一号 → "略小字"）*/
-  --todo-pct-color: var(--muted); /* 🎚 百分比颜色（默认灰；想更淡 / 更明显改这里）*/
-  --todo-pct-offset-x: 0px;      /* 🎚 左右位置：正值右移、负值左移 */
-  --todo-pct-offset-y: -1.4px;      /* 🎚 上下位置：正值下移、负值上移（默认 0 = 与文字中线居中）*/
-  --todo-pct-gap: 3px;           /* 与右边图标（待办 / Now / Minor）之间的间距 */
-  --todo-pct-pad-x: 3px;         /* 🎚 悬浮底色框的**左右**内边距（2026-09-21 用户定：小背景左右可调）*/
-  --todo-pct-pad-y: 6px;         /* 🎚 悬浮底色框的**上下**内边距（同上：上下可调）*/
-  --todo-pct-radius: 4px;        /* 悬浮底色框的圆角 */
-  --todo-pct-pct-w: 0.75em;      /* 🎚 百分号那一格的宽度（预留宽度用，宁宽勿窄）：调小 → 更紧凑，太小会让 100% 那一下重新抖 */
-  --todo-pct-pull: 7px;          /* 🎚 整块往左拉多少（正值 = 左移）：收掉左侧多余空间、更贴左；0 = 不拉。2026-09-22 用户自己在实机上试出来的定稿值 7px（我把默认给的 4px 调大了） */
   --tb-minor-raise: 0px;         /* 🎚 底部工具条「Minor」按钮里那个图标的上下位移（正值上提 / 负值下移；2026-09-20）*/
 
   /* ---- 文字 / 备注 / 链接 ---- */
@@ -196,6 +196,12 @@
   --edge-feishu: #5A82F5;     /* 飞书主题连线蓝（2026-08-31）：设置页主题选「飞书」时 --edge 会切到这个色。可自定义 */
   /* ---- 飞书粉线版（2026-09-01 定）：连线+主节点背景+选中/hover/定位按钮 等蓝色系全部覆盖为粉。改完重载插件生效 ---- */
   --edge-pink: #F06292;                /* 粉线版连线颜色：默认 #F06292（粉红 400） */
+  --edge-dim: #c5cdd9;                 /* 🎚 2026-09-24 试验：Minor / 已完成节点的连线颜色（固定灰，**不跟主题走** ——
+                                          蓝线/粉线主题下这些线也一律变灰）。默认值 = 灰色主题的线色，所以灰色主题下看不出变化 */
+  --edge-dim-alpha: .45;               /* 🎚 置灰线的**不透明度**（2026-09-24 补）：
+                                          · 灰线主题（默认）：线本来就是灰的，只改颜色**区分不出来** → 靠"变淡"区分。
+                                          · 蓝线 / 粉线主题：靠颜色就能区分 → 那边覆盖回 1（保持实心，别平白变淡）。
+                                          调小 = 更淡；调 1 = 不淡化（回到只靠颜色区分）。 */
   --root-bg-pink: #FFE4EC;             /* 粉线版主节点背景：默认 #FFE4EC（粉 50） */
   --accent-pink: #E91E63;              /* 粉线版强调色（替换 --accent 蓝 #0d72ff）：默认 #E91E63（粉 500）*/
   --sel-pink: #ffeef4;                 /* 粉线版工具栏 hover 背景色（替换 --sel 蓝 #d0e3ff）：默认 #FFB6D5（粉 200）*/
@@ -305,7 +311,7 @@
   --ui-shadow-a: 0.9;                    /* 投影总强度倍数 0~2（1 = 标准，0 = 无阴影） */
   --ui-bar-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px -10px rgba(20,40,80, calc(.28 * var(--ui-shadow-a))); /* 浮层投影 */
   --ui-tb-hover: var(--sel);             /* 按钮 / 菜单条目悬停底色（默认沿用选中蓝） */
-  --ui-tb-press-scale: 0.98;             /* 按钮按下缩放（1 = 不缩放） */
+  --ui-tb-press-scale: 0.98;             /* 按钮按下缩放（1 = 不缩放）：底部工具条那排 + 左下工具栏（.tb）共用这一个值 */
   --ui-menu-anim: 200ms;                 /* 节点工具条出场时长（0 = 关掉动效，恢复瞬间出现） */
   --ui-menu-rise: 0px;                   /* 节点工具条出场位移（从下方浮上来的距离；0 = 只淡入） */
   --ui-btn-anim: 160ms;                  /* 按钮状态变化（变亮 / 变暗 / 置灰）的过渡时长（0 = 瞬切） */
@@ -524,6 +530,11 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .card .todo-ico:hover { background: var(--todo-ico-hover, rgba(0,0,0,.08)); }
 /* 已完成待办：图标**跟着节点一起变灰**（2026-09-20 用户定：不要主题色/线色）*/
 .card .todo-ico.td-on { color: var(--minor-text-color, var(--muted)); --todo-check: var(--minor-text-color, var(--muted)); }
+/* 合并模式（2026-09-24 第九轮 + 同日微调）：母节点自己也是 todo + 有子待办 → 子进度指挥边框视觉
+   ⚠️ 底层框 **保持正常色**（不设 color，继承节点字色 —— 用户定：跟其它待办节点一样，别弄成灰的）；
+   覆盖层 stroke = --todo-ico-done-line（旋钮，默认 = 已完成置灰色）—— 走过的那段变灰 = "已完成"。
+   起点在方框顶部（12 点钟），顺时针走。 */
+/* （td-merged 本身不需要覆盖 color —— 刻意不写，让它继承）*/
 /* Now 节点：选中后整卡字体（含链接标题）变紫 */
 .card.now { color: var(--now-text-color, #8B5CF6); }
 .card.now .link-main { color: var(--now-text-color, #8B5CF6); }
@@ -553,6 +564,157 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
   padding: 5px 12px; font-size: 12px; cursor: pointer; border-radius: 5px;
 }
 .node-menu button:hover { background: var(--sel); }
+/* 「＋」的悬浮提示与它弹出的面板**都在按钮上方**（提示 data-side=top、面板向上弹）→
+   面板展开时先把提示收掉，免得两段黑字叠在一起（2026-09-28 加：改点击弹出后才挂上提示）。
+   #node-more-menu 挂在 body 上（不在 .node-menu 里），所以用 body:has(...) 跨过去判断。 */
+body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"][data-tip]::after,
+body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"][data-tip]::before { display: none; }
+
+/* ===== AI 输入条（2026-09-28 用户定）：点左下「AI 编辑」→ 底部弹出输入框，替掉那排节点按钮 =====
+   位置与底部工具条同一档（水平居中 + 同样的距底边），宽度略长；底部固定 → 打字多了往上长。
+   外观旋钮全在 :root（--ai-bar-w / -h / -bottom / -radius / -border / -maxh）。
+   显隐与底部工具条互斥，由 JS 保证（showNodeMenu 里看 aiInputOn）。 */
+#ai-input-bar {
+  position: fixed; left: 50%; bottom: var(--ai-bar-bottom);
+  transform: translateX(-50%);
+  z-index: 71;                       /* 高于底部工具条 70 */
+  display: flex; flex-direction: column; align-items: flex-start;   /* 提示词在上、框在下 */
+}
+#ai-input-bar.hidden { display: none; }
+/* 框上方那行提示词（2026-09-28）：说明这次是对谁说话；鼠标浮上去右侧冒出取消选中的叉 */
+/* 提示词那一行 = 整条框的宽度（2026-09-28 改）：提示词靠左、关闭叉靠右 —— 于是叉出现在「框的右上方」 */
+.ai-bar-hint-wrap {
+  display: flex; align-items: center; gap: 4px;   /* 文字与叉之间留一点空隙（两个叉之间也是这个） */
+  width: 100%;
+  margin: 0 0 4px 0;
+  justify-content: flex-start;                    /* 内容整体靠左：叉紧跟文字，不再被推到最右 */
+}
+.ai-bar-hint {
+  /* 文字太长就**换行**，不截断（2026-09-28 用户定：多选那句被截成「暂不支持选中多…」了）。
+     ⚠️ 用 flex: 0 1 auto（按内容宽度、可收缩）而不是 flex: 1 —— 否则它会把后面的关闭叉
+     一直顶到最右边；用户要的是「叉紧贴着这行字」。 */
+  flex: 0 1 auto; min-width: 0;
+  margin-left: var(--ai-bar-hint-x, 6px);   /* 这行字相对左边的位置：调大 = 往右移（默认 6px ≈ 对齐框的左边缘） */
+  font-size: var(--ai-bar-hint-fs, 10px);   /* 字号可调（--ai-bar-hint-fs） */
+  color: #8a8f98; line-height: 1.4;
+  white-space: normal; word-break: break-word;
+}
+/* 关闭叉靠右（原来在框外左侧，2026-09-28 用户觉得不平衡 → 挪到右上方）。
+   右内边距与导入小条那边（--ai-chip-pad-r）取同一个值 → 两颗叉上下对齐；--ai-bar-close-x 可整体平移。 */
+.ai-bar-hint-wrap { padding-right: var(--ai-chip-pad-r, 6px); }
+/* 两颗叉各就各位（2026-09-28 二改）：
+   · 「取消选中」那颗紧跟这行字（默认位置，靠左）
+   · 「关闭整个输入框」那颗**保持在最右边**（margin-left:auto 顶到行尾）—— 用户要求别动它 */
+.ai-bar-hint-wrap .ai-bar-close { margin-left: auto; margin-right: var(--ai-bar-close-x, 0px); }
+/* 导入链接后冒出来的那条小条（2026-09-28）：紧贴框的上方，宽度跟框一样 */
+#ai-import-chip {
+  display: flex; align-items: center; gap: 7px;
+  width: var(--ai-bar-w);
+  box-sizing: border-box;
+  margin: var(--ai-chip-mt, 0px) 0 var(--ai-chip-mb, 4px) 0;   /* 上下边距可调 */
+  padding: 5px var(--ai-chip-pad-r, 6px);   /* 右侧内边距（决定里面那颗叉的基准位置） */
+  /* 底色 = 主题色 + 可调不透明度（--ai-chip-bg-a，2026-09-28 用户要可调） */
+  background: color-mix(in srgb, var(--ai-chip-bg) calc(var(--ai-chip-bg-a) * 100%), transparent);
+  border-radius: 8px;
+  font-size: 12px; color: var(--text);
+  cursor: pointer;                          /* 整条可点 → 再弹导入弹窗改链接 */
+}
+#ai-import-chip.hidden { display: none; }
+.ai-chip-ic {
+  display: inline-flex; flex: none; opacity: .8;
+  margin-left: var(--ai-chip-ic-x, 0px);   /* 左右微调：用来和下面输入框里的加号对齐 */
+}
+.ai-chip-text {                    /* 超长截断加省略号（链接一般都很长） */
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 小条右侧那颗叉（2026-09-28 二改）：大小 / 左右 / 上下都读**自己那一套**旋钮（--ai-chip-close-*），
+   与框右上方那颗（--ai-bar-close-*）完全分开 —— 用户要求两颗能分别调。 */
+.ai-chip-close {
+  flex: none; padding: 0;
+  width: var(--ai-chip-close-size, 20px); height: var(--ai-chip-close-size, 20px);
+  margin-right: var(--ai-chip-close-x, 0px);
+  margin-bottom: var(--ai-chip-close-y, 0px);
+  border: none; background: transparent; color: #8a8f98; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 4px;
+}
+.ai-chip-close:hover { background: var(--ai-bar-hover-bg); color: var(--text); }
+.ai-bar-hint-clear {
+  width: 16px; height: 16px; border-radius: 4px; color: #8a8f98;
+  opacity: 0;                        /* 平时不显示，鼠标浮到提示词那一行才出来 */
+  transition: opacity var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
+}
+.ai-bar-hint-wrap:hover .ai-bar-hint-clear { opacity: 1; }
+/* 没选中时整颗叉收掉（2026-09-28 用户定：「当前视图」旁边不该有取消按钮 —— 没东西可取消）。
+   本文件的 .hidden 一律逐条点名，所以这里单独写一条。 */
+.ai-bar-hint-clear.hidden { display: none; }
+.ai-bar-hint-clear:hover { background: var(--ai-bar-hover-bg); color: var(--text); }
+.ai-bar-main { position: relative; display: flex; align-items: flex-end; gap: 10px; }   /* 关闭叉在框外左侧；
+   定位上下文 —— 「＋」的子菜单 absolute 到它上面（见 #ai-plus-menu） */
+.ai-bar-box {
+  display: flex; align-items: flex-end; gap: 6px;
+  width: var(--ai-bar-w);
+  min-height: var(--ai-bar-h);
+  padding: 5px 6px;
+  background: #fff;                  /* 与底部工具条同底色 */
+  border: var(--ai-bar-bw) solid var(--ai-bar-border);   /* 粗细可调（--ai-bar-bw） */
+  border-radius: var(--ai-bar-radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);   /* 与底部工具条同一条底部阴影 */
+}
+.ai-bar-input {
+  flex: 1; min-width: 0;
+  height: 24px;                      /* 初始单行；打字后由 JS 按内容改写（往上长） */
+  margin: 0; padding: 2px 4px;
+  border: none; background: transparent; color: var(--text);
+  font-size: 13px; font-family: inherit; line-height: 20px;
+  resize: none; outline: none; overflow-y: auto;
+  transform: translateY(var(--ai-bar-text-y));   /* 文字上下微调（负 = 上移） */
+}
+/* 预埋提示（「你想让 AI 做什么？」）：灰色小字，一打字就没 —— 原生 placeholder 行为 */
+.ai-bar-input::placeholder { color: #b0b4ba; opacity: 1; }
+.theme-dark .ai-bar-input::placeholder { color: #5a5f66; }
+/* 「＋」的子菜单（2026-09-28）：浮在框的上方，材质与其它浮层一致 */
+#ai-plus-menu {
+  /* 与输入框**左对齐**（框左边距 = 6px padding），宽度跟文字走（不再固定 190px 那种右侧多一截空白）；
+     上下位置用 --ai-plus-menu-gap 调：默认 0 = 紧贴框顶（会盖住上面那行提示词，用户 2026-09-28 说没关系） */
+  position: absolute; left: 0; bottom: calc(100% + var(--ai-plus-menu-gap, 0px));
+  z-index: 72;
+  width: max-content; padding: 4px;
+  background: #fff; border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+  display: flex; flex-direction: column; gap: 2px;
+}
+#ai-plus-menu.hidden { display: none; }
+.ai-plus-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border: none; background: transparent;
+  color: var(--text); font-size: 13px; font-family: inherit; text-align: left;
+  border-radius: 6px; cursor: pointer;
+}
+.ai-plus-item:hover { background: var(--ai-bar-hover-bg); }
+.ai-plus-item .icon { flex: none; opacity: .8; }
+.theme-dark #ai-plus-menu { background-color: rgb(30 32 36 / var(--ui-bar-a, 1)); }
+.ai-bar-plus, .ai-bar-send, .ai-bar-close, .ai-bar-hint-clear {
+  flex: none; padding: 0; border: none; background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ai-bar-plus { width: 26px; height: 26px; border-radius: 6px; color: var(--ai-bar-border); }
+.ai-bar-plus:hover { background: var(--ai-bar-hover-bg); }   /* 浅蓝底，不跟随主题色 */
+/* 发送钮（2026-09-28 换用户给的自绘图标）：图标自带实心圆 + 挖空箭头 → 按钮本身不再画底，
+   颜色交给 color（跟随主题色），所以粉/灰主题下自动变。 */
+.ai-bar-send {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: transparent; color: var(--accent);
+}
+.ai-bar-send:hover { filter: brightness(1.08); }
+.ai-bar-send:active { transform: scale(var(--ui-tb-press-scale, 1)); }   /* 与工具栏按钮同一套按下回弹 */
+.ai-bar-close {
+  width: var(--ai-bar-close-size, 20px); height: var(--ai-bar-close-size, 20px);  /* 与导入小条那颗同尺寸 */
+  border-radius: 6px; color: #b0b4ba;
+  margin-bottom: var(--ai-bar-close-y, 0px);   /* 往上抬一点（正值 = 上移）；小条那颗也读同一个值 */
+}
+.ai-bar-close:hover { background: var(--ai-bar-hover-bg); color: var(--text); }   /* 浅蓝底 */
+.theme-dark .ai-bar-box { background-color: rgb(30 32 36 / var(--ui-bar-a, 1)); }  /* 深色主题：白底换深底 */
 
 /* 底部菜单最右「更多」的悬浮面板（2026-09-17）：id=#node-more-menu（JS 动态建，挂在 body 上）。
    ⚠️ 外观**不另做一套**（用户 2026-09-17 抓的：材质/行距/分隔线都跟左下工具栏那个「更多」子菜单不一致）：
@@ -721,6 +883,10 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .ctx-ic { display: inline-flex; width: 16px; height: 16px; flex: none; opacity: .9; }
 .ctx-ic svg { width: 16px; height: 16px; }
 .ctx-item:hover { background: var(--sel); }
+/* 置灰的菜单行（2026-09-23：剪贴板空时右键「基础操作 → 粘贴」）
+   ⚠️ 只压淡、**不拦点击**（pointer-events 照常）：点下去那一步会给一句明确提示，
+   比"灰了还点不动、一点反应没有"强 —— 悬浮说明也会换成"为什么不可用"。 */
+.ctx-item.ctx-na { opacity: var(--ctx-na-opacity, .4); cursor: default; }
 .ctx-sep { height: 1px; background: var(--line); margin: 3px 0; }
 /* 右键菜单（2026-09-21）：右侧快捷键提示 + 二级菜单
    提示形态与左下「更多」菜单的 .kbd 一致（小字、半透明）；靠最右（margin-left:auto）。
@@ -728,6 +894,16 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .ctx-item .kbd { font-size: 11px; opacity: .55; margin-left: auto; padding-left: 14px; display: inline-flex; align-items: center; }
 .ctx-item.ctx-has-sub .kbd { opacity: .45; padding-left: 10px; }
 .ctx-submenu { min-width: 150px; }
+/* 右键「待办」行（2026-09-23）：图标沿用底部待办按钮的六档配色（节点状态 × ⌘ 是否按住），
+   ⚠️ 这些类只挂在图标 .ctx-ic 上、不挂整行 —— 底部那颗是纯图标按钮，右键这行还有文字，
+   整套挂到行上会把文字也染成主题色。取值与 .node-menu button.td-* 一一对应，改一处要一起看。 */
+.ctx-ic.td-plain { opacity: 1; }
+.ctx-ic.td-plain-cmd { opacity: 1; --todo-check: currentColor; }
+.ctx-ic.td-todo { color: var(--accent); opacity: 1; }
+.ctx-ic.td-todo-cmd { color: var(--accent); opacity: 1; --todo-check: var(--text); }
+.ctx-ic.td-done { color: var(--accent); opacity: 1; }
+.ctx-ic.td-done-cmd { color: var(--accent); opacity: 1; --todo-check: var(--accent); }
+.ctx-ic .td-check { stroke: var(--todo-check, #C5CDD9); } /* 对勾单独着色（方框跟 currentColor） */
 
 /* ===== 折叠按钮（白圆钮/胶囊，默认隐藏、hover 显示；数字多时自动变长） =====
    热区方案（2026-08-21 定）：卡片右侧延伸 26px 的透明热区（::after），
@@ -758,6 +934,13 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 /* 贝塞尔连线层（2026-08-21 定：替换竖线+横线） */
 #edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; } /* 2026-09-13：去掉 translateZ(0)——提层的连线层会随 #tree 放大被位图拉伸而发虚；原为减少斜向滚动重绘 */
 #edges path { fill: none; stroke: var(--edge); stroke-width: var(--edge-width); }
+/* 2026-09-24 试验（用户定）：Minor / 已完成的节点，连到它的那条线也"置灰" ——
+   两条腿：① 颜色 → --edge-dim（固定灰，蓝线 / 粉线主题下一眼能看出变灰）；
+           ② 不透明度 → --edge-dim-alpha（默认 .45，**灰线主题靠这条区分** ——
+              灰线下线本来就是灰的，只改颜色等于没变，得让它变淡才看得出来）。
+   蓝线 / 粉线主题会把 alpha 覆盖回 1（那边靠颜色就够，不必再淡化）。
+   类由 JS 打（collectEdges 读子节点行的 .done 类，含"父 done 连坐子节点"那档）。 */
+#edges path.edge-dim { stroke: var(--edge-dim); opacity: var(--edge-dim-alpha, .45); }
 /* 拖拽预测曲线（2026-08-28，飞书式）：颜色可调（调参区 --drag-edge），与拔插高亮（--accent）同色系 */
 #drag-edge { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 #drag-edge path { fill: none; stroke: rgba(var(--drag-edge, 13,114,255), var(--drag-edge-alpha, 1)); stroke-width: var(--edge-width); }
@@ -785,6 +968,10 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   position: relative;
 }
 .tb:hover:not(:disabled) { background: var(--sel); }
+/* 按下回弹（2026-09-28 用户定）：与底部工具条那排按钮同款 —— 同一个旋钮 --ui-tb-press-scale，
+   过渡也走下面那条统一的 transform（.tb 已在名单里）。
+   按钮上的黑色小字提示是它的 ::after/::before 伪元素 → 会跟着一起回弹，不用另写。 */
+.tb:active { transform: scale(var(--ui-tb-press-scale, 1)); }
 /* ===== 右上角「激活创新 Pro 版」提示按钮（2026-09-04）=====
    只在「未购买」时显示：试用中 trial / 试用结束未激活 / 模块异常 none → 显示；已激活 license → 隐藏。
    （注意：这里不能用 state.isPro 判断！isPro=功能是否可用，试用期内 isPro=true 但并未授权，
@@ -834,10 +1021,29 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 }
 #pro-cta-hint.hidden { display: none; }
 
+/* ===== 右上角全屏按钮（2026-09-27 加）=====
+   独立 fixed 定位：位置 / 大小 / 圆角 / 图标大小全在 :root 顶部调参区（--fs-top-right / --fs-top-top /
+   --fs-top-size / --fs-top-ico / --fs-top-radius）。材质（白玻璃 + 描边 + 阴影）走下面「所有浮层共用」那组。
+   左下那颗同功能的按钮由 main.js 的 SHOW_TB_FULLSCREEN 屏蔽（不是删掉）。 */
+#fs-top-wrap { position: fixed; top: var(--fs-top-top); right: var(--fs-top-right); z-index: 88; }
+#fs-top-wrap.hidden { display: none; }   /* 被 SHOW_TB_FULLSCREEN_TOP 屏蔽时靠这条收掉（代码不删） */
+/* 用「容器 + 按钮」两级 id 写：下面「所有浮层共用同一套材质」那条是全文件统一的圆角（--ui-bar-radius），
+   单 id 选择器会被它盖掉 —— 加一级 #fs-top-wrap 提权，--fs-top-radius 才真的生效。 */
+#fs-top-wrap #btn-full-top {
+  width: var(--fs-top-size); height: var(--fs-top-size);
+  border-radius: var(--fs-top-radius);
+}
+#fs-top-wrap #btn-full-top svg { width: var(--fs-top-ico); height: var(--fs-top-ico); }
+/* 左下工具栏那颗全屏按钮被屏蔽时靠这条收掉（本文件的 .hidden 一律逐条点名，没有全局兜底） */
+#btn-full.hidden { display: none; }
+
 /* 2026-08-30：不用 opacity（会把 hover tooltip 的黑框一起调暗成灰框，所有 tooltip 统一小黑框）
    → 只把图标颜色调灰（SVG 走 currentColor），禁用态照样看得出，但 tooltip 保持纯黑 */
 .tb:disabled, .tb.disabled { color: #b0b4ba; cursor: default; }
 .tb.disabled:hover, .tb:disabled:hover { background: transparent; }
+/* 过滤按钮（眼睛）例外（2026-09-28）：它置灰时**仍然能点**（点开的是二级菜单，菜单里两项各自才置灰），
+   所以置灰态照样给 hover 背景与手型光标 —— 与可点态一致，别让用户以为它死了。 */
+#btn-hide-done.disabled:hover, #btn-hide-done:disabled:hover { background: var(--sel); cursor: pointer; }
 .tb.hidden { display: none; }
 .tb .icon { display: block; pointer-events: none; }
 /* 隐藏完成激活态：eye-off 蓝色表示当前为隐藏状态 */
@@ -846,14 +1052,15 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .tb.now-on { color: #8B5CF6; }
 /* 默认路径按钮容器（dp-wrap 类仍被 more-wrap / now-locate-wrap 使用） */
 .dp-wrap { position: relative; }
-/* hover 子菜单时，隐藏主按钮的 tooltip，避免两者文字重叠（之前「乱码」根因） */
-/* 仅作用于真正带子菜单的容器（more/now-locate）；fold 按钮无 hover 子菜单（2026-09-01 子菜单已删），tooltip 正常显示 */
-#dp-wrap:hover .tb[data-tip]::after,
-#dp-wrap:hover .tb[data-tip]::before,
-#more-wrap:hover .tb[data-tip]::after,
-#more-wrap:hover .tb[data-tip]::before,
+/* 子菜单**已经展开**时，隐藏主按钮的 tooltip，避免两者文字重叠（之前「乱码」根因）。
+   ⚠️ 2026-09-28 改：原来写的是 `:hover`（一悬停就收）—— 那是"悬停即弹菜单"时代的写法。
+   「更多」改成点击弹出后，悬停时菜单根本不弹、提示却被收掉 → 永远看不见。
+   现在按容器分开：定位按钮仍是悬停弹菜单（保留 :hover）；「更多」只在菜单真开着时收。
+   （另删掉两条 `#dp-wrap:hover` —— 页面里没有 id="dp-wrap" 的元素，是死规则。） */
 #now-locate-wrap:hover .tb[data-tip]::after,
-#now-locate-wrap:hover .tb[data-tip]::before { display: none; }
+#now-locate-wrap:hover .tb[data-tip]::before,
+#more-wrap:has(#more-menu.open) .tb[data-tip]::after,
+#more-wrap:has(#more-menu.open) .tb[data-tip]::before { display: none; }
 
 /* 定位按钮 hover 预测高亮（2026-08-30 重定）：
    预测项 → sel 外框（含 Now 紫）+ 正常色；其它所有节点（字+图标）全暗 */
@@ -887,8 +1094,8 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 #more-menu::before { /* 透明桥接：防鼠标从 more 按钮移向菜单时消失 */
   content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
 }
-#more-wrap:hover .tb[data-tip]::after,
-#more-wrap:hover .tb[data-tip]::before { display: none; }
+/* （2026-09-28 删：这里原先又写了一遍 `#more-wrap:hover` 收提示的规则，与上面那条重复；
+   现统一由上面那组 `:has(#more-menu.open)` 负责。） */
 /* 2026-09-15 实验：路径两项可操作时文字+图标变主题色并加粗（与更多按钮斜杠暗示呼应），透明度略降防扎眼；
    上一/下一保持默认色；置灰态不匹配本规则，自动回落普通字重 */
 #more-menu .mm[data-act="path-default"]:not(:disabled),
@@ -902,7 +1109,50 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   content: ''; position: absolute; left: 100%; top: -6px; bottom: -6px; width: 44px;
   background: transparent; pointer-events: auto;
 }
-:root { --now-menu-y: -8px; /* 定位按钮子菜单上下微调（负=上移），嫌偏下就改大负数 */ }
+:root {
+  --now-menu-y: -8px; /* 定位按钮子菜单上下微调（负=上移），嫌偏下就改大负数 */
+  /* ---- 定位子菜单里那两条分隔线（三段之间，2026-09-28）---- */
+  --now-sep-color: var(--line); /* 颜色：默认跟随菜单描边色；想单独配色就写具体值，如 #d8dce4 */
+  --now-sep-a: 0.3;               /* 不透明度：0=完全看不见，1=不透明。嫌线太显眼就调到 .5 左右 */
+  --now-sep-len: 90%;          /* 长度：100% = 拉满菜单宽；想短一点写 60% / 120px（短了自动居中） */
+  --now-sep-gap: 4px;           /* 上下间距：调大 → 线两侧更空（菜单更高） */
+  /* ---- 条目左侧的身份图标区（主节点 / 选中节点 / 当前关注，一个条目最多叠 3 个，2026-09-28）----
+     ⚠️ 图标区**不设固定宽度**（2026-09-28 用户定）：有几个身份就占几格、文字紧跟其后；
+     固定宽度会让单图标的条目文字被推得老远（用户实机截图否掉）。 */
+  --now-ico-gap: 8px;           /* 多个身份图标之间的间距 */
+  /* ---- AI 输入条（2026-09-28）：点左下「AI 编辑」→ 底部弹出的输入框 ----
+     圆角 / 距底边 / 底色 / 底部阴影 / 高度都跟底部工具条（#node-menu）保持一致。 */
+  --ai-bar-w: 440px;            /* 输入框宽度（比底部那排按钮略长） */
+  --ai-bar-h: 38px;             /* 单行高度：与底部工具条同高 */
+  --ai-bar-bottom: 36px;        /* 距底边：与底部工具条同一档 */
+  --ai-bar-radius: 9px;         /* 圆角：与底部工具条一致 */
+  --ai-bar-border: var(--accent);   /* 框的描边色：默认跟随**主题色**（蓝线=蓝 / 粉线=粉 / 灰线=灰），
+                                       想固定成某个蓝就写死色值（如 #3B86F7） */
+  --ai-bar-bw: 1.4px;           /* 框的描边粗细：调大 → 框更粗 */
+  --ai-bar-hover-bg: color-mix(in srgb, var(--accent) 12%, transparent);   /* 加号 / 关闭叉的悬浮底色：主题色淡版 */
+  --ai-bar-text-y: -2px;        /* 框内文字上下微调（负 = 上移）：嫌字偏下就往负调 */
+  --ai-bar-close-y: 8px;        /* 关闭叉相对框底的位置：正值 = 往上抬一点 */
+  --ai-bar-maxh: 160px;         /* 打字多了往上长的上限，超过就在框内滚动 */
+  /* （2026-09-28 删：--ai-bar-hint-maxw —— 提示词不再截断，改成占满宽度 + 太长自动换行） */
+  --ai-bar-hint-fs: 12px;       /* 框上方提示词的字号（2026-09-28 用户要可调） */
+  --ai-bar-hint-x: 6px;         /* 提示词相对左边的位置：调大 = 往右移（默认 6px ≈ 对齐框左边缘） */
+  --ai-plus-menu-gap: -22px;      /* 「＋」子菜单距框顶的距离：0 = 紧贴（会盖住上面那行提示词）；正值 = 往上让开 */
+  /* 关闭叉 A：框右上方那颗（在提示词那一行里）—— 大小 / 左右 / 上下三项都能单独调 */
+  --ai-bar-close-size: 20px;    /* 大小 */
+  --ai-bar-close-x: 1px;        /* 左右：正值 = 往右 */
+  --ai-bar-close-y: -1px;        /* 上下：正值 = 往上 */
+  /* 导入小条（输入框上方那条） */
+  --ai-chip-bg: var(--accent);  /* 底色本体：默认主题色 */
+  --ai-chip-bg-a: 0.05;         /* 底色不透明度：调大 → 更实；调小 → 更淡（0 = 完全透明） */
+  --ai-chip-mt: 0px;            /* 小条上边距 */
+  --ai-chip-mb: 4px;            /* 小条下边距（小条与输入框之间那段） */
+  --ai-chip-pad-r: 10px;         /* 小条右侧内边距（决定里面那颗叉的基准位置） */
+  --ai-chip-ic-x: 3px;          /* 小条左边那个导入图标：左右微调（正值右移，用来和下面的加号对齐） */
+  /* 关闭叉 B：小条右侧那颗 —— 同样三项单独调，与叉 A **互不联动** */
+  --ai-chip-close-size: 20px;   /* 大小 */
+  --ai-chip-close-x: 2px;       /* 左右：正值 = 往右 */
+  --ai-chip-close-y: 0px;       /* 上下：正值 = 往上 */
+}
 #now-menu {
   position: absolute; left: 100%; bottom: 0; top: auto; margin-left: 6px;
   /* 2026-09-11 用户定：**向上展开**（锚工具栏底边）—— 工具栏贴屏底，向下伸必出屏；
@@ -935,12 +1185,50 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   text-align: left;
 }
 .now-num:hover { background: var(--sel); font-weight: 700; }  /* 悬浮项加粗；颜色按类型走下方规则 */
+/* 三段分隔线（2026-09-28 用户定）：主节点 / 当前关注 / 选中节点 之间各一条。
+   颜色 / 不透明度 / 长度 / 上下间距四个旋钮都在 :root 顶部（--now-sep-*）。 */
+#now-menu .now-sep {
+  flex: none; height: 1px;
+  width: var(--now-sep-len);
+  align-self: center;                       /* 长度短于菜单宽时居中 */
+  margin: var(--now-sep-gap) 0;
+  background: var(--now-sep-color);
+  opacity: var(--now-sep-a);
+}
+/* 占位项：这一段当前没有内容（没有 Now / 没选中节点）→ 置灰、不可点、不参与 hover 高亮。
+   前面照样带该段的类型图标（与真条目同款，只是跟着文字一起置灰）—— 用户 2026-09-28 定。
+   ⚠️ 不是 .now-num，所以不会被 updateNowMenuBold 或飞出面板的下标计数算进去。 */
+#now-menu .now-empty {
+  display: flex; align-items: flex-start; gap: 7px;   /* 与 .now-num 同一套排版 */
+  padding: 5px 8px; font-size: 12px; color: #b0b4ba; cursor: default;
+}
+#now-menu .now-empty-ic {
+  display: inline-flex; flex: none; gap: var(--now-ico-gap);
+  justify-content: flex-end;   /* 与真条目同一套：图标靠右，文字左边缘才对得齐 */
+  margin-top: 1px; opacity: .85;
+}
+#now-menu .now-empty-ic svg { width: 15px; height: 15px; flex: none; }   /* 同 .now-num-ic：别被 flex 压缩 */
+/* Now 图标自带 stroke="#fff"（黑底白描边那版）→ 菜单里跟随文字色，同 .now-num 的处理 */
+#now-menu .now-empty-ic svg [stroke="#fff"] { stroke: currentColor; }
+.theme-dark #now-menu .now-empty { color: #5a5f66; }
 /* Now 项背景改紫（2026-09-11 用户定）：主节点/选中节点保持原背景（--sel），Now 用淡紫 */
 .now-num.is-now:hover, .now-num.is-now.bold { background: rgba(139, 92, 246, .14); }
 /* 2026-09-11 用户定：条目 = 类型图标 + **同源节点内容**（标题在上、备注另起一行在下）。
    全文不截断：与 .card .title 同款 white-space: pre-line + word-break: break-word，长了折行。 */
-.now-num .now-num-ic { display: inline-flex; flex: none; opacity: .85; margin-top: 2px; }
-.now-num .now-num-ic svg { width: 15px; height: 15px; }
+/* 图标区（2026-09-28）：一个条目可能叠 1~3 个身份图标（主节点 / 选中节点 / 当前关注）。
+   宽度由 JS 按「本菜单最多图标数」给（内联 min-width），图标**靠右**排（justify-content: flex-end）——
+   于是多图标那行往左长、单图标那行的图标紧贴文字侧，所有行的文字左边缘仍然对齐：
+     🏠🔆 主节点
+     【空】🖱 选中节点        ← 图标右对齐，不是「🖱【空】」那样把空位留在中间 */
+.now-num .now-num-ic {
+  display: inline-flex; flex: none; gap: var(--now-ico-gap);
+  justify-content: flex-end;
+  overflow: visible;   /* 缩进条目图标多出来时向左溢出、吃进缩进空隙（宽度由 JS 给死，不跟着内容长） */
+  opacity: .85; margin-top: 2px;
+}
+/* ⚠️ flex: none 必须有（2026-09-28 实踩）：图标区宽度是 JS 给死的，图标多出来时靠"向左溢出"消化 ——
+   没有它的话，多出来的图标会被 flex 压缩（两个图标挤成一格宽 → 图标变得非常非常小）。 */
+.now-num .now-num-ic svg { width: 15px; height: 15px; flex: none; }
 /* Now 图标用底部工具条那款（更简洁、无火花）；原设计黑底白描边 → 子菜单里改回跟随文字色 */
 .now-num .now-num-ic svg [stroke="#fff"] { stroke: currentColor; }
 .now-num-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
@@ -968,6 +1256,58 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .now-num:hover.is-now, .now-num.bold.is-now { color: #8B5CF6; }
 /* 子菜单里有 hover 时，非 hover 的当前选中项恢复普通黑（只高亮真正悬浮的那一项） */
 #now-menu:has(.now-num:hover) .now-num.bold:not(:hover):not(.is-now) { font-weight: 400; color: var(--text); background: transparent; }
+
+/* ===== 过滤按钮（眼睛）的二级菜单（2026-09-27 用户定：原「只显示 Now」+「隐藏 Minor/Done」两枚合一，
+       悬浮机制与定位按钮 #now-locate-wrap / #now-menu 完全一致：延时弹出、右侧展开、条目带黑色小字 tooltip）===== */
+#filter-wrap { position: relative; }
+#filter-wrap::after {                  /* 透明过桥区（同 #now-locate-wrap）：鼠标从按钮移向菜单途中仍算在 wrap 内，菜单不消失 */
+  content: ''; position: absolute; left: 100%; top: -6px; bottom: -6px; width: 44px;
+  background: transparent; pointer-events: auto;
+}
+/* 菜单**已经展开**时才收掉主按钮自己的 tooltip，避免两段黑字叠在一起。
+   ⚠️ 2026-09-28 改：原先写的是 `#filter-wrap:hover`（一悬停就收）—— 那是"悬停即弹菜单"时代的写法，
+   改成点击弹出后，鼠标停在按钮上菜单根本不弹，提示却被这条收掉了 → 悬浮提示永远看不见。
+   现在只在菜单真开着（#filter-menu.open）时收，提示照常显示。 */
+#filter-wrap:has(#filter-menu.open) .tb[data-tip]::after,
+#filter-wrap:has(#filter-menu.open) .tb[data-tip]::before { display: none; }
+#filter-menu {
+  /* 上沿与按钮上沿齐平（top:0）→ 菜单整个挂在**按钮自己那一格**的高度带上，不会往上飘到定位按钮旁边。
+     （2026-09-27 用户：菜单要和第二个按钮平齐；原来 bottom:0 是向上长，看着像挂在第一个按钮旁） */
+  position: absolute; left: 100%; top: 0; bottom: auto; margin-left: 6px;
+  transform: translateY(var(--filter-menu-y)); /* 上下微调（正=下移），旋钮在 :root 顶部调参区 */
+  z-index: 86;                                  /* 高于左 toolbar 85，不被遮 */
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px;
+  display: none; flex-direction: column; align-items: stretch; gap: 2px;
+  width: max-content; min-width: 120px;         /* 宽度跟着文字走，条目一律拉满（stretch）→ tooltip 起点=菜单右缘 */
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+}
+#filter-menu.open { display: flex; }
+#filter-menu::before { content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent; }
+/* 条目：图标 + 文字（与定位菜单 .now-num 同款观感）；条目拉满菜单宽度，
+   所以黑色小字 tooltip（left:100%）稳稳出现在**菜单最右边**，不会跟着某个图标乱跳 */
+.fm {
+  height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: flex-start; gap: 8px;
+  padding: 0 10px 0 8px;
+  border: none; background: transparent; color: var(--text);
+  font-size: 13px; font-family: inherit; white-space: nowrap; text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.fm-ic { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.fm-ic svg { display: block; width: 18px; height: 18px; }
+.fm-label { flex: 1; }
+.fm:hover:not(:disabled):not(.disabled) { background: var(--sel); }
+/* 置灰：与主按钮同款，只调图标色 —— 不用 opacity（会把黑色 tooltip 一起调成灰框） */
+.fm:disabled, .fm.disabled { color: #b0b4ba; cursor: default; }
+.fm.disabled:hover, .fm:disabled:hover { background: transparent; }
+.fm .icon { display: block; pointer-events: none; }
+/* 2026-09-28：删掉「默认选中某一项」那套（选中态那条 CSS）—— 现在菜单一打开就是干净的，
+   哪一项都不预选；鼠标浮上去才有背景（上面 .fm:hover 那条），移开也不留底色。 */
+/* 激活态：隐藏中=主题色（同 .tb.active-hide）；只看 Now 中=Now 紫（同 .tb.now-on） */
+.fm.active-hide { color: var(--accent); }
+.fm.now-on { color: #8B5CF6; }
 /* 悬停高亮第 N 层：复刻 hover 浅色外框 */
 /* 悬浮层级高亮（2026-09-11 用户定）：改用「选中」的深色边框 —— 原来是 hover 淡色，画面中不明显。
    三档与选中态同色：普通=--sel-ln / 一级=--sel-lv1 / 根=--sel-root */
@@ -986,7 +1326,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .mm-label { flex: 1; }
 .mm .kbd { font-size: 11px; opacity: .55; margin-left: 8px; }
 .mm-sep { height: 1px; background: var(--line); margin: 4px 4px; }
-/* 「更多面板简化」（2026-09-18）：被关掉的条目 / 分隔线整个不画。
+/* 「按钮简化」（2026-09-18）：被关掉的条目 / 分隔线整个不画。
    #more-menu 是宿主写死的静态骨架（不像节点面板那样每次重建），所以靠这条把带 .hidden 的收掉 ——
    本文件其它 .hidden 规则都是逐条 scoped 的（#error-box.hidden 之类），没有全局兜底，必须在这里点名。 */
 #more-menu .mm.hidden, #more-menu .mm-sep.hidden { display: none; }
@@ -1062,57 +1402,6 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 /* Minor 按钮图标的上下位移（2026-09-20 旋钮：--tb-minor-raise，正值上提 / 负值下移，0=不挪）；
    卡片里那个 Minor 前缀图标的位移是另一个旋钮 --minor-ico-raise（在顶部调参区），两者互不影响 */
 .node-menu button[data-act="minor"] svg { position: relative; top: calc(var(--tb-minor-raise, 0px) * -1); }
-/* 母节点「进度百分比」（2026-09-21 第七轮定稿，取代原来的圆圈进度环）：
-   灰色略小字 + 鼠标悬浮浅色底 + 上面黑色小框提示（提示走应用的 [data-tip] 机制，由 JS 写入），可点击。
-   四个旋钮在顶部调参区：--todo-pct-size（大小）/ --todo-pct-color（颜色）
-   / --todo-pct-offset-x（左右位置）/ --todo-pct-offset-y（上下位置；默认 0 = 与文字中线对齐）。 */
-.card .title .todo-pct {
-  display: inline-block; flex: none; cursor: pointer;
-  color: var(--todo-pct-color, var(--muted));
-  font-size: var(--todo-pct-size, 11px);
-  line-height: 1;
-  padding: var(--todo-pct-pad-y, 1px) var(--todo-pct-pad-x, 3px);
-  border-radius: var(--todo-pct-radius, 4px);
-  margin-right: var(--todo-pct-gap, 3px);
-  /* 整块往左拉（2026-09-22 用户定）：他说的是「这个按钮跟节点外框左边留了一条距离」，
-     要的是**整块挪过去**（不是把数字靠左 —— 那种改法他明确否了）。**只作用于这个百分比**，
-     其它前缀图标（待办 / Now / Minor）不受影响。
-     --todo-pct-pull：往左拉多少（正值 = 左移），0 = 回原位；嫌不够就加大。
-     用 margin-left 而不是 left：left（--todo-pct-offset-x）只是视觉平移、后面的文字不动，
-     空隙会跑到右边去；margin 才真把这截空间收掉。 */
-  margin-left: calc(-1 * var(--todo-pct-pull, 7px));
-  position: relative;
-  left: var(--todo-pct-offset-x, 0px);
-  top: var(--todo-pct-offset-y, 0px);
-  vertical-align: middle;   /* 上下默认居中（用户定） */
-  white-space: nowrap;
-  /* 宽度**恒定**（2026-09-22 用户定）：数字从 0% 跳到 100% 时，文本宽了两个字 → 母卡片跟着变宽
-     → 整块画布被推着挪一下，每点一次待办就抖一下。这里把宽度按**最长形态**（"100%"）预留：
-       3ch = 三个数字（tabular-nums 下所有数字同宽，ch = "0" 的宽）
-       + --todo-pct-pct-w = 百分号那一格的宽度（em 计，跟着 --todo-pct-size 一起缩放）
-       + 左右内边距 × 2
-     于是显示几 % 占的宽度都一样，卡片不再变形。
-     ⚠️ 百分号宽度只能估（字体不同略有出入），所以默认值**宁宽勿窄**：略宽只是两侧留白多一点，
-        无副作用；估窄了才会在 100% 那一下重新抖。嫌留白多就把 --todo-pct-pct-w 调小。 */
-  min-width: calc(3ch + var(--todo-pct-pct-w, 0.75em) + var(--todo-pct-pad-x, 3px) * 2);
-  /* 数字**居中**（2026-09-22 用户定，别改）：他要的是「百分数在底色框里居中」这个视觉关系 ——
-     曾经试过改成靠左（想让数字别占前面那截），用户当场叫停：靠左没必要，要的是**整块**往左挪。
-     所以宽度多余的那截就留在两侧，靠下面的 margin-left 把整块往左收。 */
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-/* ⚠️ 别再用 ::before / ::after 撑宽（2026-09-22 实踩，已撤）：
-   曾在这里放过 `.card .title .todo-pct::before { content: '100%' }` 让它撑到最长形态的**实际**宽度。
-   思路本身是对的，但位置错了 —— 本元素的 [data-tip] 提示框恰好也用 ::before（那个黑色小三角），
-   而 CSS 层叠是**逐属性**比较的：我那条只声明了 content / display / height / overflow / visibility，
-   **没有声明 position** → 悬停时 [data-tip]:hover::before 里的 `position: absolute` 照常生效
-   → 撑宽元素当场脱离文档流 → 宽度回落到 min-width → 卡片缩一点点。
-   （顺带，那个 visibility: hidden 也把提示框的小三角一起藏了。）
-   要**精确**撑宽只能用真实 DOM 子元素（grid 叠放），代价是改动渲染结构与编辑态取值 —— 不值得，
-   宽度误差用上面的 --todo-pct-pct-w 调即可。 */
-/* 悬浮底色：**所有档位都有**（含 0% —— 0% 照样可点，点了就是「全部设为完成」。
-   ⚠️ 曾短暂做过「0% 不可点 / 无底色」（2026-09-21 上半场），用户当场纠正：0% 点了就该变 100%，已还原。 */
-.card .title .todo-pct:hover { background: var(--todo-ico-hover, rgba(0,0,0,.06)); }
 /* 对勾的着色：卡片里的小图标与工具条按钮共用同一套 class 名，一条规则覆盖两处 */
 .todo-ico svg .td-check,
 .node-menu button .td-check { stroke: var(--todo-check, #C5CDD9); }
@@ -1515,8 +1804,10 @@ body.hist-on #pro-cta-wrap { display: none; }
 #node-more-sub,
 #node-style-menu,
 #now-menu,
+#filter-menu,
 .node-menu,
 #pro-cta,
+#btn-full-top,
 .ctx-menu,
 .toast-below {
   background-color: rgb(255 255 255 / var(--ui-bar-a, 1));
@@ -1624,6 +1915,39 @@ body.hist-on #pro-cta-wrap { display: none; }
 }
 .tb .icon { transition: transform var(--ui-btn-anim, 160ms) var(--ui-ease, ease); } /* 折叠按钮展开 / 收起时图标转 90° */
 
+/* ===== 键盘专注淡出（2026-09-27 定；同日三轮改）=====
+   两个触发（时长旋钮 NM_KEY_FADE_MS / NM_IDLE_FADE_MS 见 mindmap-app.js）：
+   敲键盘后（从第一次按键起算，持续敲不重计）或鼠标静置后 → 左下工具栏、底部
+   节点工具栏、顶部路径条 #crumb 一起淡出；鼠标一动即回。
+   鼠标停在这两排按钮（或它们弹出的面板）上 → 不淡出（JS 侧 nmUiHover 判定）。
+   ⏱ 淡出/淡入动画时长**分开调**：--nm-fade-out（消失，默认 350ms）/ --nm-fade-in（出现，默认 180ms）。
+   ⚠️ transition 的分工：
+   · 淡入的 transition 写在**常驻**选择器上（只写在 faded 态上，恢复那一下会瞬跳）；
+   · 淡出的 transition 写在 faded 态选择器上（挂类时它接管，visibility 靠 delay
+     延迟到动画结束才真正隐藏，恢复则不延迟）。
+   · .node-menu 用 :not(.hidden) 承接淡入 —— 别用裸 .node-menu（会盖掉它自己的出场动效，
+     一轮实踩：出场从「浮起+渐显」变成只剩渐显）；transform 仍走 --ui-menu-anim，
+     .node-menu.hidden 自己的退场过渡完全不动。 */
+#left-toolbar,
+#crumb,
+.node-menu:not(.hidden) {
+  transition:
+    opacity var(--nm-fade-in, 180ms) var(--ui-ease, ease),
+    transform var(--ui-menu-anim, 180ms) var(--ui-ease, ease),
+    visibility 0s linear;
+}
+body.nm-ui-faded #left-toolbar,
+body.nm-ui-faded #crumb,
+body.nm-ui-faded #ai-input-bar,   /* AI 输入条也一起淡出（2026-09-28 用户定：跟工具栏同一套效果） */
+body.nm-ui-faded .node-menu {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--nm-fade-out, 350ms) var(--ui-ease, ease), 
+    visibility 0s linear var(--nm-fade-out, 350ms);
+}
+
 /* ══════════════════════════════════════════════════════════════════
    深色模式（2026-09-18）：画布根元素挂 .theme-dark 时生效。
    宿主把 Obsidian 的明暗（body.theme-dark）随 init / setDark 下发，前端切类。
@@ -1653,6 +1977,10 @@ body.hist-on #pro-cta-wrap { display: none; }
   --lv1-bg: #26282c;
   --l1-bg: #1f2b40;   /* 拖拽预测父节点底：同一蓝系深色标记 */
   --edge: #3d424a;
+  /* 深色下置灰线**必须比普通线更暗**（默认的 #c5cdd9 是浅灰，盖在深底上反而更亮 = 置灰意图反了）。
+     这里换成更暗的灰 + alpha 回 1（靠颜色区分即可），与蓝/粉主题同一套思路。 */
+  --edge-dim: #2a2e35;
+  --edge-dim-alpha: 1;
   --line: #3d424a;
   --sel: color-mix(in srgb, var(--accent) 16%, #1c1c1c);
   --sel-opacity: 0.14;
@@ -1717,6 +2045,8 @@ body.hist-on #pro-cta-wrap { display: none; }
 .theme-dark .toast-below,
 .theme-dark #node-style-menu,
 .theme-dark #now-menu,
+.theme-dark #filter-menu,
+.theme-dark #btn-full-top,
 .theme-dark #pro-cta {
   background-color: rgb(30 32 36 / var(--ui-bar-a, 1));
   border-color: rgba(255, 255, 255, .12);
@@ -1731,6 +2061,7 @@ body.hist-on #pro-cta-wrap { display: none; }
 .theme-dark #link-suggest { background: #222428; border-color: #3d424a; color: #e6e8eb; }
 .theme-dark #link-suggest .ls-item.on { background: color-mix(in srgb, var(--accent) 18%, #1c1c1c); }
 .theme-dark .tb:disabled, .theme-dark .tb.disabled { color: #5a5f66; }
+.theme-dark .fm:disabled, .theme-dark .fm.disabled { color: #5a5f66; } /* 过滤菜单项与主按钮同款置灰色 */
 .theme-dark #pro-cta-hint { text-shadow: none; color: #9aa1a9; }
 /* —— 深色：白板/网页链接确认对话框 + [[ 建议面板（浅色规则里写死了白底）—— */
 .theme-dark .wb-dialog { background: #222428; border-color: #3d424a; }
@@ -1749,12 +2080,14 @@ body.hist-on #pro-cta-wrap { display: none; }
 .nm-theme-feishu {
   --edge: var(--edge-feishu);
   --drag-edge-alpha: var(--drag-edge-alpha-feishu);
+  --edge-dim-alpha: 1;   /* 蓝线：置灰线靠**颜色**（蓝→灰）就能区分，不必再淡化 */
 }
 .nm-theme-feishuGray {
   --drag-edge-alpha: var(--drag-edge-alpha-feishuGray);
 }
 .nm-theme-feishuPink {
   --edge: var(--edge-pink);
+  --edge-dim-alpha: 1;   /* 粉线：置灰线靠**颜色**（粉→灰）就能区分，不必再淡化 */
   --root-bg: var(--root-bg-pink);
   --accent: var(--accent-pink);
   --sel: var(--sel-pink);

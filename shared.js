@@ -38,7 +38,7 @@ function kindOfText(text) {
 // 2026-09-02 AI 指令区重构：入口统一指向 AI/index.md（指令清单+规则），格式契约挪到 AI/spec.md
 // 2026-09-20：ai 提示**按语言两版**——新建那一刻取一次写进文件，之后切语言不回改存量文件（避免文字变来变去出错）。
 //   文案与 i18n 的 fm.ai 保持一致（那边是界面语言表，这边是「纯函数模块」不能依赖 i18n，故各留一份）。
-const SPEC_PATH = '28Notes-Files/AI/spec.md';
+const SPEC_PATH = '28Notes-Files/AI/System Files/spec.md';   // 2026-09-28：AI 契约改成分区结构，格式契约挪进 System Files/
 const AI_INDEX_PATH = '28Notes-Files/AI/index.md';
 const FM_AI_TEXT = {
   zh: '改本文件前先读 ' + AI_INDEX_PATH + '，严格按其指引操作，否则文件打开可能会出现严重乱码',
