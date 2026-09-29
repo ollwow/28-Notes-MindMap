@@ -7,7 +7,8 @@ const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 // 简单 YAML 解析：只认顶行 `key: value`（我们的 frontmatter 只有平铺字段，不搞嵌套）
 function parseFmAttrs(fmBody) {
   const attrs = {};
-  String(fmBody || '').split('\n').forEach(line => {
+  // 换行符归一（2026-09-29）：CRLF 文件里每行末尾带 \r，`(.*)$` 会整行失配 → 属性全读不出来
+  String(fmBody || '').replace(/\r\n?/g, '\n').split('\n').forEach(line => {
     const m = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
     if (!m) return;
     let v = m[2].trim();

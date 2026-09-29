@@ -283,7 +283,10 @@
   --pm-cta-bottom: 32px;
   --pm-hint-bottom: 9px;
   --pm-top-pad: 52px;
-  --pm-bottom-pad: 47px;
+  /* 滚动内容底部留白：滚到底时最后一行字必须落在底部按钮**上方**，不能被按钮盖住。
+     按钮顶部离窗口底 ≈ --pm-cta-bottom(32) + 按钮高(≈37) = 69px，所以这里要 > 69px。
+     当前 92px = 按钮顶再往上留 23px 空隙（2026-09-28：原值 47px 会让最后一行被按钮挡住）。 */
+  --pm-bottom-pad: 92px;
   --pm-blue: #0d72ff;
   /* 下文 .pm-theme-pink 会整体覆写这几个值：粉线主题下蓝色系转粉。单独微调改这里 */
   --pm-cta-bg: #0070f5;          /* 激活按钮底色（默认蓝） */
@@ -387,7 +390,7 @@
 /* —— 滚动正文：文档流（顺序 = main.js 里 PRO_PAGES 的顺序），浮层绝对定位盖其上 —— */
 .pm-scroll, .pay-scroll{
   position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
-  padding:var(--pm-top-pad) 0 var(--pm-bottom-pad);   /* 顶部/底部留白（= --pm-top-pad / --pm-bottom-pad），避让关闭钮与遮罩 */
+  padding:var(--pm-top-pad) 0 var(--pm-bottom-pad);   /* 顶部留白避让关闭钮；底部留白避让底部按钮（滚到底时最后一行不许被按钮压住） */
   font-family:var(--pm-font); color:var(--pm-text);
 }
 /* 高度由内容自己撑（旧版写死 1507px / 1328px，插一段就得改高度）—— 现在只管顺序与档位 */

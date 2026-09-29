@@ -906,7 +906,10 @@ function parse(text) {
   let lastNode = null;
   let rootSeen = false;
   const warnings = [];
-  const lines = text.split('\n');
+  // 换行符统一归一成 \n（2026-09-29）：Windows 记事本等编辑器出来的是 CRLF，行尾残留的 \r 会让
+  // 「列表行」正则失配（`.` 不吃 \r，非多行模式下 `$` 也不落在 \r 之前）→ 整行被当成不认得的行，
+  // 节点名退回默认「未命名」。所有进解析的文本（打开文件 / 粘贴 / 拖入 / 文本视图）都在这里统一。
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
   // 节点内换行（2026-08-30）：节点文字可多行，落盘就是 Markdown 大纲的天然写法，无特殊标记——
   //   标题续行 = 节点行后「不带 `- ` 的纯文字行」（同缩进；Markdown 惰性续行，前导 Tab 不作数）；
   //   备注续行 = 连续多个 `> ` 行；夹在续行之间的空行 = 文字内空行（段落间距）。
@@ -4126,7 +4129,7 @@ window.addEventListener('blur', () => setCmdHeld(false));
 // 淡出只藏左下工具栏与底部节点工具栏，其余浮层不受影响。任一常量设 0 = 关掉那个触发。
 // ⏱ 淡出/淡入动画时长（分开调）在 mindmap-app.css：--nm-fade-out / --nm-fade-in。
 const NM_KEY_FADE_MS = 1000; // 开始敲字后多久其他按钮消失
-const NM_IDLE_FADE_MS = 10000; // 鼠标和键盘不操作后多久其他按钮消失
+const NM_IDLE_FADE_MS = 60000; // 鼠标和键盘不操作后多久其他按钮消失（2026-09-28：10s → 60s）
 let nmKeyFadeTimer = null;
 let nmIdleFadeTimer = null;
 // 鼠标停在这些元素上 → 不淡出（两排按钮 + 它们弹出的悬浮面板；2026-09-27 用户定）
@@ -5215,7 +5218,8 @@ function depthOf(root, id) {
 
 // 按「0 缩进的列表行」切块：多选复制/多段大纲粘贴时拆成多个顶层节点
 function splitTopLevel(text) {
-  const lines = text.split('\n');
+  // 与 parse 同一套换行归一（2026-09-29）：CRLF 文本在这里切块才不会把 \r 带进块里
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
   const blocks = [];
   let cur = [];
   for (const ln of lines) {
