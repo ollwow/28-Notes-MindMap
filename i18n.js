@@ -28,6 +28,25 @@ var I18N = {
     'mm.pathFwd': '返回下一路径', // 更多菜单：前进到下一下钻位置
     'mm.pathDefault': '返回默认路径', // 路径子菜单：回到保存的默认下钻位置
     'mm.pathSave': '设当前为默认路径', // 路径子菜单：把当前下钻位置存为默认（普通导图）/ 更新书签指向（书签文件）
+    // 顶部条「路径三键」里那颗主页键的提示（2026-10-06；左/右两颗直接复用上面的 mm.pathBack / mm.pathFwd）
+    'tip.pathHome': '路径设置',
+    'pro.needActivate': '此功能激活可用',
+    // 设置页尾注那一排（2026-10-07 用户定）：使用教程 · 加入群聊 · 更新历史 · Bug 反馈 · 版本号 · Make Something Wonderful
+    'footer.tutorial': '使用教程',
+    'footer.joinGroup': '加入群聊',
+    'footer.releases': '更新历史',
+    'footer.bug': 'Bug 反馈',
+    'footer.version': '版本',
+    'toast.featureSoon': '功能开发中，敬请期待',   // AI 输入条「＋」在非作者本机上点了弹这句（2026-10-07 用户定）   // 未激活时点受控功能（含快捷键）弹的提示（2026-10-07 用户定）
+    'tip.alreadyDefault': '当前已是默认路径',
+    'tip.toggleSidebar': '显示 / 隐藏文件列表',   // 全屏时那颗「侧边栏」按钮的悬停提示（2026-10-06）   // 主页菜单里那两项**不可点**时的悬停提示（2026-10-06 用户定；可点时不给提示）   // 2026-10-06 用户定：就这四个字，别再自己写「点击后可以…」那种解释
+    'more.splitRight': '左右分屏',
+    'more.showInFolder': '在访达中显示',
+    'more.revealInFiles': '在文件列表中显示',
+    'more.openSource': '查看原文件',
+    'more.viewAsMarkdown': '以 Markdown 格式查看',
+    'more.copyAiLocate': '复制 AI 定位路径',
+    'more.saveVersion': '保存此版本',
     'mm.history': '历史记录', // 菜单项：打开历史记录面板
     'mm.saveVersion': '保存此版本', // 菜单项：手动命名保存当前版本快照
     'mm.guide': '使用指南 ↗', // 菜单项：打开使用指南（飞书文档，与设置页「使用教程」同一个链接）
@@ -72,11 +91,10 @@ var I18N = {
     'notice.dataGuardBlocked': '已拦截 28 Notes Mind Map 隐藏文件误删行为；如要删除附件，请到「设置 - 高级」内手动清理。',
     'notice.aiDocsRestored': '已重建 AI 契约文件：{0}', // 28Notes-Files/AI/ 缺失后自动重建完成时（2026-09-17）
     // 全屏（2026-09-22 用户定）：按钮提示 + 两条命令名（均不设默认快捷键，用户自己绑）
-    'tb.fullscreen': '窗口全屏（按住 {Mod} 点击：桌面全屏）', // 左侧工具栏全屏按钮悬浮提示（非全屏时）；{Mod} 走 modStr（Mac=⌘ / Win=Ctrl）
-    'tb.fullscreenInWindow': '退出全屏模式（按住 {Mod} 点击：桌面全屏）', // 窗口全屏时：直接点击=退出，⌘+点击=升级为桌面全屏（2026-09-22 用户定稿）
-    'tb.fullscreenExit': '退出全屏模式', // 桌面全屏时：点 / ⌘+点击 都是退出，所以不再提修饰键
-    'cmd.fullscreenWindow': '视图显示｜窗口全屏', // 命令：循环切换（再点一次=退出）
-    'cmd.fullscreenDesktop': '视图显示｜桌面全屏', // 命令：循环切换（再点一次=退出）
+    'tb.fullscreen': '全屏专注模式（{fsHk}）(按住 {Mod} 点击：仅在窗口内全屏）', // 非全屏时的按钮提示（2026-10-01 用户定：点击=桌面全屏，⌘+点击=仅在窗口内）。{Mod} 走 modStr（Mac=⌘ / Win=Ctrl）；{fsHk} = 该命令的快捷键（含括号，由前端 fsTip() 填），**没绑定就整段消失**、不留空括号
+    'tb.fullscreenExit': '退出全屏专注模式（Esc）', // 全屏中（窗口档 / 桌面档**共用这一句**）：点 / ⌘+点击 都是退出，两档行为一致
+    'cmd.fullscreenWindow': '视图显示｜全屏专注模式（仅在窗口内）', // 命令：非全屏→仅在窗口内全屏；再点一次→退出
+    'cmd.fullscreenDesktop': '视图显示｜全屏专注模式', // 命令：非全屏→桌面全屏；窗口全屏→升级为桌面全屏；桌面全屏→退出
     // ---- 命令面板（Cmd+P）与文件右键菜单里显示的命令名（改完要重载插件才变）----
     'cmd.newMap': '新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图（2026-09-20 去掉「新建｜」前缀：Ribbon 悬停时前缀多余）
     'cmd.boldNode': '编辑文本｜加粗节点', // 命令：画布动作（键位在原生快捷键页改，2026-09-18）
@@ -90,8 +108,10 @@ var I18N = {
     'cmd.todoNode': '编辑节点｜（不）设为待办 Todo 节点',
     'cmd.todoDoneNode': '编辑节点｜（不）设为完成 Done 节点', // 2026-09-20 第三轮新增：⌥⌘L，与按钮 ⌥+点击同款
     'cmd.copyNodeLink': '其它｜复制节点链接', // 2026-09-21 由右键菜单注册成命令（⌥⌘C）
-    'cmd.copyAILocate': '其它｜复制 AI 定位路径', // 同上（⌥⌘A）
+    'cmd.copyAILocate': 'AI｜复制 AI 定位路径', // 2026-10-07 用户定：分类从「其它」改成「AI」
     'cmd.saveShortcut': '视图整体｜保存为捷径', // 同上（⌘/；对当前视图的主节点建捷径）
+    'cmd.aiMark': 'AI｜添加 AI 生成标记', // 2026-10-05：一次打标、再触发清除（名字 2026-10-07 用户定成「添加…」，别管它也能删，就叫这个）
+    'cmd.aiRules': 'AI｜添加 AI 更改规则', // 2026-10-07 用户定：新注册的命令（菜单里那项同源）
     'cmd.editNote': '编辑文本｜节点备注', // 命令：画布动作（默认 Shift+Enter）
     'cmd.toggleShowNow': '视图整体｜（只）显示 Now 当前节点', // 命令：画布动作（默认 Mod+Alt+N）
     'cmd.toggleHideMinor': '视图整体｜显示/隐藏 Minor 次要节点', // 命令：画布动作（默认 Mod+Alt+M）
@@ -121,9 +141,10 @@ var I18N = {
     'fold.moreLevels': '更多层级', // 折叠层级「+更多」按钮的悬停提示（Obsidian 状态栏）
 
     // ============ 设置页（设置 → 第三方插件 → 28 Notes）============
-    'settings.uiHeading': '界面', // 设置页最顶端 H2 标题（2026-09-01 定）
+    'settings.uiHeading': '界面',
+    'settings.groupSettings': '设置',   // 2026-10-07 用户定：设置页并成两块「许可证」+「设置」，原来「界面」「更多」两块并进后者 // 设置页最顶端 H2 标题（2026-09-01 定）
     'settings.language': '界面语言', // 语言设置项的名称（2026-09-11 删「支持中文和英文」说明）
-    'settings.langAuto': '跟随 Obsidian', // 语言下拉选项一：跟随客户端语言
+    'settings.langAuto': '跟随 Obsidian（用户默认）', // 语言下拉选项一：跟随客户端语言。2026-10-01 用户定：界面语言同在调试组（只有本机可见），默认档同样尾随「用户默认」四字
     'settings.langZh': '中文', // 语言下拉选项二
     'settings.langEn': 'English', // 语言下拉选项三
     'settings.theme': '界面样式', // 主题设置项名称（2026-08-31）
@@ -159,7 +180,20 @@ var I18N = {
     'settings.todoBtn': '待办按钮位置', // 2026-09-23 用户定：不叫「待办按钮」（和右边两个选项连读更顺）
     'settings.todoBtnDesc': '选择待办按钮触发的位置。（实验性功能，未来可能会调整）',
     'settings.todoBtnContext': '右键菜单', // ⚠️ 2026-09-24 起**不再是默认档**（默认改成「底部菜单」）；2026-09-23 用户定：要简短
-    'settings.todoBtnBottom': '底部菜单', // **2026-09-24 起为新装默认档**；选中节点后底部那一排按钮里常驻（与 2026-09-23 之前的行为一致）
+    'settings.todoBtnBottom': '底部菜单（用户默认）', // **2026-09-24 起为新装默认档**；选中节点后底部那一排按钮里常驻（与 2026-09-23 之前的行为一致）。2026-10-01 用户定：默认档后面标「用户默认」四个字 —— 调试组只有本机看得见，这四个字是给作者看的：这一档才是**发给用户**的那个值
+    // 视图筛选（2026-09-30）：左下两枚过滤按钮的形态；只在调试组（作者本机），普通用户拿默认值「展开」
+    'settings.filterMode': '视图筛选',
+    'settings.filterModeDesc': '',
+    'settings.filterModeSplit': '展开', // 默认档：两枚一级按钮（聚焦当前关注 / 隐藏次要节点）
+    'settings.filterModeMerged': '合成（用户默认）', // 一枚小眼睛 + 二级菜单（左键开菜单）；**2026-10-01 起为默认档**，标签尾随「用户默认」四字（用户定）
+    'settings.filterModeRclick': '右键展开', // 一枚小眼睛：左键直接切「隐藏次要节点」，右键才开菜单
+    // ---- AI 生成标记（ainode）的配色（2026-10-05，只在调试组）----
+    'settings.aiMarkPalette': '常用颜色对照', // 常驻色卡（不是选项）：小色块 + 中文颜色名
+    // 12 个 iOS 官方色 + 一个次要节点的置灰：只给中文名，不给色号（用户看色号没概念）
+    'aiColor.orange': '橙色', 'aiColor.yellow': '黄色', 'aiColor.green': '绿色', 'aiColor.blue': '蓝色',
+    'aiColor.cyan': '青色', 'aiColor.lightblue': '轻蓝色', 'aiColor.waterblue': '水蓝色',
+    'aiColor.purple': '紫色', 'aiColor.magenta': '红紫色', 'aiColor.pink': '粉色',
+    'aiColor.brown': '棕色', 'aiColor.gray': '灰色（当前使用）', // 灰 = 次要节点的置灰色；2026-10-05 起节点上固定用这个（那三个设置项已删）
     // 二级页入口右侧的灰字说明（2026-09-18 用户定：两行都去掉，入口只留标题 + 箭头）
     'settings.uiSimplify': '界面简化', // 「界面」栏的原生二级页（2026-09-18）：收纳文件类型徽标 / 新增页面提示等
     'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
@@ -271,14 +305,17 @@ var I18N = {
     'hint.line2': '选中子节点 + 回车 → 新增同级节点', // 空图提示第二行
     'hint.line3': '按住空格 + 拖动鼠标 → 移动视图', // 空图提示第三行
     // ============ 导图画面：节点图标 / 折叠箭头 / 备注等悬停提示 ============
-    'tip.minorIcon': '此节点已次要 Minor（置灰）', // Minor 节点标题前小图标的悬停提示
-    'tip.nowIcon': '此节点已标记 Now', // Now 节点标题前小圆点的悬停提示
-    'tip.todoIconTodo': '待办：点击小图标标记为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20）
+    'tip.todoIconTodo': '设为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20；2026-10-06 撤掉 ⌘ 那段）
     'tip.todoIconDone': '已完成：点击小图标标记为待办',
     'tip.todoIconProgress': '子节点完成进度：{0}%', // 母节点自己是待办 + 有子待办时的合并模式提示（{0} = 只算子节点的完成百分比，2026-09-24）
+    // 节点前缀图标「点一下 = 取消这个标记」的悬停提示（2026-10-05）：四个图标统一走 data-tip 黑色小字
+    'tip.icoClearNow': '清除 Now 标记',
+    'tip.icoClearMinor': '清除 Minor 标记',
+    'tip.icoClearAi': '清除 AI 生成标记',
+    'tip.icoClearAiMix': '清除 AI 生成（含人工内容）标记',
     'tip.unfold': '点击展开', // 节点右侧折叠箭头悬停提示（折叠态）
     'tip.fold': '点击折叠', // 节点右侧折叠箭头悬停提示（展开态）
-    'tip.editNote': '双击编辑备注', // 备注行（灰竖条文字）悬停提示
+    'tip.editNote': '备注（双击编辑）', // 备注行（灰竖条文字）悬停提示
     'tip.image': '单击选中 · 双击放大 · 右键复制', // 节点里图片的悬停提示
     'tip.imgMissing': '图片缺失 · 双击重试', // 缺失图片的悬停提示（上方还会拼上文件名）
     'tip.editLinkSuffix': '\n双击编辑链接', // 链接悬停提示的第二行（自动拼在各类链接提示后面，\n = 换行）
@@ -311,6 +348,13 @@ var I18N = {
     'now.noSel': '无选中节点', // 最后那段为空时的占位
     'tb.minorToggle': '隐藏/显示次要 Minor 节点', // 隐藏/显示 Minor 按钮初始 tooltip（键位段动态追加）
     'tb.viewFilter': '视图筛选', // 左下过滤按钮（眼睛）的悬浮提示（2026-09-28：按钮只开二级菜单，不再随过滤状态换文案）
+    // 右键展开档（2026-09-30）：左键直接切「隐藏次要节点」，右键才弹菜单 —— 提示前半句跟着状态走，后半句说明菜单在右键
+    'tb.viewFilterRcHide': '隐藏次要节点（右键展开更多筛选项）',
+    'tb.viewFilterRcShow': '显示次要节点（右键展开更多筛选项）',
+    // 左下 AI 按钮的小字（2026-10-05）：⌘/Ctrl + 点击 = 复制 AI 定位路径（就是右键菜单里暂隐那一项做的事）。
+    // ⚠️ 不与 more.aiEdit 共用：那个键同时是 AI 定位弹窗的标题，改它会把弹窗标题一起改掉。
+    // {Mod} 走 modStr（Mac=⌘ / Win=Ctrl），与其它 tb.* 提示同一套写法。
+    'tb.aiEdit': 'AI 编辑', // 左下那颗 AI 按钮的提示（2026-10-05：⌘/Ctrl 那条说明已撤）
     // AI 输入条（2026-09-28）：点左下「AI 编辑」→ 底部弹出的输入框。
     // 关闭叉与加号**不挂**悬浮提示（看图标就懂，用户定），只有发送挂。
     'aiBar.send': '发送',
@@ -330,16 +374,40 @@ var I18N = {
     'fm.hideMinor': '隐藏次要节点',
 
     // ============ 节点工具栏（选中节点时底部弹出的黑色圆条按钮 tooltip）============
-    'nm.bold': '加粗节点', // 键位段由画布键位表动态追加（nmKeySuffix），不再写死（2026-09-18）
+    'nm.bold': '加粗', // 键位段由画布键位表动态追加（nmKeySuffix），不再写死（2026-09-18）
     'nm.red': '标为红色', // 标红按钮
     'nm.yellow': '标为黄色', // 标黄按钮
-    'nm.note': '添加备注', // 写备注按钮（键位段由 nmKeySuffix 动态追加，随改键实时变）
-    'nm.now': '设为当前关注 Now 节点', // 标记 Now 按钮
-    'nm.minor': '设为次要 Minor 节点', // 标记 Minor 按钮
+    'nm.note': '备注', // 写备注按钮（键位段由 nmKeySuffix 动态追加，随改键实时变）
+    'nm.now': '设为当前关注 Now', // 标记 Now 按钮
+    'nm.minor': '设为次要 Minor', // 标记 Minor 按钮
     'nm.add': '添加', // 底部工具条最右「＋」按钮的悬浮提示（2026-09-28：改成点击弹面板后，悬停不再弹面板，提示才挂得上）
+    // 底部工具条最右那颗「AI」按钮 + 它的横排子菜单（2026-10-05，四项）
+    'nm.ai': 'AI', // 底部工具条最右那颗「AI」按钮的悬浮提示（与「＋添加」那颗的「添加」同款）
+    'nm.aiEdit': 'AI 编辑', // 子菜单项：等同原来右键那条，开合底部 AI 输入条
+    'nm.aiEditTip': '点击后，让 AI 快速编辑', // 那一行的悬浮提示（2026-10-06 用户定）
+    'nm.aiMark': '添加 AI 生成标记', // 子菜单项：未标记时（点一下 = 打标）
+    'nm.aiMarkOn': '清除 AI 生成标记', // 子菜单项：已标记时（ai / mix 都是这一条，图标+文字变主题色，再点 = 清除）
+    // 那一行的**悬浮提示分三态**（用户 2026-10-05 定：沿用原来右键那套 —— 行文字只有"添加/清除"两态，
+    // 但提示要把"这节点现在是纯 AI 还是混合"说准）
+    'nm.aiMarkTip': '点击后，将此节点标记为 AI 生成', // 未标记
+    'nm.aiMarkTipAi': '点击后，将清除 AI 生成标记', // 已标记 ainode:ai
+    'nm.aiMarkTipMix': '点击后，将清除 AI 生成（含人工内容）标记', // 已标记 ainode:mix
+    'nm.aiLocate': '复制 AI 定位路径', // 子菜单项：等同原来右键那条
+    'nm.aiLocateTip': '点击后，可复制路径，让 AI Agent 快速定位和修改', // 悬浮说明（键位段由 tipAct='copyAILocate' 自动接，见 nmApplyTip）
+    'nm.aiRules': '添加 AI 更改规则', // 子菜单项：给这个节点写「AI 改它时要遵守的规则」
+    'tip.aiRulesHint': '点击后，可添加规则，AI Agent 更改此文件时会遵循此规则', // 「添加 AI 更改规则」的悬浮说明（用户 2026-10-05 定的原话）
+    'tip.editAiRules': 'AI 更改规则（双击编辑）', // 卡片上那一块自己的原生提示（与备注同款）
+    // 小眼睛（2026-10-06 定稿形态）：AI 面板「AI 更改规则」那一行**右边**那颗，切「显示 / 隐藏 AI 更改规则」
+    // （全局生效；隐藏 = **整个不渲染**，像隐藏次要节点那样，不是收成小横条）。
+    // 写的是**点下去会发生什么**：现在显示着 → 提示「点击后隐藏…」+ 闭眼。
+    'tip.aiRulesEyeOn': '点击后，画面中不显示更改规则，更简洁', // 当前是**显示** → 点了变隐藏
+    'tip.aiRulesEyeOff': '点击后，显示 AI 更改规则', // 当前是**隐藏** → 点了变显示
+    // 置灰档（画面里一个带规则的节点都没有；**置灰 = 不可点**，2026-10-06 用户定）——
+    // 句式和另外两条一致（"点击后…"），括号里补一句为什么是灰的（会渲染成浅色那一段）
+    'tip.aiRulesEyeNone': '点击后，画面中不显示更改规则，更简洁（当前视图无此类规则）',
     // 待办按钮（2026-09-20）：提示两行随选中节点状态换 —— {0}/{1} 是动态键位段（nmKeySuffix）
-    'nm.todoPlainTip': '设为待办节点{0}（按住 {Mod} ：设为已完成）', // 选中普通节点（2026-09-21 第五轮；{Mod} 按平台=⌘/Ctrl）
-    'nm.todoOffTip': '设为非待办节点{0}', // 选中待办 / 已完成节点（此时按住 ⌘ 无特殊效果）；2026-09-23 用户定：不叫「普通节点」
+    'nm.todoPlainTip': '设为待办{0}（按住 {Mod} ：设为已完成）', // 选中普通节点（2026-09-21 第五轮；{Mod} 按平台=⌘/Ctrl）
+    'nm.todoOffTip': '清除待办属性{0}', // 选中待办 / 已完成节点（此时按住 ⌘ 无特殊效果）；2026-09-23 用户定：不叫「普通节点」
     // 底部一级按钮在设置页「添加面板简化」列表里的行名（2026-09-20 第五轮：底部按钮注册进面板统一排序/显隐）
     'addPanel.btnStyle': '格式按钮',
     'addPanel.btnNote': '备注按钮',
@@ -355,10 +423,14 @@ var I18N = {
     // 所以原来那条 'nm.more' 文案已删。
     // 一级菜单（2026-09-17 二次改版：原来 8 项挤在一起看着过载 → 只留 4 项常用 + 一个二级入口）
     // 三次改版（同日稍后）：节点操作（加子节点/加同级/删除）也收进「添加其他内容」二级里，一级不再单列
-    'more.addChild': '添加子节点',
-    'more.addChildTip': '快捷键：Tab',
-    'more.addSibling': '添加同级节点',
-    'more.addSiblingTip': '快捷键：Enter',
+    'more.addChild': '子节点',
+    // 2026-10-06 用户定：提示改成「点击后，可…」+ 键位段自动接（tipAct → NM_FIXED_KEYS 那张写死键表）。
+    //   原来这两条是**整句写死键位**的（'快捷键：Tab' / '快捷键：Enter'）—— 键位现在不再进 i18n。
+    'more.addChildTip': '点击后，可添加子节点',
+    'more.addSibling': '同级节点',
+    'more.addSiblingTip': '点击后，可添加同级节点',
+    // ⚠️ 下面这几条已**无人引用**（对应功能早删了：删除节点 / 添加其他内容 / 自定义该面板 / AI 编辑入口）——
+    //    留着只是没清；别再照着它们的写法（把键位写进文案）加新提示，键位一律走 tipAct / NM_FIXED_KEYS。
     'more.delNode': '删除节点',
     'more.delNodeTip': '快捷键：Delete',
     // 注：「添加其他内容」与底部「样式」按钮都**有子菜单 → 不挂提示**（会和子菜单叠住），
@@ -368,25 +440,29 @@ var I18N = {
     'more.aiEditTip': '点击复制 AI 定位信息',
     'more.customPanel': '自定义该面板', // 二级面板底部入口：点开 → 设置页「添加面板简化」
     'more.customPanelTip': '可选择隐藏部分操作按钮',
-    'more.addImage': '添加图片',
-    'more.addImageTip': '支持主流图片格式（可直接粘贴）', // 用户指定文案
-    'more.addVideo': '添加视频',
-    'more.addVideoTip': '支持主流视频格式',
-    'more.addAudio': '添加音频',
-    'more.addAudioTip': '支持主流音频格式',
-    'more.addVaultAttach': '添加 Obsidian 附件',
-    'more.addVaultAttachTip': '添加后，可引用库里已有的音视频（可直接粘贴）',
+    'more.addNoteTip': '点击后，可添加备注', // 添加面板「备注」行的悬浮提示（2026-10-06 用户定；键位段由 tipAct='editNote' 自动接）
+    'more.addImage': '图片',
+    'more.addImageTip': '点击后，可添加图片（可直接粘贴）', // 用户指定文案
+    'more.addVideo': '视频',
+    'more.addVideoTip': '点击后，可添加视频',
+    'more.addAudio': '音频',
+    'more.addAudioTip': '点击后，可添加音频',
+    'more.addVaultAttach': 'Obsidian 仓库附件',
+    'more.addVaultAttachTip': '点击后，可引用库里已有的音视频（可直接粘贴）',
     'more.addVaultAttachHint': '当你在普通笔记粘贴图片 / 视频时，该文件会存入 Obsidian 默认附件文件夹。你可以选择将它的文件名（如 xxx.png）或路径粘进来，思维导图会识别并渲染。（只是建立引用，不会复制文件）',
-    'more.addFileLink': '添加本地文件链接',
-    'more.addFileLinkTip': '添加后，点击即可跳转至本地文件（可直接粘贴）',
+    'more.addFileLink': '本地文件链接',
+    'more.addFileLinkTip': '点击后，可添加本地文件链接（可直接粘贴）',
     'more.addFileLinkHint': '请填写完整文件路径，例如 /Users/…/文件.pdf。（你也可在选中节点时（非编辑状态下），直接粘贴地址）',
-    'more.addWiki': '添加双链',
-    'more.addWikiTip': '添加后，可一键跳转至其它页面（快捷键：[[ )', // ⚠️ 末尾「[[ )」是**半角右括号 + 空格**，用户特意这么写的（2026-09-21），别"顺手"改成全角
-    'more.addNodeLink': '添加关联节点',
-    'more.addNodeLinkTip': '添加后，可一键跳转至对应节点（可直接粘贴）',
+    'more.addWiki': '双链',
+    'more.addWikiTip': '点击后，可添加双链，一键跳转至其它页面（[[ )', // ⚠️ 末尾「[[ )」是**半角右括号 + 空格**，用户特意这么写的（2026-09-21），别"顺手"改成全角
+    'more.addNodeLink': '关联节点',
+    'more.addNodeLinkTip': '点击后，可添加关联节点，一键跳转至对应节点（可直接粘贴）',
     'more.addNodeLinkHint': '选中要关联的节点，右键「复制节点链接」，并粘贴至此处即可关联。支持跨思维导图粘贴；支持选中节点后直接粘贴。',
     // 两个输入框的**预设文字**（2026-09-20 从代码里抽出来）：英文界面曾露出中文「文件」/「文件名」
     'more.addFileLinkPh': '/Users/…/文件.pdf',
+    'more.pickLocal': '从本机选择',   // 「本地文件链接」弹窗左下角那颗（2026-10-07 用户定）：拉起系统文件选择器
+    'more.pickLocalPrompt': '选择要链接的文件或文件夹',   // 系统选择框上那句提示（2026-10-07 放开文件夹）
+    'notice.pickPathFail': '没能拿到这个文件的完整路径（当前平台可能不支持，请手动粘贴路径）',
     'more.addNodeLinkPh': '[[文件名#节点ID]]',
     // 「建议反馈」行右侧的加群按钮（2026-09-20 从代码里抽出来：英文界面曾只有中文）
     'settings.joinGroupBtn': '加入群聊',
@@ -420,8 +496,8 @@ var I18N = {
     'pay.path': '在 Obsidian → 设置 → 第三方插件 → 28 Notes 里激活',
     'pay.alt3': '如遇激活问题，请发送邮件 / 联系开发者微信：{0} 解决',
     'pay.thanks': '=) 谢谢你的支持！',
-    'more.addUrlLink': '添加网页链接',
-    'more.addUrlLinkTip': '添加后，可一键打开网页（可直接粘贴）',
+    'more.addUrlLink': '网页链接',
+    'more.addUrlLinkTip': '点击后，可添加网页链接（可直接粘贴）',
     'more.urlText': '显示文字',
     'more.urlAddr': '链接地址',
     // 「添加网页链接」弹窗里的说明——与条目悬浮提示**分开两个键**，方便各自单独改（用户 2026-09-17）
@@ -432,6 +508,7 @@ var I18N = {
     // ============ 操作提示条（画面底部/顶部黑色浮出提示）============
     'toast.hiddenMinor': '已隐藏此 Minor 节点', // 隐藏 Minor 后（带撤销按钮）
     'toast.hiddenNow': '已隐藏此 Now 节点', // 只看 Now 视图下取消 Now 标记后（节点从画面消失，带撤销）
+    'toast.nowFilterOff': '视图中已无「当前关注」节点，「当前关注-视图筛选按钮」已自动关闭', // 「聚焦当前关注」开着时把最后一个 Now 设为次要节点 → 它被「隐藏次要节点」藏掉、画面再无 Now 可显示 → 自动关掉这项筛选（不落盘，意图保留；带撤销）
     'toast.hiddenAlsoDeleted': '提示：{0} 个被隐藏的次要 Minor 子节点也被删除了', // 删除节点时连带删除了被隐藏的 Minor 子节点（{0}=数量）
     'toast.pasteLink': '请先选中一个节点，再粘贴链接', // 未选中节点就 Cmd+V 粘贴链接时
     'toast.pasteFileLink': '请先选中一个节点，再粘贴文件链接', // 未选中节点就粘贴文件链接时
@@ -469,8 +546,9 @@ var I18N = {
     'ctx.deleteImage': '删除该附件', // 菜单项：把这张图片/视频/音频从节点上移除（2026-09-17 补）
     'more.pickBadType': '只支持图片 / 视频 / 音频，其它格式已跳过', // 选了不支持的格式时提示
     'ctx.drill': '进入当前节点', // 菜单项：下钻把该节点当主节点
-    'ctx.drillTip': '让视图中只显示这一节点内容{0}', // ⚠️ 预埋文案（2026-09-21 用户要求「你先自己预埋」，待用户改）
-    'ctx.bookmarkTip': '保存为新页面，下次可快速进入该视图{0}', // ⚠️ 预埋文案（同上）
+    'ctx.drillTip': '点击后，视图中只会显示此节点树', // ⚠️ 预埋文案（2026-09-21 用户要求「你先自己预埋」，待用户改）
+    'ctx.drillRootTip': '当前为母节点，不可进入', // 母节点上「进入当前节点」那一项置灰时的说明（2026-10-07 用户定）
+    'ctx.bookmarkTip': '点击后，可将此视图保存为快捷页面', // ⚠️ 预埋文案（同上）
     'ctx.basicOps': '基础操作', // 右键二级菜单（2026-09-21）：剪切 / 复制 / 粘贴 / 删除收在这里
     // 右键「待办」行（2026-09-23）：设置项「待办按钮」= 右键档时才有这一行，形态/功能与底部按钮同款
     'ctx.todoPlain': '设为待办节点', // 选中**普通**节点 + 裸点击
@@ -493,8 +571,7 @@ var I18N = {
     'ctx.bookmark': '保存为捷径', // 菜单项：为该节点创建书签文件
     'ctx.bookmarkHint': '不写默认为节点名', // 书签命名弹框输入框里的灰色占位提示
     'ctx.editLink': '编辑链接', // 菜单项：双击编辑链接的菜单版（仅文件/URL 链接显示）
-    'ctx.copyAILocate': '复制 AI 定位路径', // 菜单项：复制「文件绝对路径 + 节点 ID」，供 AI Agent 定位编辑
-    'ctx.copyAILocateTip': '让 AI Agent 快速定位你要编辑的节点{0}', // 复制 AI 定位路径 悬浮说明
+    // 清除项的悬浮说明按当前标记分两版（2026-10-05）：一句话里说清「现在是什么」+「点了会怎样」
     // 复制给 AI 的定位文案（2026-09-20 用户改版）：**单行 + 【】外框**（用户要「一整块粘贴」，所以不分行），
     // 路径 / 节点 ID 用占位符填入。两版：node = 带节点 ID（节点右键 / AI 编辑按钮）；file = 只有路径（文件列表右键）。
     // 语言跟着界面语言（中文界面复制中文、英文界面复制英文）—— AI 读的是文案本身，所以必须跟着走。
@@ -516,7 +593,7 @@ var I18N = {
     // 之后切语言一律不改（存量文件里的文字保持原样 —— 变来变去容易出错，用户定）。
     'fm.ai': '改本文件前先读 28Notes-Files/AI/index.md，严格按其指引操作，否则文件打开可能会出现严重乱码',
     'fm.aiLocate': '定位节点：在文件中搜索 id:<节点ID>（节点 ID 形如 <!--id:xxx-->，写在标题行行尾，不是 Obsidian 的 ^块锚点，不要拼到文件路径后面打开）。',
-    'ctx.copyLinkTip': '可粘贴到其它思维导图，点击跳转回这里{0}', // 复制节点链接 悬浮说明
+    'ctx.copyLinkTip': '点击后，可复制粘贴到其它思维导图，快速跳转', // 复制节点链接 悬浮说明
 
     // ============ 折叠层级数字按钮悬停提示（右下角状态栏层级条）============
     'fold.menuKeep': '选中节点 折叠到第 {0} 层级（同时外部保持不变）（点击）', // 折叠数字右键第一项 = 选中后的默认左键行为（{0}=按钮数字；2026-09-13 文案用户定）
@@ -616,6 +693,24 @@ var I18N = {
     'mm.pathFwd': 'Next Path',
     'mm.pathDefault': 'Back to Default Path',
     'mm.pathSave': 'Set Current as Default Path',
+    // Tip for the home button in the top bar's path trio (2026-10-06; the back/forward pair reuses mm.pathBack / mm.pathFwd)
+    'tip.pathHome': 'Path Settings',
+    'pro.needActivate': 'Activate to use this feature',
+    'footer.tutorial': 'Tutorial',
+    'footer.joinGroup': 'Join the Group',
+    'footer.releases': 'Release Notes',
+    'footer.bug': 'Bug Report',
+    'footer.version': 'Version',
+    'toast.featureSoon': 'Coming soon',
+    'tip.alreadyDefault': 'Already the Default Path',
+    'tip.toggleSidebar': 'Show / Hide File List',
+    'more.splitRight': 'Split Right',
+    'more.showInFolder': 'Reveal in Finder',
+    'more.revealInFiles': 'Reveal in File List',
+    'more.openSource': 'Open Source File',
+    'more.viewAsMarkdown': 'View as Markdown',
+    'more.copyAiLocate': 'Copy AI Locate Path',
+    'more.saveVersion': 'Save This Version',
     'mm.history': 'History',
     'mm.saveVersion': 'Save This Version',
     'mm.guide': 'User Guide ↗',
@@ -657,8 +752,10 @@ var I18N = {
     'cmd.todoNode': 'Node | (Un)Set as To-Do',
     'cmd.todoDoneNode': 'Node | (Un)Set as Done',
     'cmd.copyNodeLink': 'Other | Copy Node Link',
-    'cmd.copyAILocate': 'Other | Copy AI Locate Path',
+    'cmd.copyAILocate': 'AI | Copy AI Locate Path',
     'cmd.saveShortcut': 'View | Save as Shortcut',
+    'cmd.aiMark': 'AI | Add AI-Generated Mark',
+    'cmd.aiRules': 'AI | Add AI Rules',
     'cmd.editNote': 'Text | Node Note',
     'cmd.toggleShowNow': 'View | Show Only Now Nodes',
     'cmd.toggleHideMinor': 'View | Show/Hide Minor Nodes',
@@ -686,8 +783,9 @@ var I18N = {
     'fold.moreLevels': 'More Levels',
 
     'settings.uiHeading': 'Interface',
+    'settings.groupSettings': 'Settings',
     'settings.language': 'Interface Language',
-    'settings.langAuto': 'Follow Obsidian',
+    'settings.langAuto': 'Follow Obsidian (user default)', // 2026-10-01: same "(user default)" tag as the other debug-group defaults
     'settings.langZh': '中文',
     'settings.langEn': 'English',
     'settings.theme': 'Interface Style',
@@ -722,11 +820,10 @@ var I18N = {
     'btn.dismiss': 'OK',
     'notice.dataGuardBlocked': 'Blocked an Accidental Deletion of the 28 Notes Mind Map Hidden Files. To Delete Attachments, Clean Them up Manually in "Settings - Advanced".',
     'notice.aiDocsRestored': 'Rebuilt AI Contract File: {0}',
-    'tb.fullscreen': 'Fullscreen (Hold {Mod} and Click for True Full Screen)',
-    'tb.fullscreenInWindow': 'Exit Full Screen (Hold {Mod} and Click for True Full Screen)',
-    'tb.fullscreenExit': 'Exit Full Screen',
-    'cmd.fullscreenWindow': 'View | Window Fullscreen',
-    'cmd.fullscreenDesktop': 'View | Desktop Fullscreen',
+    'tb.fullscreen': 'Full-Screen Focus ({Mod} and Click for Window-Only)', // 2026-10-01: plain click = desktop full-screen, {Mod}+click = window-only; {fsHk} = the command hotkey (with brackets, filled by fsTip()), dropped entirely when unbound
+    'tb.fullscreenExit': 'Exit Full-Screen Focus (Esc)', // 2026-10-01: shared by both full-screen kinds (click and {Mod}+click both exit)
+    'cmd.fullscreenWindow': 'View | Full-Screen Focus (Window Only)', // 2026-10-01: renamed (was "Window Fullscreen")
+    'cmd.fullscreenDesktop': 'View | Full-Screen Focus', // 2026-10-01: renamed (was "Desktop Fullscreen")
     'settings.badgeStyle': 'File Type Badge',
     'settings.badgeStyleDesc': 'It refers to the type badge on the right of the file name in the file list. This design avoids confusion between file types.',
     'settings.badgeStyleText': '28 Notes Text',
@@ -737,7 +834,17 @@ var I18N = {
     'settings.todoBtn': 'To-Do Button Placement',
     'settings.todoBtnDesc': 'Choose where the To-Do button is triggered. (Experimental feature, may change in the future)',
     'settings.todoBtnContext': 'Context Menu', // no longer the default as of 2026-09-24 (default moved to Bottom Menu)
-    'settings.todoBtnBottom': 'Bottom Menu', // the new default as of 2026-09-24; pinned in the row shown after selecting a node (behavior before 2026-09-23)
+    'settings.todoBtnBottom': 'Bottom Menu (user default)', // the new default as of 2026-09-24; pinned in the row shown after selecting a node (behavior before 2026-09-23). 2026-10-01: marked "(user default)" — the debug group is author-only, so the tag spells out that this is the value users get
+    'settings.filterMode': 'View Filter', // 2026-09-30: shape of the two filter buttons at the bottom-left; debug group only
+    'settings.filterModeDesc': '',
+    'settings.filterModeSplit': 'Expanded', // default: two top-level buttons
+    'settings.filterModeMerged': 'Merged (user default)', // one eye button plus a submenu (left-click opens it); default as of 2026-10-01; "(user default)" per 2026-10-01
+    'settings.filterModeRclick': 'Right-Click Expand', // one eye button: left-click hides Minor, right-click opens the submenu
+    'settings.aiMarkPalette': 'Color Reference',
+    'aiColor.orange': 'Orange', 'aiColor.yellow': 'Yellow', 'aiColor.green': 'Green', 'aiColor.blue': 'Blue',
+    'aiColor.cyan': 'Cyan', 'aiColor.lightblue': 'Light Blue', 'aiColor.waterblue': 'Water Blue',
+    'aiColor.purple': 'Purple', 'aiColor.magenta': 'Magenta', 'aiColor.pink': 'Pink',
+    'aiColor.brown': 'Brown', 'aiColor.gray': 'Gray (in use)', // Gray = the muted gray used for Minor nodes; hard-coded as of 2026-10-05
     'settings.uiSimplify': 'Interface Simplification', // Native sub-page under "Interface" (2026-09-18)
     'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
     'settings.motion': 'Motion', // Under "Advanced" (2026-09-20): node shift transition, on by default
@@ -845,14 +952,16 @@ var I18N = {
     'hint.line2': 'Select a Child Node + Enter to Add a Sibling Node',
     'hint.line3': 'Space + Drag to Pan',
 
-    'tip.minorIcon': 'This Node Is Marked Minor (Grayed out)',
-    'tip.nowIcon': 'This Node Is Marked Now',
-    'tip.todoIconTodo': 'To-Do: Click the Icon to Mark as Done', // to-do node prefix icon (2026-09-20)
+    'tip.todoIconTodo': 'Mark as Done', // to-do node prefix icon (2026-09-20; the {Mod} hint was removed 2026-10-06)
     'tip.todoIconDone': 'Done: Click the Icon to Mark as To-Do',
     'tip.todoIconProgress': 'Child Progress: {0}%', // merged mode: parent is a to-do + has to-do children ({0} = children-only percentage, 2026-09-24)
+    'tip.icoClearNow': 'Clear Now Mark',
+    'tip.icoClearMinor': 'Clear Minor Mark',
+    'tip.icoClearAi': 'Clear the AI-Generated Mark',
+    'tip.icoClearAiMix': 'Clear the AI-Generated (with Human Content) Mark',
     'tip.unfold': 'Click to Unfold',
     'tip.fold': 'Click to Fold',
-    'tip.editNote': 'Double-Click to Edit the Note',
+    'tip.editNote': 'Note (Double-Click to Edit)',
     'tip.image': 'Click to Select · Double-Click to Zoom · Right-Click to Copy',
     'tip.imgMissing': 'Image Missing · Double-Click to Retry',
     'tip.editLinkSuffix': '\NDouble-Click to Edit the Link',
@@ -883,6 +992,9 @@ var I18N = {
     'now.noSel': 'No Node Selected', // 定位子菜单：最后那段为空时的占位
     'tb.minorToggle': 'Hide/Show Minor Nodes',
     'tb.viewFilter': 'View Filter', // 左下过滤按钮（眼睛）的悬浮提示（2026-09-28）
+    'tb.viewFilterRcHide': 'Hide Minor Nodes (Right-Click to Expand More Filters)', // 2026-09-30: right-click expand mode
+    'tb.viewFilterRcShow': 'Show Minor Nodes (Right-Click to Expand More Filters)',
+    'tb.aiEdit': 'AI Edit', // bottom-left AI button (the Hold-Mod hint was removed 2026-10-05)
     'aiBar.send': 'Send', // AI 输入条（2026-09-28）：关闭叉与加号不挂提示，只有发送挂
     'aiBar.placeholder': 'What do you want AI to do?',
     'aiBar.hintView': 'Edit Current View',
@@ -897,16 +1009,37 @@ var I18N = {
     'fm.nowFocus': 'Focus on Now',
     'fm.hideMinor': 'Hide Minor',
 
-    'nm.bold': 'Bold the Node',
+    'nm.bold': 'Bold',
     'nm.red': 'Mark Red',
     'nm.yellow': 'Mark Yellow',
-    'nm.note': 'Add a Note',
-    'nm.now': 'Mark as Now Node',
-    'nm.minor': 'Mark as Minor Node',
+    'nm.note': 'Note',
+    'nm.now': 'Mark as Now',
+    'nm.minor': 'Mark as Minor',
     'nm.add': 'Add', // 底部工具条最右「＋」按钮的悬浮提示（2026-09-28）
+    // Bottom toolbar "AI" button + its horizontal submenu (2026-10-05, four items)
+    'nm.ai': 'AI',
+    'nm.aiEdit': 'AI Edit',
+    'nm.aiEditTip': 'Click to Let AI Edit It Quickly',
+    'nm.aiMark': 'Add AI Mark',
+    'nm.aiMarkOn': 'Clear AI Mark',
+    'nm.aiMarkTip': 'Click to Mark This Node as AI-Generated',
+    'nm.aiMarkTipAi': 'Click to Clear the AI-Generated Mark',
+    'nm.aiMarkTipMix': 'Click to Clear the AI-Generated (with Human Content) Mark',
+    'nm.aiLocate': 'Copy AI Locate Path',
+    'nm.aiLocateTip': 'Click to Copy the Path So an AI Agent Can Locate and Edit It', // hotkey segment comes from tipAct='copyAILocate' (see nmApplyTip)
+    'nm.aiRules': 'Add AI Editing Rules',
+    'tip.aiRulesHint': 'Click to Add Rules the AI Agent Will Follow When Editing This File',
+    'tip.editAiRules': 'AI Editing Rules (Double-Click to Edit)',
+    // The little eye at the right of the "AI Editing Rules" row (2026-10-06): toggles show/hide globally.
+    // Hiding = not rendered at all (like hiding Minor nodes). The tip says what a click WILL do.
+    'tip.aiRulesEyeOn': 'Click to Hide AI Editing Rules in the Canvas for a Cleaner View', // currently shown -> clicking hides
+    'tip.aiRulesEyeOff': 'Click to Show AI Editing Rules', // currently hidden -> clicking shows
+    // Grayed out (this view has no rules at all; grayed = not clickable, 2026-10-06).
+    // Same sentence shape as the other two; the parenthetical says why it is gray (renders in the dimmer segment).
+    'tip.aiRulesEyeNone': 'Click to Hide AI Editing Rules in the Canvas for a Cleaner View (No Such Rules in This View)',
     // To-do button (2026-09-20): the tip swaps with the selected node's state; {0}/{1} = dynamic key segments
     'nm.todoPlainTip': 'Click to Mark as Todo{0} (Hold {Mod}: Mark Done)',
-    'nm.todoOffTip': 'Mark as a Non-Todo Node{0}', // 2026-09-23: "plain node" renamed to "non-Todo node" (user's wording)
+    'nm.todoOffTip': 'Clear the Todo Mark{0}', // 2026-09-23: "plain node" renamed to "non-Todo node" (user's wording)
     'addPanel.btnStyle': 'Format Button',
     'addPanel.btnNote': 'Note Button',
     'addPanel.btnTodo': 'To-Do Button (Todo)',
@@ -918,10 +1051,10 @@ var I18N = {
     'settings.primarySepRowDesc': 'Buttons above this line appear in the primary toolbar above the node (max 8). This line cannot be turned off — drag it up or down only.',
     // Bottom bar "More" menu (2026-09-17): hover panel with add-entries.
     // Note: this button intentionally has NO tooltip (it would overlap the panel), so 'nm.more' was removed.
-    'more.addChild': 'Add Child Node',
-    'more.addChildTip': 'Shortcut: Tab',
-    'more.addSibling': 'Add Sibling Node',
-    'more.addSiblingTip': 'Shortcut: Enter',
+    'more.addChild': 'Child Node',
+    'more.addChildTip': 'Click to Add a Child Node',
+    'more.addSibling': 'Sibling Node',
+    'more.addSiblingTip': 'Click to Add a Sibling Node',
     'more.delNode': 'Delete Node',
     'more.delNodeTip': 'Shortcut: Delete',
     'more.addOther': 'More Options',
@@ -929,25 +1062,29 @@ var I18N = {
     'more.aiEditTip': 'Click to Copy the AI Locator Info',
     'more.customPanel': 'Customize This Panel',
     'more.customPanelTip': 'Choose Which Buttons to Hide',
-    'more.addImage': 'Add Image',
-    'more.addImageTip': 'Supports Common Image Formats (Paste Directly)',
-    'more.addVideo': 'Add Video',
-    'more.addVideoTip': 'Supports Common Video Formats',
-    'more.addAudio': 'Add Audio',
-    'more.addAudioTip': 'Supports Common Audio Formats',
-    'more.addVaultAttach': 'Add Attachment from Vault',
-    'more.addVaultAttachTip': 'Reference Images / Videos Already in Your Vault (Paste Directly)',
+    'more.addNoteTip': 'Click to Add a Note', // note row in the Add panel (2026-10-06; the hotkey comes from tipAct)
+    'more.addImage': 'Image',
+    'more.addImageTip': 'Click to Add an Image (Paste Directly)',
+    'more.addVideo': 'Video',
+    'more.addVideoTip': 'Click to Add a Video',
+    'more.addAudio': 'Audio',
+    'more.addAudioTip': 'Click to Add an Audio',
+    'more.addVaultAttach': 'Obsidian Vault Attachment',
+    'more.addVaultAttachTip': 'Click to Reference Images / Videos Already in Your Vault (Paste Directly)',
     'more.addVaultAttachHint': 'When you paste an image / video into a normal note, Obsidian saves the file into its default attachment folder. Paste its file name (e.g. xxx.png) or path here and the mind map will find and render it. (This only creates a reference — the file is not copied.)',
-    'more.addFileLink': 'Add Local File Link',
-    'more.addFileLinkTip': 'Click It Later to Open the Local File (Paste Directly)',
+    'more.addFileLink': 'Local File Link',
+    'more.addFileLinkTip': 'Click to Add a Local File Link (Paste Directly)',
     'more.addFileLinkHint': 'Enter a file path, e.g. /Users/…/file.pdf. (You can also select a node while not editing and paste the path directly.)',
-    'more.addWiki': 'Add Wiki Link',
-    'more.addWikiTip': 'Click It Later to Jump to That Page (Shortcut: [[ )', // trailing "[[ )" = half-width paren + space, intentional (matches zh)
-    'more.addNodeLink': 'Add Linked Node',
-    'more.addNodeLinkTip': 'Click It Later to Jump to That Node (Paste Directly)',
+    'more.addWiki': 'Wiki Link',
+    'more.addWikiTip': 'Click to Add a Wiki Link That Jumps to Another Page ([[ )', // trailing "[[ )" = half-width paren + space, intentional (matches zh)
+    'more.addNodeLink': 'Linked Node',
+    'more.addNodeLinkTip': 'Click to Add a Linked Node That Jumps to It (Paste Directly)',
     'more.addNodeLinkHint': 'Select the target node in the other mind map, right-click "Copy node link", then paste it here. Works across mind maps; you can also select a node and paste directly.',
     // Input placeholder presets (2026-09-20): these used to be hard-coded Chinese and leaked into the English UI
     'more.addFileLinkPh': '/Users/…/File.Pdf',
+    'more.pickLocal': 'Choose from This Mac',
+    'more.pickLocalPrompt': 'Choose a File or Folder to Link',
+    'notice.pickPathFail': 'Could not get the full path of that file (not supported on this platform — paste the path manually).',
     'more.addNodeLinkPh': '[[File Name#Node ID]]',
     'settings.joinGroupBtn': 'Join Group Chat',
     // Copy for the Pro / payment modals (a few lines on 2026-09-20; the full body on 2026-09-27).
@@ -980,8 +1117,8 @@ var I18N = {
     'pay.path': 'Obsidian → Settings → Community Plugins → 28 Notes',
     'pay.alt3': 'Activation trouble? Email us, or reach the developer on WeChat: {0}',
     'pay.thanks': '=) Thank you for your support!',
-    'more.addUrlLink': 'Add Web Link',
-    'more.addUrlLinkTip': 'Open the webpage with one click (Paste Directly)',
+    'more.addUrlLink': 'Web Link',
+    'more.addUrlLinkTip': 'Click to Add a Web Link (Paste Directly)',
     'more.urlText': 'Display Text',
     'more.urlAddr': 'URL',
     'more.addUrlLinkHint': 'Top: the display text. Bottom: the URL (starting with www. / https://). If the display text is left empty, the URL is shown instead.',
@@ -990,6 +1127,7 @@ var I18N = {
 
     'toast.hiddenMinor': 'Minor Node Hidden',
     'toast.hiddenNow': 'Now Node Hidden',
+    'toast.nowFilterOff': 'No Now Nodes Left in This View, so This View Filter Has Been Turned Off', // 2026-10-01: last Now marked as Minor while "Hide Minor" is on
     'toast.hiddenAlsoDeleted': 'Note: {0} Hidden Minor Child Nodes Were Deleted as Well',
     'toast.pasteLink': 'Select a Node before Pasting a Link',
     'toast.pasteFileLink': 'Select a Node before Pasting a File Link',
@@ -1025,8 +1163,9 @@ var I18N = {
     'ctx.deleteImage': 'Remove Attachment',
     'more.pickBadType': 'Only image / video / audio files are supported; other formats were skipped',
     'ctx.drill': 'Enter the Current Node',
-    'ctx.drillTip': 'Show Only This Node in the View{0}', // {0} = hotkey segment, filled by nmKeySuffix()
-    'ctx.bookmarkTip': 'Save as a New Page to Jump Back into This View Later{0}', // {0} = hotkey segment
+    'ctx.drillTip': 'Click to Show Only This Node Tree in the View', // hotkey segment appended by nmApplyTip (no {0} in the text)
+    'ctx.drillRootTip': 'This Is the Main Node — Cannot Enter',
+    'ctx.bookmarkTip': 'Click to Save This View as a Shortcut Page', // hotkey segment appended by nmApplyTip
     'ctx.basicOps': 'Basic Actions',
     // Context-menu To-Do row (2026-09-23): shown when the "To-Do Button" setting is on the context-menu mode;
     // same look and behavior as the bottom-bar button.
@@ -1050,8 +1189,6 @@ var I18N = {
     'ctx.bookmark': 'Save as Shortcut',
     'ctx.bookmarkHint': "(Optional — defaults to the node's title)",
     'ctx.editLink': 'Edit Link',
-    'ctx.copyAILocate': 'Copy AI Locate Path',
-    'ctx.copyAILocateTip': 'Let an AI Agent Quickly Locate the Node You Want to Edit{0}', // {0} = hotkey segment
     // AI locate text (2026-09-20): single line wrapped in 【】 (user wants to paste it as one block), {0} = path, {1} = node ID.
     'aiLocate.node': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly; 3. A snapshot has already been saved automatically by the plugin — do not back up again (skip the "Before editing" section of index.md and do not run snapshot.py); 4. Use the node id to locate the node to edit, node ID: {1}; 5. Start editing based on the user\'s instruction】',
     'aiLocate.file': '【1. Find the document to edit, path: {0}; 2. Start editing based on the user\'s instruction】',
@@ -1069,7 +1206,7 @@ var I18N = {
     // language is taken **at write time** and never rewritten afterwards (switching language must not touch existing files).
     'fm.ai': 'Before editing this file, read 28Notes-Files/AI/index.md and follow it strictly — otherwise the file may show garbled content when opened',
     'fm.aiLocate': 'Locate a node: search for id:<node ID> in the file (node IDs look like <!--id:xxx-->, they sit at the end of the heading line — not an Obsidian ^block anchor, and must not be appended to the file path when opening).',
-    'ctx.copyLinkTip': 'Paste into Another Mind Map to Jump Back Here{0}', // {0} = hotkey segment
+    'ctx.copyLinkTip': 'Click to Copy and Paste into Another Mind Map for Quick Jumps', // hotkey segment appended by nmApplyTip
 
     'fold.menuKeep': 'Fold the Selected Node to Level {0} (Keep Everything Else Unchanged) (Click)',
     'fold.menuMin': 'Fold the selected node to level {0} (fold everything else to the minimum) (hold {Mod} and click)',

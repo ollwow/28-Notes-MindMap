@@ -1,5 +1,256 @@
 /* 28Notes MindMap —— Obsidian 侧样式（导图界面本身的样式在 mindmap-app.css，注入 iframe 内） */
 
+/* ═══ 接管标签页标题栏（2026-10-06）═══════════════════════════════════════
+   路径三键（返回 / 前进 / 主页）+ 面包屑 + 全屏按钮搬到系统标题栏上之后，这里管三件事：
+   ① 让自家标签页的标题栏**一定显示**（用户在设置里关了「显示标签页标题栏」也显示）；
+   ② 收掉系统那个「文件名」（面包屑已经取代它）；③ 我们那几颗按钮与面包屑的长相。
+   按钮本体与事件在 main.js 的 takeoverLeafHeader()；这里只管样子。
+   ⚠️ 改完要「禁用再启用 28 Notes 插件」才生效（CSS 只在插件启用时读一次）。
+
+   ── 可调旋钮（改数字即可）────────────────────────────────────────────
+     --shin-mm-crumb-lead     面包屑离主页键多远（挂在**弹簧**上；调大更远、负值更近）
+     --shin-mm-crumb-gap      面包屑段与段之间（默认 0，官方就是 0 —— 间距靠各段自己的 padding）
+     --shin-mm-crumb-sep-gap  斜杠左右各留多少（默认 2px）
+     --shin-mm-crumb-fs       面包屑字号（默认 13px）
+     --shin-mm-fs-dim         全屏时状态栏的待命透明度（默认 .1）
+     --shin-mm-tip-arrow      黑字提示的小三角大小（默认 5px）
+   （--shin-mm-accent 不用手调：画布把当前主题档的强调色报上来，宿主自动跟着走）
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ① 强制显示标题栏：只命中自家视图的 leaf。
+      ⚠️ data-type 挂在 **.workspace-leaf-content** 上（不是 .workspace-leaf）—— 写错就完全不生效。
+      Obsidian 自己那条 body:not(.show-view-header) .view-header{display:none} 没有 !important，
+      我们这条更具体 + !important 稳赢。 */
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header { display: flex !important; }
+
+/* ② 面包屑**住进那根"弹簧"里**（官方就是这结构：弹簧里放面包屑 + 文件名）。
+      弹簧（.view-header-title-container，flex:1 1 auto）留着 → 右侧那排照样贴右；
+      文件名单独 display:none 让位给面包屑。
+      ⚠️ 别把整个 .view-header-title-container 关掉 —— 那才是"把弹簧抽掉、右侧摊到左边"的写法（2026-10-06 实踩）。
+      ⚠️ 也别再往面包屑上写 visibility:hidden（它现在是这里唯一的内容）。 */
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header-title-container {
+  justify-content: flex-start !important; min-width: 0 !important;
+  /* 面包屑整条离主页键多远就靠它（旋钮 --shin-mm-crumb-lead）：
+     调大 = 整条往右挪、离三键更远；调小 / 负值 = 往左挪（负太多会压到三键上，那是用户自己调的）。
+     ⚠️ 这个数字是**用户会自己改的**，别在自检里钉死具体值。 */
+  margin-left: var(--shin-mm-crumb-lead, -6px);
+}
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header-title { display: none !important; }
+/* 🔴 官方自己那条「文件夹 / 子文件夹」路径条（.view-header-title-parent）也要藏 ——
+   它是「显示文件路径」那个设置开着时出现的，会跟我们自己的节点面包屑**并排显示**（2026-10-06 用户实报）。
+   ⚠️ 只藏它，别碰 .view-header-title-container（那根弹簧 + 我们的面包屑住在里面）。 */
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header-title-parent { display: none !important; }
+
+/* ②b 「滑出文件列表」那颗按钮**只在全屏专注模式下出现**（2026-10-06 用户定：
+      平时根本用不到它，别在状态栏里白占一个位置）。 */
+#shin-mm-side { display: none; }
+body.shin-mm-fullscreen #shin-mm-side { display: flex; }
+
+/* ③ 我们那几颗键（容器沿用系统的 view-header-nav-buttons → 尺寸 / 间距自动一致） */
+#shin-mm-nav { display: flex; align-items: center; }
+/* 常态色**提亮**（2026-10-06 用户报"一直灰灰的、看不清能点"）：系统那排图标本身是 muted 灰，
+   我们这几颗要给足对比度；只有真置灰（.shin-mm-na）才暗下去。
+   ⚠️ 置灰**别用 `cursor: not-allowed`** —— 用户看到的"鼠标变成禁止小图标"就是从这类光标来的，用 default。 */
+#shin-mm-nav .clickable-icon, #shin-mm-fs { color: var(--text-normal); }
+#shin-mm-nav .shin-mm-na { opacity: .3; cursor: default; }
+#shin-mm-nav .shin-mm-na:hover { background-color: transparent; }
+/* 主页：当前路径 ≠ 默认路径 → 主题色（要压过上面那条常态色 + 系统的 clickable-icon 色）。
+   ⚠️ 用 --shin-mm-accent（画布把主题档的 --accent 报上来的，粉档就是粉的），
+   别用 --interactive-accent —— 那是 Obsidian 的主题色，跟插件主题档不是一回事（用户报过"怎么是紫的"）。 */
+#shin-mm-home.shin-mm-on { color: var(--shin-mm-accent, var(--interactive-accent)) !important; }
+/* 2026-10-07 用户定：主页键不可点（当前已是默认路径）时跟返回/前进置灰同一档 ——
+   浅色 + 默认光标（`.shin-mm-na` 那两条规则已经覆盖颜色与光标，这里只是说明用途，别再单独写一份）。 */
+
+/* ④ 面包屑（紧跟三键右边）—— **照 Obsidian 官方那套「文件路径面包屑」做的**（2026-10-06 用户定）：
+   官方结构（扒 obsidian.asar 得到）：每段一个**可点的小块**，中间用**斜杠**分隔；
+   小块 hover 有底色 + 文字提亮；整串超长时各段自己省略号收缩（那串 flex-shrink 很大、专门让位给右边）。
+   旋钮：--shin-mm-crumb-gap（段与段之间，官方是 0）/ --shin-mm-crumb-sep-gap（斜杠左右）/
+        --shin-mm-crumb-fs（字号）。「距三键多远」不在这里 —— 它挂在外面那根弹簧上（见上面那条）。
+        改完要「禁用再启用插件」才生效。 */
+#shin-mm-crumb {
+  display: flex; align-items: center; gap: var(--shin-mm-crumb-gap, 0px);
+  /* 离主页键多远**由外层那根弹簧的 margin-left 控制**（见下面 .view-header-title-container 那条）——
+     不能写在这里：面包屑是弹簧里唯一的内容、且 flex:1 占满弹簧，
+     写在自己身上只会让"文字相对按钮"挪、整条不动（2026-10-06 用户实报"调 -50 也只动一点点"）。 */
+  /* 它住在那根弹簧（.view-header-title-container）里、是里面唯一的内容 →
+     自己占满 + 允许收缩，路径长了就在这里被裁（各段再各自省略号），不会把右边那排顶出去 */
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; white-space: nowrap;
+  font-size: var(--shin-mm-crumb-fs, 13px); color: var(--text-muted);
+}
+#shin-mm-crumb.hidden { display: none; }
+/* 每一段：可点的小块（官方 .view-header-breadcrumb） */
+#shin-mm-crumb a {
+  padding: 2px 4px; border-radius: var(--radius-s, 4px);
+  white-space: nowrap;
+  color: inherit; cursor: pointer; text-decoration: none;
+  /* 🔴 每段**不许收缩**（`flex: 0 0 auto`）：长度由 JS 逐级截断控制（fitHeaderCrumb）。
+     2026-10-06 实踩：原来照官方写 `flex: 0 100 auto`（可收缩）→ flex 会**先把内容压扁**、
+     于是内容永远不溢出 → JS 那句"量 scrollWidth 看装不装得下"**恒成立** →
+     压缩逻辑一次都没跑过，用户看到的全是 CSS 硬压的结果（短段被压成半个字、长段还剩一长串）。 */
+  flex: 0 0 auto;
+}
+#shin-mm-crumb a:hover { background-color: var(--background-modifier-hover); color: var(--text-normal); }
+/* 斜杠分隔符（官方 .view-header-breadcrumb-separator，内容就是 "/"） */
+#shin-mm-crumb .sep { padding: 2px 1px; color: var(--text-faint); flex: none; }
+
+/* Mac + **窗口全屏**（非原生）时：给左上角那三个红绿灯留出空位（2026-10-06 用户定）。
+   窗口全屏（仅窗口内）不隐藏红绿灯，它正好压在返回/主页那几颗上 → 留一段左内边距把它们推开。
+   桌面全屏（原生）由系统收起红绿灯，不用留（:not(.shin-mm-fullscreen-native) 就是干这个的）。
+   ⚠️ 只在 Mac 生效：body.shin-mm-is-mac 由宿主启动时按 process.platform 挂（别的系统红绿灯不存在）。
+   旋钮 --shin-mm-fs-traffic（默认 78px）。 */
+body.shin-mm-is-mac.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .workspace-leaf-content[data-type="28notes-mindmap"] .view-header {
+  padding-left: var(--shin-mm-fs-traffic, 78px);
+}
+
+/* 全屏时左侧边栏改成**浮层**（2026-10-06 用户定）：点那颗侧边栏按钮就"滑出来"、**不挤压画布**，
+   再点一次 / 点画布空白处滑回去。背景不透明 + 右边一道投影，看起来就是从左边滑出的一块。
+   ⚠️ 只在全屏专注模式下这样（平时侧边栏照旧走 Obsidian 自己的布局）。 */
+body.shin-mm-fullscreen.shin-mm-side-open .workspace-split.mod-left-split {
+  /* 2026-10-07 用户报「窗口全屏下侧边栏被顶上那条盖住、桌面全屏却没事」，要它盖住一切。
+     ⚠️ 两档的 CSS 与代码路径**完全相同**（逐行对过：同一个 toggleLeftSidebar / 同一个类 / 同一条规则），
+        差异只可能来自"原生全屏"这个系统层行为。
+     🔴 原来只写 `absolute + z-index:50` —— 这是**上次单纯提数字没解决**的原因：
+        `position: absolute` 的层叠上下文**受最近的定位祖先约束**，一旦画布那一侧
+        （.workspace-leaf / .workspace-leaf-content）自己成了层叠上下文，
+        50 就只是"在我这一层里最大"，**跨不出去**，提多高都没用。
+     改法：`position: fixed` —— 相对**视口**定位，直接挂到根层叠上下文上，
+        不再被 workspace 内部的层级困住；z-index 顺带给足余量。
+     ⚠️ 视觉上等价（workspace 铺满窗口时 top:0 就是视口顶），变的只是"站在哪一层"。 */
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 500;
+  background: var(--background-primary);
+  box-shadow: 4px 0 18px rgba(0,0,0,.14);
+}
+/* 🔴 侧边栏浮层在**窗口档**下要给红绿灯让位（2026-10-07 定位，与上面那条 view-header 的 78px 同源）。
+   定位依据（实测诊断）：elementFromPoint 在侧边栏顶部 / 中部三点**全返回侧边栏自己的元素**、
+   两档祖先链完全一样（都是 static/auto）→ **DOM 层叠没有任何问题**，侧边栏本来就是网页里最上层。
+   真凶是**系统窗口控件**：Obsidian 是 frameless 窗口（body.is-hidden-frameless），
+   macOS 的红绿灯**浮在网页内容之上** —— 窗口档下它还在（桌面档原生全屏时被系统收起），
+   于是它压住侧边栏左上角。红绿灯不在 DOM 里，elementFromPoint 根本看不见它，
+   这就是"诊断看着一切正常、眼睛却明明被挡着"的原因，也是"提 z-index 永远没用"的原因（压根不是层级问题）。
+   ⚠️ 只给窗口档留（:not(.shin-mm-fullscreen-native)）：桌面档红绿灯已被系统收起，留了反而空一块。
+   ⚠️ 用 padding-top 而不是改高度：背景照旧铺满整条（含红绿灯那一段），只是内容下移让开。
+   旋钮 --shin-mm-fs-traffic-v（默认 40px ≈ 红绿灯那条的高度；嫌空太多/太少就调它）。 */
+body.shin-mm-is-mac.shin-mm-fullscreen:not(.shin-mm-fullscreen-native).shin-mm-side-open .workspace-split.mod-left-split {
+  padding-top: var(--shin-mm-fs-traffic-v, 40px);
+}
+/* 🔴 桌面全屏（原生）下滑出文件列表时：把状态栏那排按钮**整个藏起来**（2026-10-06 用户定）。
+   桌面全屏有它自己的一套窗口行为，按钮留在上面会跟浮层打架（用户实报"按钮还在它上面"），直接藏最省事。 */
+/* （2026-10-06 用户定：**不做**"滑出文件列表时把状态栏按钮藏掉"这个设计 ——
+   重叠就重叠，按钮一律正常显示。原来那两条 `#shin-mm-nav` / `#shin-mm-fs` 的 display:none 已删，
+   画布那边的 body.nm-side-open 也一并撤了。） */
+/* 画布里的常驻 UI（左下工具栏 / AI 输入条 / 右上角浮层）由**画布自己**藏：
+   宿主发 sidebarFloat 消息过去 → 画布挂 body.nm-side-open → mindmap-app.css 里那几条生效。
+   （宿主这边选不到 iframe 里的元素，所以只能分工） */
+
+/* ⑤ 全屏时整条标题栏跟着"待命"（2026-10-06 用户定）：跟画布那几排一个待遇，鼠标悬浮回 100%。
+   · 透明度默认 .1 = **与左下工具栏那排完全一致**（画布那边是 --fs-dim: .1）；想单独调就改这个数。
+   · ⚠️ 只降透明度、**不动 pointer-events** —— 全屏里还得能点到那颗"退出全屏"。
+   · 🔴 同时把这条标题栏**浮起来**（absolute，脱离文档流）：画布内容才**能从它下面透过去**，
+     而不是被一条横条切掉一截（2026-10-06 用户实报"往上移的时候被挡住"）。浮起来后背景必须透明。 */
+body.shin-mm-fullscreen .shin-mm-header-taken {
+  opacity: var(--shin-mm-fs-dim, .1);
+  transition: opacity 180ms ease;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 6;
+  background: transparent;
+}
+body.shin-mm-fullscreen .shin-mm-header-taken:hover { opacity: 1; }
+/* 容器要能当定位基准（只对自家 leaf 生效，别的笔记不受影响） */
+body.shin-mm-fullscreen .workspace-leaf-content[data-type="28notes-mindmap"] { position: relative; }
+
+/* ⑥ 黑色小字提示（我们自己的设计，2026-10-06）：黑底白字小条，弹在按钮**下方**
+   （标题栏贴着屏幕最上沿，往上弹会出屏）。由 main.js 的 showHeaderTip() 挂到 body 上、定位用 fixed。 */
+/* 提示几何 = **与画布完全同一套**（2026-10-06 用户定，两个值同名同义）：
+   · --shin-mm-tip-gap  = 三角**尖端离目标**的缝隙（画布 --tip-gap 也是 2）
+   · --shin-mm-tip-arrow = 小三角大小（画布 --tip-arrow 也是 5）
+   框离目标 = gap + arrow，所以三角尖端正好离目标 gap。JS 读这两个值，别在 JS 里写死数字。 */
+body {
+  --shin-mm-tip-gap: 2px;
+  --shin-mm-tip-arrow: 5px;
+  /* 只针对**主页菜单那两项**的提示（横向弹那个）：单独一个缝隙值，不影响其他黑字提示。
+     不想要单独调就删掉这行（会回落到上面的 --shin-mm-tip-gap）。 */
+  --shin-mm-tip-gap-menu: 6px;
+}
+.shin-mm-tip {
+  position: fixed; z-index: 9999;
+  background: #1f2329; color: #f5f5f5;   /* 与画布那套小黑字同一个底色（#1f2329） */
+  font-size: 12px; line-height: 1.4;
+  padding: 4px 8px; border-radius: 6px;
+  max-width: 340px; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  pointer-events: none;
+}
+/* 提示框里的**浅色段**（2026-10-06 用户报"这颗按钮的浅色段不见了"）：
+   与画布那套同规格 —— 键位段 `.shin-mm-tip-k` / 括号补充段 `.shin-mm-tip-h`，都比正文浅一档。
+   旋钮：--shin-mm-tip-dim（默认 rgba(255,255,255,.55)，与画布 --tip-kbd 同值）。 */
+.shin-mm-tip-k, .shin-mm-tip-h { color: var(--shin-mm-tip-dim, rgba(255,255,255,.55)); }
+
+/* 小三角（2026-10-06 用户报"箭头忘了带回来"）：照画布那套几何 —— border 三角 + 5px，
+   提示框弹在按钮**下方**，所以三角要**朝上**贴在框顶（border-bottom 着色、border-top 收掉）。
+   ⚠️ 收边用 `border-top: 0` 只在"朝上"这一档里写（同一条基规则里别写 shorthand，见分册那条坑）。 */
+.shin-mm-tip::before {
+  content: ""; position: absolute;
+  border: var(--shin-mm-tip-arrow, 5px) solid transparent;   /* 只给尺寸：四条边一律透明，朝哪边由下面各档点色 */
+}
+/* 朝上（提示在目标**下方**）—— 只有标题栏那几颗按钮用（它们贴着屏幕最顶上，只能往下弹） */
+.shin-mm-tip[data-side="bottom"]::before {
+  left: var(--shin-mm-tip-arrow-left, 50%); transform: translateX(-50%); bottom: 100%;
+  border-bottom-color: #1f2329;
+}
+/* 🔴 朝左（提示在目标**右侧**）—— **子菜单条目一律用左右，不许上下**（2026-10-06 用户定：
+   弹上下会盖住相邻的那一条）。三角贴框左边外侧，纵向位置按目标中心算。
+   ⚠️ 四条边写全：border 三角的老坑 —— 少写一条边会继承别的档的点色，三角变成半个（分册有记）。 */
+.shin-mm-tip[data-side="right"]::before {
+  right: 100%; top: var(--shin-mm-tip-arrow-top, 50%); transform: translateY(-50%);
+  border-top-color: transparent; border-right-color: #1f2329; border-bottom-color: transparent; border-left-color: transparent;
+}
+/* 朝右（提示在目标**左侧**）：右边放不下时自动翻过来 */
+.shin-mm-tip[data-side="left"]::before {
+  left: 100%; top: var(--shin-mm-tip-arrow-top, 50%); transform: translateY(-50%);
+  border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: #1f2329;
+}
+
+/* ⑦ 主页键的二级菜单（我们自己的设计，2026-10-06）：白底卡片 + 图标 + 文字，
+   与画布里那套二级菜单同款观感（原来是官方 Menu，样式跟画布不搭）。 */
+/* ⑦ 主页键的二级菜单（我们自己的设计，2026-10-06）：**尺寸 / 底色 / 圆角 / 悬停都照画布「更多」菜单那套来**
+   （画布 `#more-menu`：padding 6px / gap 2px / min-width 180 / 圆角 8 / 悬停 var(--sel) / 置灰 opacity .4）。
+   这里用 Obsidian 自己的同名变量近似（--background-primary / --background-modifier-hover），视觉上是一路的。 */
+.shin-mm-menu {
+  position: fixed; z-index: 9998;
+  background: var(--background-primary); color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  /* 宽度**跟着文字走**（2026-10-06 用户定：别用「更多」菜单那个固定 180 最小宽，显得空）。
+     左右留白 = 菜单自己的 padding 6px + 每条自己的 padding 6px。 */
+  width: max-content; min-width: 0;
+  box-shadow: 0 6px 24px rgba(0,0,0,.15);
+  max-height: calc(100vh - 12px); overflow-y: auto;
+}
+.shin-mm-menu-item {
+  display: flex; align-items: center; justify-content: flex-start;  /* 图标 + 文字一律**居左**（2026-10-06 用户定） */
+  gap: 8px; width: 100%; padding: 6px;                              /* 与画布 .mm 一致 */
+  background: transparent; border: none; border-radius: 6px;
+  color: inherit; font-size: 13px; cursor: pointer;
+  /* Obsidian 自己的 button 样式会把文字拉居中 → 这条要压过它 */
+  text-align: left !important;
+}
+/* 悬停底色 = **主题色的浅底**（复刻画布「更多」菜单那条：`--sel: color-mix(in srgb, var(--accent) 16%, …)`）——
+   ⚠️ 别用 Obsidian 那个灰底 --background-modifier-hover：用户 2026-10-06 明确说"悬浮上去该是我的主题色"。 */
+.shin-mm-menu-item:hover:not(.is-disabled) { background: color-mix(in srgb, var(--shin-mm-accent, var(--interactive-accent)) 16%, var(--background-primary)); }
+.shin-mm-menu-item.is-disabled { opacity: .4; cursor: default; }   /* 与画布 .mm:disabled 同款 */
+.shin-mm-menu-item.is-disabled:hover { background: transparent; }
+/* **可点的那两项**：跟画布「更多」菜单一模一样 —— 整条（图标 + 文字）上主题色 + 透明度 .78 + 加粗。
+   （画布那条规则：`#more-menu .mm[data-act="path-default"]:not(:disabled) { color: var(--accent); opacity: .78; font-weight: 700 }`） */
+.shin-mm-menu-item.is-on { color: var(--shin-mm-accent, var(--interactive-accent)); opacity: .78; font-weight: 700; }
+/* 🔴 点过之后**不许**留焦点框 / 按下底色（2026-10-06 用户报"一点击这两项就有背景框，设计完全不对"）：
+   Obsidian 自己的 button 样式会给 :focus / :active 上底色 —— 菜单项只在**鼠标悬停**时才该有底色。 */
+.shin-mm-menu-item:focus,
+.shin-mm-menu-item:focus-visible,
+.shin-mm-menu-item:active { background: transparent !important; box-shadow: none !important; outline: none !important; }
+.shin-mm-menu-ic { display: flex; align-items: center; }
+.shin-mm-menu-ic svg { display: block; width: 18px; height: 18px; }  /* 与画布菜单里的图标同尺寸 */
+
 /* ═══ 文件树徽章自定义区（按用途分三段：①文字 ②捷径小箭头 ③图标；2026-08-31 梳理）════════
    改完必须「禁用再启用 28 Notes 插件」才生效（CSS 只在插件启用时读一次）。
    徽章文案日常在 i18n.js 的 badge.* 改（界面语言切换自动换中英）。 */
@@ -36,6 +287,13 @@
   --shin-file-badge-transform: uppercase;         /* 大小写：none=原样，uppercase=英文转全大写 */
   --shin-file-badge-spacing: 0.05em;              /* 字距 */
   --shin-file-badge-background: transparent;      /* 底色 */
+
+  /* ---- 全屏专注：右下角状态栏（2026-10-01 用户定）----
+     全屏（窗口全屏 / 桌面全屏）下状态栏**保留**（我们的「折叠层级条」住在里面），
+     只把它降到下面的「待命透明度」，鼠标悬浮到它自己身上才回到 100%。
+     0 = 全透明（仍能悬停到）；1 = 等于没这个效果。 */
+  --shin-fs-status-dim: .25;                      /* 0~1，越小越淡 */
+  --shin-fs-status-fade: 180ms;                   /* 淡入淡出时长 */
 }
 /* ═══ 自定义区结束 ═════════════════════════════════════════════════ */
 
@@ -150,6 +408,15 @@
      --shin-ribbon-size       Ribbon 按钮外框大小（悬浮背景层 / 点击区，与侧栏一致）
      --shin-ribbon-icon-size  Ribbon 图标本身大小（调小=图标缩小、留白更多；默认比外框小） */
 :root {
+  /* 黑色小字提示（框 + 三角）的统一几何 —— 与 mindmap-app.css 的同名值保持一致
+     （画布是 iframe，CSS 变量不能跨文档，所以两边各定义一份、值必须一样；改一处记得改另一处）。
+     三角尖端 ↔ 目标的距离 = --tip-gap；框自动贴在三角外侧（gap + 三角半径）。 */
+  --tip-gap: 2px;
+  --tip-arrow: 5px;
+  --tip-font: 12px;
+  --tip-pad: 5px 10px;
+  /* --tip-inset：容器自己的「内边距 + 描边」——提示量间距时自动加上，所以量的是**容器外边缘**
+     （目标 = 外面那个描线框，不是里面的按钮）。这一项不是手调旋钮，是各容器自己报的值。 */
   --shin-foldbar-num-y: 0px;
   --shin-foldbar-more-y: -1.5px;
   --shin-foldbar-pop-gap: 4px;
@@ -179,17 +446,17 @@
    ⚠️ 选择器带 [data-tip] —— 没有提示的按钮（如「+」）不设该属性，避免渲染出空白黑框 */
 .status-bar .shin-foldbar-btn[data-tip]::after {
   content: attr(data-tip);
-  position: absolute; bottom: calc(100% + 12px); right: -6px; z-index: 200;
-  background: #1f2329; color: #fff; font-size: 12px; line-height: 1.5; font-weight: 400;
-  padding: 5px 10px; border-radius: 6px; white-space: nowrap;
+  position: absolute; bottom: calc(100% + var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)); right: -6px; z-index: 200;
+  background: #1f2329; color: #fff; font-size: var(--tip-font, 12px); line-height: 1.5; font-weight: 400;
+  padding: var(--tip-pad, 5px 10px); border-radius: 6px; white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
   opacity: 0; pointer-events: none; transform: translateY(3px);
   transition: opacity .12s ease, transform .12s ease;
 }
 /* 小箭头（5px 三角，指向下方按钮）：与左下角按钮 tooltip 同款（mindmap-app.css [data-tip]::before） */
 .status-bar .shin-foldbar-btn[data-tip]::before {
-  content: ""; position: absolute; bottom: calc(100% + 7px); right: 0; z-index: 200;
-  border: 5px solid transparent; border-top-color: #1f2329; border-bottom: 0;
+  content: ""; position: absolute; bottom: calc(100% + var(--tip-gap, 2px) + var(--tip-inset, 0px)); right: 0; z-index: 200;
+  border: var(--tip-arrow, 5px) solid transparent; border-top-color: #1f2329; border-bottom: 0;
   opacity: 0; pointer-events: none; transform: translateY(3px);
   transition: opacity .12s ease, transform .12s ease;
 }
@@ -198,12 +465,12 @@
 /* （2026-09-13 删 .shin-foldbar-dim 未选中淡显 —— 数字语义统一后选中与否视觉不再区分） */
 /* 「+」弹层里的按钮：提示框改放左侧垂直居中 —— 向上弹会盖住弹层里上方的选项（用户 2026-09-11） */
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::after {
-  bottom: auto; right: calc(100% + 10px); left: auto; top: 50%;
+  bottom: auto; right: calc(100% + var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)); left: auto; top: 50%;
   transform: translateY(-50%) translateX(3px);
 }
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::before {
-  bottom: auto; right: calc(100% + 5px); left: auto; top: 50%;
-  border: 5px solid transparent; border-left-color: #1f2329; border-right: 0;
+  bottom: auto; right: calc(100% + var(--tip-gap, 2px) + var(--tip-inset, 0px)); left: auto; top: 50%;
+  border: var(--tip-arrow, 5px) solid transparent; border-left-color: #1f2329; border-right: 0;
   transform: translateY(-50%) translateX(3px);
 }
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]:hover::after {
@@ -226,6 +493,7 @@
    改 right:0 让提示框右缘与「+」对齐、整体向左展开（2026-09-13） */
 .status-bar .shin-foldbar-more[data-tip]::after { right: 0; }
 .status-bar .shin-foldbar-pop {
+  --tip-inset: calc(var(--shin-foldbar-pop-gap-x) + 1px); /* 弹层里按钮的提示往左弹 → 量到弹层外边缘 */
   position: absolute; bottom: calc(100% + var(--shin-foldbar-pop-gap)); right: var(--shin-foldbar-pop-right);
   display: none; flex-direction: column; align-items: center; gap: var(--shin-foldbar-pop-gap-y);
   background: var(--background-primary); border: 1px solid var(--background-modifier-border);
@@ -455,6 +723,13 @@
   box-shadow:0 2px 10px var(--pm-cta-shadow,rgba(0,112,245,.35));
 }
 .pm-cta:hover{ background:var(--pm-cta-bg-hover,#0062d6) !important; }
+/* 🔴 点完**不许留焦点框**（2026-10-06 用户报"这两个按钮点完一直有个灰边框"）：
+   Obsidian 会给拿到焦点的 button 套一圈 box-shadow，而上面 .pm-cta 自己那条 box-shadow 没带 !important
+   → 被盖掉。这里在 focus / active 态把**原来的投影显式写回**，顺手收掉 outline。 */
+.pm-cta:focus, .pm-cta:focus-visible, .pm-cta:active{
+  outline:none !important;
+  box-shadow:0 2px 10px var(--pm-cta-shadow,rgba(0,112,245,.35)) !important;
+}
 
 /* —— 浮层：支付弹窗的引导箭头（2026-09-24 用户定）——
    钉在窗口、**不随滚动**（与底部按钮同一层浮层）；位置 / 大小 / 旋转 / 颜色全走 --pay-arrow-* 旋钮。
@@ -586,15 +861,6 @@
 /* 「⋯」按钮背景（2026-09-14 用户定：默认**全透明** —— 主题会给 button 加椭圆底色，压掉它）。
    想要淡淡一层：把 transparent 改成如 rgba(0,0,0,.06)。⚠️ 这里必须用高优先级选择器
    （.workspace-leaf-content[data-type=...] 前缀），普通 class 选择器会被主题的 button 底色盖掉。 */
-/* 状态栏的 git 分支指示（2026-09-23）：只在本机 / 开发仓库出现（普通用户看不到）。
-   点它 → 列出全部本地分支，点某条 = 复制 `git checkout <分支>`。 */
-.shin-branch-status {
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.shin-branch-status:hover { color: var(--text-normal); }
-
 :root {
   --shin-hist-more-bg: transparent;
   /* hover 底色块的整体下移量（正数往下、负数往上）。底色由伪元素画，调这个就能单独微调它的位置：
@@ -655,6 +921,21 @@
 .shin-hist-lock .svg-icon { width: 12px; height: 12px; position: relative; }
 .shin-hist-more .svg-icon { width: 15px; height: 15px; position: relative; }
 
+/* ===== 调试组顶部的常驻色卡（2026-10-05）=====
+   不是选项，只作对照：一排「小色块 + 中文颜色名」，作者一眼取到名字与色号。
+   色号由 JS 从 AI_MARK_COLORS 内联到 style.background，这里只管排布。 */
+.shin-palette-row {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 6px;
+}
+.shin-palette-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+}
+.shin-palette-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  box-shadow: 0 0 0 1px var(--background-modifier-border); /* 浅色（如黄）在白底上也能看清轮廓 */
+}
+
 /* ===== 深色模式（跟随 Obsidian 明暗）：徽标字换浅色（2026-09-18） =====
    徽标在宿主文档里，Obsidian 的 body.theme-dark 直接可用；要微调就改这里这一个值。 */
 body.theme-dark {
@@ -688,30 +969,48 @@ body.theme-dark {
    窗口全屏（2026-09-22 用户定）
    进入时 main.js 给 body 加 .shin-mm-fullscreen（退出摘掉）；
    侧边栏由 workspace API 折叠，这里只管官方 API 管不到的界面元素：
-   顶部标签栏（含标签头整行）、左侧功能区图标条、状态栏。
+   顶部标签栏（含标签头整行）、左侧功能区图标条**藏掉**；右下角状态栏**保留但半透明待命**（2026-10-01 用户定，
+   理由：折叠层级条在里面，藏了它等于把折层级那几个数字一起藏了）。
    值不带变量 —— 全屏就是要盖住一切，. !important 压主题与其它插件的显示规则。
    ============================================================ */
 body.shin-mm-fullscreen .workspace-tabs.mod-top .workspace-tab-header-container,
 body.shin-mm-fullscreen .workspace-tabs.mod-top .workspace-tab-header-container-inner,
-body.shin-mm-fullscreen .workspace-ribbon,
-body.shin-mm-fullscreen .status-bar { display: none !important; }
-/* 全屏时把"标题栏"收掉 —— 两条都写，因为俩长得都像标题栏：
-   ① `.titlebar` = Obsidian 设置 → 外观 →「显示标签页标题栏」（**没开这个设置时页面上根本没有这个元素**，规则写了也无害）。
-   ② `.view-header` = **每个视图自己的头**：那行「文件名 + 右侧操作按钮」—— 这才是用户 2026-09-22 指的"标题栏"。
-      怎么确认的：社区 Zen 类插件的同类功能隐藏的就是这一行（`View.headerEl` = `.view-header`）；
-      实现是我们自己的 CSS，不依赖任何外部插件。
-   ② 用 `.shin-mm-fs-leaf` 限定在**画布视图**上：宿主进入全屏时给画布视图的 containerEl 加这个类、退出时摘掉
-      （见 main.js 的 toggleFullscreen.setLeafCls），所以全屏期间切到别的视图、或别的 pane 的头部都不受影响。
-   ⚠️ 别和「路径条」搞混：那行 `📥 Inbox › 插件优化 › Backup` 是**画布自己**的 #crumb（在 iframe 里），
-   全屏时是要**保留**的（只做让位），不在这里隐藏。 */
+body.shin-mm-fullscreen .workspace-ribbon { display: none !important; }
+/* 右下角状态栏：全屏下**保留**（2026-10-01 用户定）—— 我们的「折叠层级条」就住在里面，
+   藏了状态栏等于把折层级那几个数字一起藏了。改为跟画布内的常驻 UI 同一套「待命」观感：
+   降到 --shin-fs-status-dim 的透明度，鼠标**悬浮到它自己身上**才回到 100%。
+   （原来这里是 display:none，与标签栏 / 功能区条一起藏 —— 那三处照旧藏。） */
+body.shin-mm-fullscreen .status-bar {
+  opacity: var(--shin-fs-status-dim, .25);
+  transition: opacity var(--shin-fs-status-fade, 180ms) ease;
+}
+body.shin-mm-fullscreen .status-bar:hover { opacity: 1; }
+/* 全屏时收掉 `.titlebar` —— Obsidian 设置 → 外观 →「显示标签页标题栏」
+   （**没开这个设置时页面上根本没有这个元素**，规则写了也无害）。 */
 body.shin-mm-fullscreen .titlebar { display: none !important; }
-.shin-mm-fs-leaf .view-header { display: none !important; }
+/* 🔴 `.view-header`（视图自己的头）2026-10-06 起**不再隐藏**，而且全屏时它必须留着：
+   我们的路径三键 / 面包屑 / 全屏按钮现在都住在这条标题栏上（见上面「接管标签页标题栏」那一段）——
+   把它藏了，全屏后连"退出全屏"那颗按钮都找不到了。
+   （原来那条「把自家 leaf 的视图头藏掉」的规则已删（选择器带 shin-mm-fs-leaf 那个）。
+     注意：上面那条强制显示规则比它更具体，本来就会赢 —— 但留着两条互相打架的规则迟早出事，直接删干净。） */
+/* 原生全屏动画期间：把页面里所有 CSS 过渡 / 动画掐掉（2026-10-01 用户定）
+   macOS 自己那段窗口放大 / 缩小是系统级动画（掐不掉），页面里的 transition 跟它**同时**跑会互相打架 ——
+   用户实报：进去时「左边先收到某一个位置、然后再全屏」，Esc 退出时「文件列表先展示一半、再全部展示」，中间顿一下。
+   （判据：⌘+点击只进「仅在窗口内全屏」、不触发系统动画时**不顿** → 顿来自原生全屏那段动画。）
+   main.js 在"要动原生全屏"那一刻挂上 .shin-mm-fs-noanim，FS_NATIVE_ANIM_MS 毫秒后摘掉。
+   ⚠️ 只掐 transition / animation —— **一个 display / 布局属性都不碰**，上面的隐藏清单照旧瞬间生效。 */
+body.shin-mm-fs-noanim *,
+body.shin-mm-fs-noanim *::before,
+body.shin-mm-fs-noanim *::after {
+  transition: none !important;
+  animation: none !important;
+}
 
-/* ⚠️ `.view-header` 只允许「整体隐藏」这一种用法（就是上面那条），**别拿它做让位 / 加 padding**：
-   2026-09-22 实测查明，全屏时要让位的那行「📥 Inbox › 插件优化 › Backup」其实是**画布自己写的** #crumb
-   （fixed top:0，在 mindmap-app.js 的 iframe 里），让位规则在 mindmap-app.css 的 `body.fs-window #crumb`。
-   先前在这里给 .titlebar / .view-header 写过两版让位，全是错方向 —— 尤其 `.view-header` 那版
-   会给**所有普通笔记**的视图头也加 padding（误伤），当时已删净。 */
+/* ⚠️ 动 `.view-header` 之前先看这条历史：2026-09-22 曾给它写过两版「让位 / 加 padding」，全是错方向 ——
+   当时要让位的那行「📥 Inbox › 插件优化 › Backup」其实是**画布自己写的** #crumb（在 iframe 里），
+   而那版规则会给**所有普通笔记**的视图头也加 padding（误伤）。
+   2026-10-06 起这条标题栏是**我们自己的工具栏**（路径三键 / 面包屑 / 全屏），改它一律走
+   `main.js` 的 takeoverLeafHeader() 与上面「接管标签页标题栏」那一段 —— 别再在别处零散加规则。 */
 
 /* ============================================================
    设置页底部「Make Something Wonderful」灰色小字（2026-09-27 用户定）：
@@ -749,6 +1048,30 @@ body.shin-mm-fullscreen .titlebar { display: none !important; }
   --setting-items-padding-x: 0;
   --setting-items-padding-y: 0;
 }
+/* ===== 设置页尾注那一排（2026-10-07 用户定）=====
+   一排**小字链接**（不是按钮）：使用教程 · 加入群聊 · 更新历史 · Bug 反馈 · 版本号 · Make Something Wonderful。
+   点文字即打开对应操作。可调旋钮：
+     --nm-footer-fs   字号 / --nm-footer-fw 粗细
+     --nm-footer-gap  各项之间的间距 / --nm-footer-mt 与上方那一项的间距
+   （具体值看下面那条规则里的 var() 兜底值 —— 那是**用户会自己调**的地方，别在别处再写一份）
+   分隔点「·」由 ::after 自动加，最后一项后面不加。 */
+.nm-footer-links {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: center;              /* 2026-10-07 用户定：整排**居中**显示 */
+  gap: var(--nm-footer-gap, 6px);
+  margin-top: var(--nm-footer-mt, 16px);
+  font-size: var(--nm-footer-fs, 12px);
+  font-weight: var(--nm-footer-fw, 400);
+}
+.nm-footer-links > *:not(:last-child)::after { content: '·'; margin-left: var(--nm-footer-gap, 6px); color: var(--text-faint); }
+/* 2026-10-07 用户定：可点的这几项**跟后面的版本号一个颜色**（都置灰）、**不要下划线** ——
+   整排看起来是同一档小字，不分"按钮"和"说明"（只在 hover 时才提亮一点，给个可点的反馈）。 */
+.nm-footer-link { color: var(--text-faint); cursor: pointer; text-decoration: none !important; }
+.nm-footer-link:hover { color: var(--text-muted); text-decoration: none !important; }
+.nm-footer-meta { color: var(--text-faint); }
+.nm-footer-sig { cursor: pointer; }
+.nm-footer-sig:hover { color: var(--text-accent); }
+
 .shin-appreciation-link {
   display: block;
   width: 100%;
