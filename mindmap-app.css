@@ -4,7 +4,8 @@
 :root {
   /* ---- 间距 ---- */
   --gap-x: 80px;              /* 父子左右间距（列间距，越大越分开） */
-  --gap-y: 2px;              /* 兄弟上下间距（行间距，越大越分开）【对于二级目录，也就是蓝色的那个是 12。但对于二级之后的的那些是 2，这样改的，目的是因为之后那些不显示边框，所以可以近一点。】 */
+  --gap-y: 4px;              /* 兄弟上下间距（行间距，越大越分开）【对于二级目录，也就是蓝色的那个是 12。但对于二级之后的的那些是 2，这样改的，目的是因为之后那些不显示边框，所以可以近一点。】 */
+  --gap-y-lv1: 12px;         /* 🎚 **一级节点**（主节点直接子节点，depth=1）同级之间的上下间距（2026-10-10 从写死 12px 提成旋钮）。⚠️ 只管一级↔一级；二级及以后所有同级走 --gap-y。当年一级给更大间距是因为它默认带底色块（--lv1-bg，颜色可调）；想全层级统一就把这值改成和 --gap-y 一样 */
 
   /* ---- 空图使用提示（新建空白思维导图后，主节点下方三行操作提示；建第一个节点后自动消失）---- */
   --hint-color: #000;         /* 提示文字颜色：默认纯黑（2026-09-01 定）。可改如 #333/#666 */
@@ -66,6 +67,13 @@
   --tip-arrow: 5px;    /* 🎚 三角的半径（= border-width）；框的位置 = 尖端距离 + 这个值 */
   --tip-font: 12px;    /* 🎚 提示文字大小（框的大小跟着文字走）*/
   --tip-pad: 5px 10px; /* 🎚 提示框内边距 */
+  --tip-warn-arrow: var(--toast-warn-bg, #fff3cd);
+                              /* 🎚 **黄底警告提示**那只小三角的颜色（2026-10-09 用户定）。
+                                 **就是提示框自己的背景色** `--toast-warn-bg`（浅色 #fff3cd / 深色 #3a3320）
+                                 —— 一个变量把明暗两套都覆盖了，不用再手写深色值。
+                                 用户原话：「它那个三角形的颜色……本质上应该跟上面那个提示框的背景色一样，
+                                 你找找那个颜色。因为暗色模式下还有一个暗色的，如果能找到复用同一个颜色最好。」
+                                 效果 = 三角和气泡连成一体（普通气泡那个小尾巴），不是凸出来的一块。 */
   /* --tip-inset：**每个有描线框的容器**自己报上来的「内边距 + 描边」（见下面那组声明）——
      提示量间距时自动加上，所以间距永远是量到**容器外边缘**。这一项不是给手调的旋钮，
      是让"目标 = 外面那个框"这句话在代码里成立的东西。 */
@@ -86,6 +94,9 @@
   /* 节点链接图标（frame，侧边 Ribbon「新建思维导图」同款）专属：可单独调大小与粗细，不影响其它链接图标 */
   --node-ico-size: 15px;      /* 节点链接图标大小：调大→更大，调小→更小。改完重载插件生效 */
   --node-ico-stroke: 1;       /* 节点链接图标描边粗细：frame 为填充式图标，此值会给它叠加一圈可变粗细的轮廓（2=原样，>2 更粗，<2 更细）。改完重载插件生效 */
+  /* 已收纳文档图标（file-text，2026-10-08）专属：只在「这个 [[名字]] 指向的文件在 28Notes-Files/docs/ 里」时替换方括号图标 */
+  --doc-ico-size: 13px;       /* 已收纳文档图标大小：调大→更大，调小→更小。改完重载插件生效 */
+  --doc-ico-stroke: 2;        /* 已收纳文档图标描边粗细：描边式图标，2 = lucide 原样，>2 更粗，<2 更细。改完重载插件生效 */
 
   /* ---- 卡片本体 ---- */
   --card-pad-top: 4px;        /* 卡片内边距·上（字离上边框距离）✅ 【上下拆开了：字体默认下沉，想让上下视觉均匀可把 --card-pad-bottom 调小 1px】 */
@@ -93,6 +104,36 @@
   --card-pad-x: 12px;         /* 卡片内边距·左右 ✅ */
   --card-pad-ln-top: 2px;     /* 普通(白底)节点内边距·上：无边框/无背景，可以近一点 ✅ */
   --card-pad-ln-bottom: 1px;  /* 普通(白底)节点内边距·下 ✅ */
+  /* ---- 节点内「每个元素」的上/下边距（2026-10-10 用户定；同日二轮：**gap 已折进边距**）----
+     一个节点里可能渲染：正文(.title) / 备注(.note) / 图片(.imgs) / AI 更改规则(.ai-rules) / 音视频(.embeds)，
+     每个元素的上边距 -mt / 下边距 -mb 独立可调。
+     🔴 元素之间**不再有**另一份 flex gap —— 原来那份写死的 4px 已按位折进各默认值（视觉零变化）：
+        相邻两元素的实际距离 = 上一个元素的 -mb + 下一个元素的 -mt，一处一个旋钮，不用再加来加去。
+        （备注/图片/AI 的 7px = 用户调的 3px + 原 gap 4px；音视频没动过 = 6 + 4 = 10px。） */
+  --el-title-mt: 0px;         /* 正文·上边距（第一行，默认 0；正值会把它从卡片顶边距往下推）*/
+  --el-title-mb: 0px;         /* 正文·下边距（⚠️ 只在"下面还有元素"时管用；纯文字节点的下方空隙看 --card-minh，见下）*/
+  --el-note-mt: 7px;          /* 备注·上边距 */
+  --el-note-mb: 0px;          /* 备注·下边距 */
+  --el-imgs-mt: 7px;          /* 图片·上边距 */
+  --el-imgs-mb: 0px;          /* 图片·下边距 */
+  --el-ai-mt: 7px;            /* AI 更改规则·上边距（老旋钮 --ai-rules-gap 已退役：语义被这组取代）*/
+  --el-ai-mb: 0px;            /* AI 更改规则·下边距 */
+  --el-embeds-mt: 10px;       /* 音视频嵌入·上边距 */
+  --el-embeds-mb: 0px;        /* 音视频嵌入·下边距 */
+  /* ---- 纯文字节点"下边距偏大"的两个真来源（2026-10-10 用户问，提成旋钮）----
+     ① 卡片有**最小高度**：内容不足时标题（flex-grow）被拉伸补足 → 多余空间全落在**文字下方**；
+        加了备注等内容撑过最小高度后，拉伸消失 → 文字下方只剩正常间距（这就是"加了备注下边距变小"的原因）。
+     ② 行框自带的半行距：line-height > 1 时文字上下各有一份自然空隙（下多一点点，字体基线所致）。
+        想让纯文字节点的下方紧一点：调小 --card-minh（最直接）；或调 --card-pad-bottom / --card-lh。 */
+  --card-minh: 28px;          /* 卡片最小高度（**所有层级共用**的兜底值；想分层调就动下面三个）✅ */
+  /* 分层最小高度（2026-10-11 用户定）：三层各一个，默认都跟随上面的 --card-minh（零变化）。
+     ⚠️ 注意：最小高度只管"内容不足时兜底撑多高"。节点**有文字之后**的实际高度由**字号**决定 ——
+       主节点字号是 --root-font(16px)、其余是 --card-font(14px)，所以主节点本来就会更高；
+       要主节点不那么"胖"，直接调 --root-font（16 → 14 就跟普通节点一样了）。 */
+  --card-minh-root: 44px;  /* 主节点（根）最小高度 ✅ */
+  --card-minh-lv1: 32px;   /* 二级节点（主节点直接子节点）最小高度 ✅ */
+  --card-minh-ln: var(--card-minh);    /* 三级及以后（普通白底节点）最小高度 ✅ */
+  --card-lh: 1.55;            /* 卡片行高 ✅（所有文字行框的上下自然空隙）*/
   --card-radius: 6px;         /* 卡片圆角（越大越圆）✅ */
   --card-font: 14px;          /* 卡片字号 */
   --font-weight: 500;         /* 字体粗细（普通节点/标题；只能 100 的倍数：400细 500中 600半粗 700粗；450 无效会落到 500）✅ */
@@ -110,6 +151,20 @@
 
   /* ---- 一级节点 ---- */
   --lv1-bg: #f3f3f3e0;          /* 一级节点背景色✅ */
+  /* 一级节点（主节点的直接子节点，depth=1）**专属**的内边距旋钮（2026-10-11 用户定）。
+     原来它和主节点共用 --card-pad-top/bottom/x —— 那套是给"有底色/有边框的节点"用的，
+     比普通白底节点（--card-pad-ln-*）上下各多 2px + 1px，所以二级节点看着比三级"上下更宽"。
+     想单独调二级节点就动这三个（不填 = 跟随通用那套，视觉零变化）：
+       --card-pad-lv1-top / -bottom：上下内边距
+       --card-pad-lv1-x：左右内边距（也就等于卡片宽度） */
+  --card-pad-lv1-top: var(--card-pad-top);
+  --card-pad-lv1-bottom: var(--card-pad-bottom);
+  --card-pad-lv1-x: var(--card-pad-x);
+  /* ── 文档节点（2026-10-08 用户定）────────────────────────────────
+     整行是 [[名字]] 且指向 28Notes-Files/docs/ 里已收纳文档的节点 → 蓝色文字 + 淡蓝底，
+     与普通双链（方括号图标 + 链接色）一眼分得开。色相取调试组色卡里的 blue。 */
+  --doc-node-color: #3B86F7;   /* 🎚 文档节点的蓝（文字 / 图标 / 底色都从它派生）。改完重载插件生效 */
+  --doc-node-bg-a: 0.10;       /* 🎚 文档节点底色浓度：0 = 完全不要底色，1 = 全蓝。想更淡就调小 */
 
   /* ---- 悬停 / 选中外框 ---- */
   --hover-border: color-mix(in srgb, var(--accent) 38%, #fff);    /* 悬停外框（一级/普通） */
@@ -125,6 +180,42 @@
   --minor-hover-color: #d4d4d4;  /* 悬停边框色 */
   --minor-sel-color: #b9b9b9;    /* 选中边框色 */
   --minor-text-color: #b9b9b9; /* Minor 节点文字色（默认同 --muted 灰）✅ */
+
+  /* ---- 空图「＋ 新建母节点」按钮（2026-10-11；照 Minor 那圈虚线，但常驻可见）---- */
+  --empty-btn-border: #d4d4d4;      /* 虚线框颜色（与 Minor 悬停那档灰同色）✅ */
+  --empty-btn-border-w: 1px;        /* 虚线粗细 ✅ */
+  --empty-btn-text: #b9b9b9;        /* 文字色 ✅ */
+  --empty-btn-hover-text: var(--text-normal); /* 悬停文字色（提到正常字色）✅ */
+  --empty-btn-hover-bg: rgba(128,128,128,.12); /* 悬停底色 ✅ */
+  --empty-btn-radius: var(--radius-s, 6px);    /* 圆角 ✅ */
+  --empty-btn-pad: 8px 16px;        /* 内边距 ✅ */
+  --empty-btn-gap: 6px;             /* 图标与文字的间距 ✅ */
+  --empty-btn-fs: 14px;             /* 字号 ✅ */
+  --empty-btn-ico: 16px;            /* 加号图标大小 ✅ */
+
+  /* ---- 右侧「关闭分屏」图标（2026-10-11 用户定；图标本体现画在 mindmap-app.js 的 ICONS['close-splits']）----
+     有右侧文档分屏时出现在画布右边缘，点一下把那组文档分屏全关掉 */
+  --close-splits-right: 4px;       /* 离画布**右边缘**的距离 ✅ */
+  --close-splits-top: 50%;          /* 上下位置：50% = 垂直居中（想更靠上/下就改这个）✅ */
+  --close-splits-size: 36px;        /* 图标大小 ✅ */
+  --close-splits-color: #343434;    /* 浅色模式下的图标颜色（用户给的设计稿就是 #343434）✅ */
+  --close-splits-color-dark: #dcdcdc; /* 深色模式下的图标颜色（换成浅色）✅ */
+  --close-splits-hover-bg: rgba(128,128,128,.16); /* 悬停底色 ✅ */
+  --close-splits-radius: 6px;       /* 悬停底色的圆角 ✅ */
+  --close-splits-pad: 5px;          /* 图标四周的留白（悬停底色比图标大多少）✅ */
+
+  /* ---- 「被多处管理」的文档节点（2026-10-09 用户定；当天二次改版：改成**两层框**）----
+     判据 = 这份文档在所有导图里被引用的**总处数 > 1**（宿主算好随 docLinksRes 下发，见 nmMultiRefOf）。
+     两层（用户原话："第一个是虚线黄色外框，第二个是黄色实线外框"）：
+       ① **虚线框**（卡片自己的 border）：**常驻**、**正常黄**，不随状态变；
+       ② **实线框**（::before 叠在虚线上、同位置同粗细）：平时**不存在** → 悬浮**浅黄** → 选中**正常黄**。
+     → 悬浮/选中时实线盖住虚线，看起来就是"从虚线变成实线"。
+     ⚠️ 与 Minor（.done）的虚线框会叠加：本组规则写在 .done 之后 → 多处管理优先（黄盖灰）。
+     ✅ 改完重载插件生效 */
+  --multi-ref-color: #f7ce46;      /* 黄色：取调试组色卡里的 yellow（AI_MARK_COLORS.yellow）✅ */
+  --multi-ref-style: dashed;       /* 虚线框的样式（**常驻**，不随状态变）✅ */
+  --multi-ref-width: 1.5px;        /* 两层框的粗细（与 .card 常驻透明边框同宽，防跳动）✅ */
+  --multi-ref-soft: rgba(247, 206, 70, .45);  /* 悬浮时那层**实线**框的颜色（浅黄）✅ */
 
   /* ---- Minor 前缀图标（2026-08-26）：图标名写在这里即可，改完重载插件生效 ----
      可选值 = ICONS 里任意存在的图标名（写错回退双竖线），或 'bars' = 内置的「两条圆头竖线」。
@@ -197,7 +288,8 @@
   --ai-pill-gap: 0px;            /* 🎚 右边那块的左边缘再往右让多少（默认 0；**不改**图标与文字的实际间距）*/
   --ai-eye-na-color: #b0b4ba;    /* 🎚 小眼睛·置灰色（选中节点没有规则时；与左下那只小眼睛的置灰同色，深色档另给）*/
   --ai-eye-off-color: var(--now-color, #8B5CF6); /* 🎚 小眼睛·已隐藏时的颜色（默认 = 标准紫；**不跟主题色**）*/
-  --ai-rules-gap: 10px;          /* 🎚 卡片上「AI 更改规则」块与上面备注之间的间距（两块要断开）*/
+  /* ⚠️ 2026-10-10 退役：AI 规则块的上边距改由 `--el-ai-mt` 管（那组的注释里说明了原因）。留着这行只为不炸老引用。 */
+  --ai-rules-gap: 10px;          /* （退役）原来 = 卡片上「AI 更改规则」块与上面备注之间的间距 */
   /* ---- 卡片上「AI 更改规则」那一块的颜色（2026-10-06 用户定：**只给左竖条和文字上紫，不要底色**）----
      颜色 + 透明度**各一对旋钮**（色相都默认读标准紫 --now-color，深浅两档它自己会跟着换，
      不用在这里再写一份深色值）。想跟备注一样（灰竖条 + 灰字）就把色相改成 var(--line) / var(--muted)。
@@ -437,14 +529,16 @@ body {
 .card {
   position: relative;
   flex: 0 0 auto; /* 不被 flex 压缩：否则树变宽时卡片被压到单字宽 → 文字竖排 */
-  width: max-content; max-width: var(--card-maxw); min-height: 32px;
+  width: max-content; max-width: var(--card-maxw); min-height: var(--card-minh, 32px);
   padding: var(--card-pad-top) var(--card-pad-x) var(--card-pad-bottom);
   cursor: pointer;
-  /* column 布局：标题/备注/图片/链接天然各占一行；左对齐（2026-08-21 定：不要居中） */
-  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  /* column 布局：标题/备注/图片/链接天然各占一行；左对齐（2026-08-21 定：不要居中）。
+     🔴 2026-10-10 二轮：原来那份 `gap: 4px`（后提成 --card-gap）**整个撤掉** —— 元素间距全部
+        由各元素自己的 -mt/-mb 旋钮管（默认值已按位折算，视觉零变化），一处一个旋钮不再两头加。 */
+  display: flex; flex-direction: column; align-items: flex-start;
   border: 1.5px solid transparent;   /* 常驻透明边框（防跳动）；普通节点原样（2026-08-25 改：仅 Minor 节点用虚线，见 .node-row.done） */
   border-radius: var(--card-radius);
-  font-size: var(--card-font); line-height: 1.55;
+  font-size: var(--card-font); line-height: var(--card-lh, 1.55);
   color: var(--text);
   font-weight: var(--font-weight); /* 粗细可调参（调参区 --font-weight） */
   /* 定位暗态↔亮态 opacity 渐变（时长 --locate-fade-ms）；正常态选中是 border-color 变化，不在此列 → 瞬时无渐变 */
@@ -452,6 +546,7 @@ body {
 }
 /* 根节点（中央主题）：蓝底白字 */
 .card.lv0, .card.is-root {
+  min-height: var(--card-minh-root, var(--card-minh)); /* 主节点最小高度（2026-10-11 分层旋钮） */
   background: var(--root-bg); color: var(--root-color);
   font-size: var(--root-font); font-weight: var(--font-weight-root); /* 根粗细（调参区 --font-weight-root） */
   border-radius: var(--root-radius);
@@ -461,14 +556,82 @@ body {
 .node-row.selected > .card.lv0, .node-row.selected > .card.is-root { border-color: var(--sel-root); }
 /* 一级节点：浅蓝底 */
 .card.lv1 { background: var(--lv1-bg); }
+/* 一级节点（二级目录，depth=1）专属内边距（2026-10-11 用户定）：单独一条规则覆盖上面 .card 那套，
+   默认值就跟着 --card-pad-top/bottom/x 走 → 不动旋钮时视觉零变化；要单独调二级节点就改 --card-pad-lv1-*。
+   （主节点继续用 .card 通用那套，两者从此可以各调各的。） */
+.card.lv1 { padding: var(--card-pad-lv1-top, var(--card-pad-top)) var(--card-pad-lv1-x, var(--card-pad-x)) var(--card-pad-lv1-bottom, var(--card-pad-bottom)); }
+.card.lv1 { min-height: var(--card-minh-lv1, var(--card-minh)); } /* 二级节点最小高度（2026-10-11 分层旋钮） */
 .card.lv1:hover { border-color: var(--hover-border); }
 .node-row.selected > .card.lv1 { border-color: var(--sel-lv1); }
 /* 普通节点：无颜色属性 → 统一白底（2026-08-22 定：没属性就白底，贝塞尔曲线不透过卡片；红/黄/蓝保持原色） */
-.card.ln { background: var(--bg); padding: var(--card-pad-ln-top) var(--card-pad-x) var(--card-pad-ln-bottom); }
+.card.ln { background: var(--bg); padding: var(--card-pad-ln-top) var(--card-pad-x) var(--card-pad-ln-bottom); min-height: var(--card-minh-ln, var(--card-minh)); } /* min-height = 三级及以后的最小高度（2026-10-11 分层旋钮） */
 .card.ln:hover { border-color: var(--hover-border); }
 .node-row.selected > .card.ln { border-color: var(--sel-ln); }
+/* ── 文档节点（2026-10-08 用户定）：蓝色文字 + 淡蓝底，与普通双链一眼分得开 ──
+   判据在前端 nmDocNodeOf（整行是 [[名字]] 且指向 docs/ 里已收纳的文档）→ 卡上多一个 .doc-node 类。
+   色相 / 浓度见顶部调参区 --doc-node-color / --doc-node-bg-a。
+   ⚠️ 文字色要分两条走：图标读 `--node-fg`，正文读 `color`（`.inline-wiki` 自己有一条 color 规则，
+      继承盖不住它）。两条都带 :not(.done):not(.now) 让位 —— 完成 / 次要节点照旧全灰、Now 照旧全紫。 */
+.card.doc-node:not(.done):not(.now) { --node-fg: var(--doc-node-color, #3B86F7); color: var(--doc-node-color, #3B86F7); }
+.card.doc-node:not(.done):not(.now) .inline-wiki { color: var(--doc-node-color, #3B86F7); }
+.card.doc-node:not(.done):not(.now) .inline-wiki:hover { color: var(--sel-lv1); } /* 悬停反馈沿用普通链接那一档 */
+/* 底色一律混进 --bg（画布底色），**不叠 lv1 那层灰**（2026-10-08 用户定：二级节点本身的灰 + 蓝叠在一起很怪）；
+   也不混进 transparent —— 卡片必须不透明，否则贝塞尔连线会透过来（同 `.card.ln` 白底那条的理由）。
+   🔴 2026-10-10 补 `.lv0` / `.is-root`：转入生成的导图里**主节点本身就是文档节点**，
+      而 `.card.lv0` 那条给的是「蓝底白字」（--root-bg / --root-color）—— 原来这里只列了 lv1 / ln，
+      主节点的底色压根没被覆盖 → 文字被上面那条染成蓝色、底色还是深蓝 → 蓝字压蓝底看不清。
+      加上主节点这一档（(0,3,0) 压过 `.card.lv0` 的 (0,2,0)），主节点就跟其他文档节点一个样：
+      淡蓝底 + 蓝字 + 蓝图标。 */
+.card.doc-node.lv0, .card.doc-node.is-root,
+.card.doc-node.lv1, .card.doc-node.ln { background: color-mix(in srgb, var(--doc-node-color, #3B86F7) calc(var(--doc-node-bg-a, .1) * 100%), var(--bg)); }
 /* 空图使用提示（2026-09-01 定）：相对主节点卡片绝对定位 → 拖动/缩放画布自动跟随；
    文字换行用 \n；参数全在顶部调参区 --hint-*（颜色/明暗/大小/行间距/垂直距离） */
+/* 空图（正文里没有主节点那一行）时画面中间那枚「＋ 新建母节点」按钮（2026-10-11）。
+   样子照 Minor 次要节点那圈虚线框，但**常驻可见**（Minor 那圈是常驻透明、悬停才显形，
+   这里要的是一直看得见）。参数全在顶部调参区 --empty-btn-*。 */
+.empty-root-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--empty-btn-gap);
+  padding: var(--empty-btn-pad);
+  border: var(--empty-btn-border-w) dashed var(--empty-btn-border);
+  border-radius: var(--empty-btn-radius);
+  background: transparent;
+  color: var(--empty-btn-text);
+  font-family: inherit;
+  font-size: var(--empty-btn-fs);
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.empty-root-btn:hover {
+  background: var(--empty-btn-hover-bg);
+  color: var(--empty-btn-hover-text);
+}
+.empty-root-ico { display: inline-flex; align-items: center; }
+.empty-root-ico svg { width: var(--empty-btn-ico); height: var(--empty-btn-ico); }
+
+/* 右侧「关闭分屏」图标（2026-10-11）：贴在画布右边缘、上下居中（位置/大小/颜色全是旋钮 --close-splits-*）。
+   只在"右侧有文档分屏"时显示（宿主推 setDocSplits(true) 时摘掉 .hidden）。 */
+.close-splits-btn {
+  position: absolute;
+  right: var(--close-splits-right, 10px);
+  top: var(--close-splits-top, 50%);
+  transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: var(--close-splits-pad, 5px);
+  border: none; background: transparent;
+  cursor: pointer;
+  color: var(--close-splits-color, #343434);
+  border-radius: var(--close-splits-radius, 6px);
+  outline: none; /* 与画布其它按钮一致：不吃键盘操作后的系统焦点框 */
+  z-index: 20;
+}
+.close-splits-btn.hidden { display: none; }
+.close-splits-btn:hover { background: var(--close-splits-hover-bg); }
+.close-splits-btn svg { display: block; width: var(--close-splits-size, 26px); height: var(--close-splits-size, 26px); }
+.theme-dark .close-splits-btn { color: var(--close-splits-color-dark, #dcdcdc); }
+
 .start-hint {
   position: absolute;
   top: 100%;              /* 贴卡片下沿 */
@@ -527,7 +690,8 @@ body {
 .md-del { text-decoration: line-through; } /* v2：~~x~~ 是真正的删除线 */
 em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 /* v2 音视频嵌入（![[文件名]] 附属行 → 就地播放器） */
-.card .embeds { flex: 0 1 auto; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.card .embeds { flex: 0 1 auto; display: flex; flex-direction: column; gap: 6px; /* 上/下边距提成旋钮（2026-10-10 用户定）*/
+  margin-top: var(--el-embeds-mt, 10px); margin-bottom: var(--el-embeds-mb, 0px); }
 .card .embed-media { max-width: 260px; max-height: 160px; border-radius: 6px; border: 1px solid var(--line); background: #000; }
 .card audio.embed-media { width: 240px; height: 32px; background: transparent; }
 .card .embed-media.img-missing { min-height: 24px; background: #fafbfc; }
@@ -555,6 +719,28 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .node-row.done > .card { border: 1.5px var(--minor-border-style, dashed) var(--minor-border-color, transparent) !important; }
 .node-row.done > .card:hover { border-color: var(--minor-hover-color, var(--minor-border-color, var(--muted))) !important; }
 .node-row.done.selected > .card { border-color: var(--minor-sel-color, var(--minor-border-color, var(--muted))) !important; }
+/* ===== 「被多处管理」的文档节点（2026-10-09 用户定；当天二次改版：两层框）=====
+   ① **虚线框** = 卡片自己的 border：常驻、正常黄，不随状态变；
+   ② **实线框** = ::before 叠在虚线上（同位置、同粗细）：平时透明 → 悬浮浅黄 → 选中正常黄。
+   悬浮 / 选中时实线盖住虚线 → 看起来就是"从虚线变成实线"（用户要的那个效果）。
+   ⚠️ 只能用 ::before：`.card::after` 已经被"右侧 26px hover 热区"占了。
+   ⚠️ 叠准位置靠 `inset: calc(-1 * 宽度)` —— 绝对定位的包含块是 padding box，往负方向一圈才盖到 border 上。
+   ⚠️ 写在 .node-row.done 那三条**之后** → 同时是 Minor 时黄盖灰（多处管理这条信息更重要）。 */
+.node-row.multi-ref > .card {
+  border: var(--multi-ref-width, 1.5px) var(--multi-ref-style, dashed) var(--multi-ref-color, #f7ce46) !important;
+}
+.node-row.multi-ref > .card::before {
+  content: ''; position: absolute; inset: calc(-1 * var(--multi-ref-width, 1.5px));
+  border: var(--multi-ref-width, 1.5px) solid transparent;
+  border-radius: inherit; pointer-events: none;
+}
+.node-row.multi-ref > .card:hover::before { border-color: var(--multi-ref-soft, rgba(247, 206, 70, .45)); }
+.node-row.multi-ref.selected > .card::before { border-color: var(--multi-ref-color, #f7ce46); }
+/* 前缀图标：警告三角染黄（图标本身由 wikiIcoName 换成 triangle-alert）。
+   ⚠️ 只染 .doc-ico 里那只（节点正文里其它位置的图标不受影响）；stroke 也钉一道，
+      免得被别的 `color` 规则抢走（svg 是 stroke: currentColor）。 */
+.node-row.multi-ref > .card .doc-ico { color: var(--multi-ref-color, #f7ce46); opacity: 1; }
+.node-row.multi-ref > .card .doc-ico svg { stroke: var(--multi-ref-color, #f7ce46); }
 /* 已完成待办（2026-09-20）：灰字 + 灰虚线框直接复用上面的 .node-row.done（Done 已并进 done 链），
    它比 Minor 多出来的就是这个删除线。
    ⚠️ td-done 也是**连坐**的（2026-09-20 用户定：母节点标了 Done，子树全部加删除线）——
@@ -652,6 +838,10 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
   padding: 4px;
 }
 .node-menu.hidden { display: none; }
+/* 「AI 功能」总开关关掉时（2026-10-08）：底部工具条那颗「AI」按钮 + 它前面那根分隔线**一起藏**。
+   两颗元素渲染时都带 data-ai（见 ensureNodeMenu 的 aiGate 标记），容器挂上 .ai-off 即整组收掉 ——
+   这样切开关不必重建工具条。 */
+.node-menu.ai-off [data-ai] { display: none; }
 .node-menu button {
   border: none; background: transparent; color: var(--text);
   padding: 5px 12px; font-size: 12px; cursor: pointer; border-radius: 5px;
@@ -883,6 +1073,44 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
    这里只补它没有的两件：① 「添加 AI 生成标记」已标记时图标变主题色；② 新增那几个图标的描边粗细旋钮。 */
 #node-ai-menu .mm[data-act="aiMark"].on .icon { stroke: var(--accent); }
 #node-ai-menu .mm[data-act="aiMark"].on { color: var(--accent); } /* 文字也一起变主题色（用户 2026-10-05 定）*/
+
+/* ===== 右键菜单里的 AI 那组（2026-10-08 用户定：底部那四项"再放一份"）=====
+   条目来自 NM_AI_ITEMS —— 与底部「AI」面板**同一份定义**（图标 / 文案 / 动作 / 小眼睛全共用），
+   所以这里只补「右键行外观」缺的两件：① 已标记时染主题色；② 「更改规则」那行的小眼睛。 */
+.ctx-item[data-act="aiMark"].on { color: var(--accent); }
+.ctx-item[data-act="aiMark"].on .ctx-ic .icon { stroke: var(--accent); }
+/* 小眼睛：与底部那只（.mm-eye）**同一套三态、同一批旋钮**（.na 置灰 / .hiding 紫+闭眼 / 悬停本行才露），
+   宿主是 .ctx-airow（行与眼睛**并列**，照底部 .mm-row 那套）—— 定位基准随之改：
+   图标格中心 = 左内边距 12px + 半个图标 8px = 20px（.mm 那边是 10 + 9 = 19px）。
+   --ctx-eye-size 兜底到 --ai-eye-size：默认与底部那只**一样大**，真要单独微调时才动它。 */
+.ctx-airow { position: relative; }   /* 眼睛与行**并列**（照底部 .mm-row 那套）→ 定位基准在这一层 */
+.ctx-airow .ctx-eye {
+  position: absolute; z-index: 1;
+  left: calc(20px - var(--ctx-eye-size, var(--ai-eye-size, 28px)) / 2 + var(--ai-eye-x, 0px));
+  top: calc(50% + var(--ai-eye-y, 0px));
+  transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: var(--ctx-eye-size, var(--ai-eye-size, 28px));
+  height: var(--ctx-eye-size, var(--ai-eye-size, 28px));
+  padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--text); cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
+}
+.ctx-airow:hover .ctx-eye,
+.ctx-airow .ctx-eye.hiding { opacity: 1; pointer-events: auto; } /* 已隐藏 → 常驻，让用户知道"是我关掉的" */
+/* 眼睛要露出来时行图标让位（与底部面板同款交叉淡入淡出） */
+.ctx-airow .ctx-ic { transition: opacity var(--ui-btn-anim, 160ms) var(--ui-ease, ease); }
+.ctx-airow:hover .ctx-ic,
+.ctx-airow:has(.ctx-eye.hiding) .ctx-ic { opacity: 0; }
+.ctx-airow .ctx-eye:hover { background: var(--sel); }
+.ctx-airow .ctx-eye .icon { opacity: .75; stroke-width: var(--ai-eye-stroke, 2); }
+/* ① 画面里一个带 AI 更改规则的节点都没有 → 置灰 + 不可点（与底部那只同色、同"不用 pointer-events 挡"的做法） */
+.ctx-airow .ctx-eye.na { color: var(--ai-eye-na-color, #b0b4ba); cursor: default; }
+.ctx-airow .ctx-eye.na .icon { opacity: .45; }
+.ctx-airow .ctx-eye.na:hover { background: transparent; }
+/* ③ 已隐藏 → 紫 + 闭眼（**不是主题色**，与底部那只同一个旋钮） */
+.ctx-airow .ctx-eye.hiding { color: var(--ai-eye-off-color, var(--now-color, #8B5CF6)); }
+.ctx-airow .ctx-eye.hiding .icon { opacity: 1; }
 #node-ai-menu .mm[data-act="aiEdit"] .icon   { stroke-width: var(--ai-edit-stroke, 2); }
 #node-ai-menu .mm[data-act="aiMark"] .icon   { stroke-width: var(--ai-mark-stroke, 2); }
 #node-ai-menu .mm[data-act="aiLocate"] .icon { stroke-width: var(--ai-link-stroke, 2); }
@@ -974,7 +1202,8 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 /* （2026-09-17 删：试做期的 .node-menu button.nm-trial-hidden —— 用户已确认采用「格式」按钮方案，
    原来那个隐藏的红/黄独立按钮已从 JS 里彻底删除，不再需要"隐藏保留"这条规则。） */
 
-.card .title { font-size: var(--card-font); font-weight: inherit; outline: none; flex: 1 1 auto; word-break: break-word; white-space: pre-line; } /* pre-line：节点内换行 \n 渲染成换行（2026-08-30） */
+.card .title { font-size: var(--card-font); font-weight: inherit; outline: none; flex: 1 1 auto; word-break: break-word; white-space: pre-line; /* pre-line：节点内换行 \n 渲染成换行（2026-08-30） */
+  margin: var(--el-title-mt, 0px) 0 var(--el-title-mb, 0px); /* 正文的上/下边距（2026-10-10 用户定，默认 0）*/ }
 /* 编辑态（标题/备注）：去掉背景框/焦点圈，正常编辑（2026-08-21 定） */
 [contenteditable="true"] { background: transparent; outline: none; }
 /* 编辑态整行格式效果（2026-08-22 机制改造：格式是属性，编辑框纯文字 + CSS 显示效果，内容里没有符号） */
@@ -987,7 +1216,9 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .card .note,
 .card .ai-rules {
   display: flex; align-items: center; gap: var(--note-gap); /* 竖条↔文字间距 = 光标位置（调参区 --note-gap） */
-  margin-top: 6px;
+  /* 上/下边距提成旋钮（2026-10-10 用户定；⚠️ 这条共用规则里只写**备注**的 —— AI 规则在下面那条覆盖成自己的） */
+  margin-top: var(--el-note-mt, 7px);
+  margin-bottom: var(--el-note-mb, 0px);
   max-width: 100%; /* 兜底：备注永远不许超出卡片内容宽（2026-10-05，配 .note > div 的 word-break） */
   font-size: var(--note-font); color: var(--muted); line-height: 1.4;
   /* flex: 0 1 auto：按内容宽，不再强制 100% 撑满 card（2026-08-21 修：原 100% 导致备注/图片/链接行右边一大块空白"多出一块"） */
@@ -1017,7 +1248,9 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
    隐藏 AI 规则现在走「整个不渲染」（像隐藏次要节点那样），不再有横条。 */
 /* 颜色 + 透明度：透明度 = 把色相按比例混进 transparent（--ai-rules-*-a 是 0~1 的小数） */
 .card .ai-rules {
-  margin-top: var(--ai-rules-gap, 10px);
+  /* 🔴 2026-10-10：上/下边距提成 --el-ai-mt / -mb（原 --ai-rules-gap 语义被这组取代、已退役） */
+  margin-top: var(--el-ai-mt, 7px);
+  margin-bottom: var(--el-ai-mb, 0px);
   color: color-mix(in srgb, var(--ai-rules-fg, var(--now-color, #8B5CF6)) calc(var(--ai-rules-fg-a, 1) * 100%), transparent);
 }
 .card .ai-rules::before {
@@ -1026,7 +1259,9 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 /* 图片缩略图 + 双链（真实图片，保留功能） */
 .imgs {
   flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: 4px;
-  margin-top: 6px;
+  /* 上/下边距提成旋钮（2026-10-10 用户定）*/
+  margin-top: var(--el-imgs-mt, 7px);
+  margin-bottom: var(--el-imgs-mb, 0px);
 }
 .card .img {
   max-width: var(--img-maxw); max-height: var(--img-maxh); object-fit: cover;
@@ -1096,6 +1331,8 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .link-ico svg { width: 13px; height: 13px; display: block; }
 /* 节点链接图标（frame）专属覆盖：独立大小；frame 为填充式，额外叠一圈可变粗细的 currentColor 轮廓，使 --node-ico-stroke 真正生效（CSS 描边覆盖其 SVG 内 stroke="none" 属性） */
 .link-ico.node-ico svg { width: var(--node-ico-size, 13px); height: var(--node-ico-size, 13px); stroke: currentColor; stroke-width: var(--node-ico-stroke, 2); }
+/* 已收纳文档图标（file-text）专属覆盖：与 brackets 同为描边式，但可单独调大小 / 粗细（2026-10-08） */
+.link-ico.doc-ico svg { width: var(--doc-ico-size, 13px); height: var(--doc-ico-size, 13px); stroke-width: var(--doc-ico-stroke, 2); }
 
 /* 框选矩形（设计稿：淡蓝半透明，无边框；透明度可调参 --sel-opacity） */
 #marquee {
@@ -1110,7 +1347,7 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
      和节点「更多」面板(80/81)：点节点后呼出右键菜单，不再被底部那条挡住。
      但**必须低于 tooltip(85)**：菜单行的黑色小提示得浮在菜单上面，否则提示自己看不见。 */
   position: fixed; z-index: 83;
-  background: #fff; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: var(--ctx-pad, 4px); min-width: 110px; /* padding 走变量：提示的让位量要跟它联动 */
 }
@@ -1161,8 +1398,11 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 }
 .card:hover .fold-tag, .fold-tag:hover, .fold-tag.always { display: flex; }
 /* 折叠态（always，显示数字徽章）常驻显示；展开态（‹ 箭头）仅 hover 触发（2026-08-21 定双形态） */
-/* 卡片右侧热区：鼠标在节点右边 26px 内也算 hover（覆盖按钮位置，按钮不消失） */
-.card::after {
+/* 卡片右侧热区：鼠标在节点右边 26px 内也算 hover（覆盖按钮位置，按钮不消失）。
+   🔴 2026-10-11 用户定：**只给有子节点的卡片**（.has-kids，由 buildCard 按 children 是否为空打类）——
+   没有子节点的卡片那儿根本没有折叠按钮，却照样吃这块热区，鼠标停在节点右边一片空白上
+   节点也进了 hover/待选态（用户实报截图）。 */
+.card.has-kids::after {
   content: ""; position: absolute; left: 100%; top: -10px;
   width: 26px; height: calc(100% + 20px);
 }
@@ -1187,8 +1427,10 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 .children { margin-left: var(--gap-x); flex: none; }
 /* 同级节点垂直间距 = var(--gap-y)（只在兄弟之间；第一个子不加，保证单子节点时父居中对齐 → 水平直线） */
 .children .node-row + .node-row { margin-top: var(--gap-y); }
-/* 一级节点（蓝底）兄弟间距 12（2026-08-21 定：比深层的 2 更开，因为它有背景边框） */
-.children .node-row.row-lv1 + .node-row.row-lv1 { margin-top: 12px; }
+/* **一级节点**（depth=1，默认带浅蓝底块但颜色可调 --lv1-bg）兄弟间距
+   🔴 2026-10-10 用户定：这条原来是写死的 12px，现在提成旋钮（想调一级节点之间的距离就动它；
+      二级及以后走上面的 --gap-y，两个旋钮各管各的；想全层级统一就把两个值改成一样）。 */
+.children .node-row.row-lv1 + .node-row.row-lv1 { margin-top: var(--gap-y-lv1, 12px); }
 
 /* ===== 左侧工具栏（飞书文档一致：左下垂直） ===== */
 #left-toolbar {
@@ -1594,7 +1836,32 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
 }
 [data-tip]:hover > .nm-tip { display: inline-flex; align-items: baseline; }
+/* 整张卡片也挂着提示（文档 / 附件节点「点击打开…」，2026-10-09），而卡片里的图标（待办 / Now / AI 标记…）
+   各自还有自己的提示 —— 悬停到图标上时**只显示图标那一条**，别两条叠在一起。
+   `:has()` 在 Obsidian 的 Chromium 上可用（项目里已在用，见 #filter-wrap 那几条）。 */
+.card[data-tip]:has([data-tip]:hover) > .nm-tip { display: none; }
 .nm-tip-k { color: var(--tip-kbd, rgba(255,255,255,.55)); } /* 🎚 键位段颜色（默认比正文浅一档，用户 2026-10-06 要的"变灰"）*/
+/* 黄底警告样式（2026-10-09 用户定）：「文档警告节点」（被多处管理的）的悬浮小字。
+   配色**整套复用底部那条警告 toast 的变量**（`--toast-warn-*`，浅色 / 深色各一套）：
+   边框走 `--toast-warn-line`（浅色 #f0d48a / 深色 #57503a）—— 跟 toast 那条边框**一模一样**
+   （2026-10-09 用户定：「它那个边框还是原来那个黑色，能不能变成我下面 toast 的那个边框」）。
+   ⚠️ 括号里那截（nm-tip-h）默认是「浅白」，黄底 / 深色黄底上都看不见 → 这里覆盖掉。 */
+.nm-tip.warn {
+  background: var(--toast-warn-bg, #fff3cd);
+  color: var(--toast-warn-text, #7a5b00);
+  border: 1px solid var(--toast-warn-line, #f0d48a);
+  /* 小三角 = **跟提示框背景同色**（2026-10-09 用户定：三角跟气泡连成一体，就是普通气泡那个小尾巴）。
+     走 `--tip-arrow-color` → 下面四条方向规则统一读它，见那组 `::before`。
+     ⚠️ 边框仍是 toast 那条淡金边（`--toast-warn-line`）—— 用户只让改三角。 */
+  --tip-arrow-color: var(--tip-warn-arrow, #fff3cd);
+  /* 🎚 「（右键管理）」那截的浅色：**基础色 × 透明度**两个旋钮（照 2026-10-09 用户定的那条规矩）。
+     基础色取 `--toast-warn-text`（它自己分浅色 / 深色两套）→ 明暗主题各自都能看清；
+     透明度 .62 = 比正文浅一档。⚠️ 别再写死一个褐色 —— 深色主题下会糊在深褐底上（看不见）。 */
+  --tip-warn-hint-base: var(--toast-warn-text, #7a5b00);
+  --tip-warn-hint-a: .62;
+  --tip-hint: color-mix(in srgb, var(--tip-warn-hint-base) calc(var(--tip-warn-hint-a) * 100%), transparent);
+  --tip-kbd: var(--tip-hint);
+}
 /* 快捷操作段（括号里那截补充说明，如「（可直接粘贴）」「（按住 ⌘ 点击：仅在窗口内全屏）」）：
    与键位段同为**次要信息** → 默认同一档浅色（用户 2026-10-06：「快捷操作的提示也变灰」）。
    🎚 想让它跟键位段分色就设 --tip-hint；不设就跟键位段同色。 */
@@ -1606,9 +1873,9 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    「目标」= **外面那个描线框**（面板 / 工具条），不是里面的按钮 —— 用户定的判据；
    每个有描线框的容器把自己的「内边距 + 描边」写进 --tip-inset（见下面那组），量间距时自动加上。 */
 .nm-tip { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)))); }
-.nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: #1f2329; border-bottom: 0; }
+.nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, #1f2329); border-bottom: 0; }
 [data-side="top"] > .nm-tip { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)))); }
-[data-side="top"] > .nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: #1f2329; border-bottom: 0; }
+[data-side="top"] > .nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, #1f2329); border-bottom: 0; }
 [data-side="left"] > .nm-tip { right: 100%; left: auto; top: 50%; bottom: auto; transform: translate(calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px))), -50%); }
 /* ⚠️ 三角现在挂在**提示框**上（不是按钮上），所以方向语义要跟着翻过来：
    框在按钮左边 → 三角要贴框的**右**边（`left: 100%`），朝右指向按钮；
@@ -1620,14 +1887,14 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    而左右两档**没声明** border-bottom → 那条照样生效 → 三角只剩上半边（一个直角三角），
    看着像一道**斜杠**（用户原话「丢了一半」）。
    → 左右两档一律显式写 `border-top` / `border-bottom`（宽度 + 透明），别只改颜色。 */
-[data-side="left"] > .nm-tip::before { left: 100%; right: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-left-color: #1f2329; border-right: 0; }
+[data-side="left"] > .nm-tip::before { left: 100%; right: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-left-color: var(--tip-arrow-color, #1f2329); border-right: 0; }
 [data-side="right"] > .nm-tip { left: 100%; right: auto; top: 50%; bottom: auto; transform: translate(calc(var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)), -50%); }
-[data-side="right"] > .nm-tip::before { right: 100%; left: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-right-color: #1f2329; border-left: 0; }
+[data-side="right"] > .nm-tip::before { right: 100%; left: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-right-color: var(--tip-arrow-color, #1f2329); border-left: 0; }
 /* 朝下（2026-10-06 加）：提示挂在元素**下方**、三角贴框上边朝上指 —— 顶部条那几颗用（条贴屏幕最上沿，
    往上弹会出屏）。⚠️ 四条边照样写全：基规则那条 `border-bottom: 0`（给"朝上那档"用的）会漏过来，
    只写颜色会让三角只剩半边（左右两档踩过同一个坑）。 */
 [data-side="bottom"] > .nm-tip { top: 100%; bottom: auto; left: 50%; transform: translate(-50%, calc(var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px))); }
-[data-side="bottom"] > .nm-tip::before { bottom: 100%; top: auto; left: 50%; transform: translateX(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid #1f2329; border-left: var(--tip-arrow, 5px) solid transparent; border-right: var(--tip-arrow, 5px) solid transparent; }
+[data-side="bottom"] > .nm-tip::before { bottom: 100%; top: auto; left: 50%; transform: translateX(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid var(--tip-arrow-color, #1f2329); border-left: var(--tip-arrow, 5px) solid transparent; border-right: var(--tip-arrow, 5px) solid transparent; }
 /* ===== 各容器把自己的「内边距 + 描边」报上来（--tip-inset）=====
    ⚠️ 新增面板 / 工具条时，**必须在这里补一条**，否则它的提示会从按钮边量起、印在容器上。
    值 = 容器 padding + border-width（都是 1px 描边）。 */
@@ -1713,7 +1980,10 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   font-size: 13px; max-width: 80%;
 }
 .toast-below.show { display: flex; }
-.toast-below-msg { line-height: 1.4; }
+/* ⚠️ pre-line：文案里带 `\n` 的要能换行（2026-10-09 加的）。目前**没有**一条 toast 文案带 `\n`
+   —— 当初是为「被多处管理」那条常驻警告加的两行文案，而那条 toast 2026-10-09 已整体删掉。
+   这条留着是防御性的：以后哪条文案想分两行，直接写 `\n` 就行，不用再回来动 CSS。 */
+.toast-below-msg { line-height: 1.4; white-space: pre-line; }
 .toast-below-action { cursor: pointer; color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
 .toast-below-action:hover { text-decoration: underline; }
 /* 警告态（2026-10-01 用户定）：位置、圆角、形状跟普通提示**完全一致**，只有**底色换成黄底**
@@ -2122,8 +2392,10 @@ body.hist-on #pro-cta-wrap { display: none; }
 #pro-cta,
 .ctx-menu { /* ⚠️ .toast-below 2026-10-01 已从这组摘出：它现在有**两套**配色（浅蓝 / 黄底警告），
     不能被"所有浮层共用同一套材质"压住 —— 材质归它自己那几条规则管。
-    （#btn-full-top 2026-10-06 删：那颗按钮搬去系统标题栏，不再走画布这套浮层材质。） */
-  background-color: rgb(255 255 255 / var(--ui-bar-a, 1));
+    （#btn-full-top 2026-10-06 删：那颗按钮搬去系统标题栏，不再走画布这套浮层材质。）
+    🔴 2026-10-10 用户定：底色**跟随画布自定义色**（--bg）—— 原来写死白，画布改色后菜单还是白的；
+       透明度照旧走 --ui-bar-a（color-mix 等价换算），外框还在所以仍能和画布区分开。 */
+  background-color: color-mix(in srgb, var(--bg, #ffffff) calc(var(--ui-bar-a, 1) * 100%), transparent);
   border: 1px solid var(--ui-bar-border, rgba(146,164,192,.4));
   border-radius: var(--ui-bar-radius, 10px);
   box-shadow: var(--ui-bar-shadow, 0 2px 12px rgba(0,0,0,.10)),

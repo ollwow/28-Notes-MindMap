@@ -40,6 +40,11 @@ body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header-title { d
    它是「显示文件路径」那个设置开着时出现的，会跟我们自己的节点面包屑**并排显示**（2026-10-06 用户实报）。
    ⚠️ 只藏它，别碰 .view-header-title-container（那根弹簧 + 我们的面包屑住在里面）。 */
 body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header-title-parent { display: none !important; }
+/* 🔴 数据区（28Notes-Files/）里的**文档**：顶部那条路径条也藏掉（2026-10-09 用户定）——
+   那是插件自己的隐藏目录，用户不需要（也不该）看到 `28Notes-Files / docs / xxx` 这条路径。
+   类由宿主按当前文件路径打（CSS 认不出路径），见 main.js 的 `applyHiddenBreadcrumbs()`；
+   ⚠️ 同样**只藏 `.view-header-title-parent`**，别碰那根"弹簧" `.view-header-title-container`。 */
+.view-header.shin-hide-breadcrumb .view-header-title-parent { display: none !important; }
 
 /* ②b 「滑出文件列表」那颗按钮**只在全屏专注模式下出现**（2026-10-06 用户定：
       平时根本用不到它，别在状态栏里白占一个位置）。 */
@@ -133,6 +138,31 @@ body.shin-mm-fullscreen.shin-mm-side-open .workspace-split.mod-left-split {
    旋钮 --shin-mm-fs-traffic-v（默认 40px ≈ 红绿灯那条的高度；嫌空太多/太少就调它）。 */
 body.shin-mm-is-mac.shin-mm-fullscreen:not(.shin-mm-fullscreen-native).shin-mm-side-open .workspace-split.mod-left-split {
   padding-top: var(--shin-mm-fs-traffic-v, 40px);
+}
+/* 🔴 2026-10-10 用户定：全屏滑出的文件列表侧边栏，**最右边**给一颗大关闭按钮（点它收起）。
+   · 图标 = 用户给的 SVG（实心圆 + 打叉镂空；fill 已改 currentColor 跟主题变色，见 main.js 的 SIDEBAR_CLOSE_SVG）。
+   · 点空白收起的兜底照旧；这颗只是给"不知道能点空白"的用户一个明摆着的按钮。
+   · 位置 / 大小给三个旋钮：贴右多远、垂直落点、按钮大小（想挪就调，不用动 JS）。 */
+body.shin-mm-fullscreen.shin-mm-side-open .shin-mm-side-close {
+  position: absolute;
+  right: var(--shin-side-close-x, -70px);   /* 离「右侧面板」的距离：负数 = 探到面板外面（往画布那侧）✅ */
+  top: 50%;                                  /* 上下居中（2026-10-11 用户定：固定居中，不给旋钮）*/
+  transform: translateY(-50%);
+  width: var(--shin-side-close-size, 64px);  /* 按钮大小 ✅ */
+  height: var(--shin-side-close-size, 64px);
+  color: var(--text-normal);
+  opacity: .85;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+body.shin-mm-fullscreen.shin-mm-side-open .shin-mm-side-close:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.06);
+}
+body.shin-mm-fullscreen.shin-mm-side-open .shin-mm-side-close svg {
+  width: 100%; height: 100%; display: block;
+  /* 水平翻转（2026-10-11 用户定）：设计稿里那个箭头朝右，这颗按钮的语义是"往左把侧边栏收回去" */
+  transform: scaleX(-1);
 }
 /* 🔴 桌面全屏（原生）下滑出文件列表时：把状态栏那排按钮**整个藏起来**（2026-10-06 用户定）。
    桌面全屏有它自己的一套窗口行为，按钮留在上面会跟浮层打架（用户实报"按钮还在它上面"），直接藏最省事。 */
@@ -813,33 +843,21 @@ body {
 
 .shin-hist-panel { display: block; }
 
-/* 顶部工具栏的样式已随按钮一起删除（2026-09-14：面板不再有顶部按钮，见 main.js build） */
-
-/* 顶部一行（2026-09-14 用户定）：左「28 Notes Mind Map 历史记录」+ 右「保存规则」小按钮 */
-.shin-hist-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 0 2px 6px;
-}
-.shin-hist-head-title {
-  font-size: var(--font-ui-smaller); font-weight: 600; color: var(--text-normal);
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.shin-hist-rules-btn {
-  flex: 0 0 auto;
-  padding: 2px 7px;
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
-  background: transparent; border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s); box-shadow: none; cursor: pointer;
-}
-.shin-hist-rules-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-/* 「保存规则」展开的三行小字（文案带 <br>，由 JS 走 innerHTML 写入） */
+/* 🔴 2026-10-09 用户定：顶部改成**图标分页**（与「用思维导图管理文档」面板同一套 `.shin-doc-tabs` /
+   `.shin-doc-tab`）→ 原来那一行「标题 + 保存规则小按钮」的样式（`.shin-hist-head` /
+   `.shin-hist-head-title` / `.shin-hist-rules-btn`）整条撤掉。 */
+/* 「保存规则」那三行说明（文案带 <br>，由 JS 走 innerHTML 写入）；它现在是**问号分页**的内容。
+   🔴 2026-10-10 用户定：**离左边有点远** → 左边距拆成两个旋钮（内层 padding-left + 外层 margin-left），
+      两个加起来就是它离面板左缘的距离，想贴多近自己调（数值旋钮，不受"基础色+透明度"那条约束）。 */
 .shin-hist-rules {
-  padding: 6px 8px; margin: 0 2px 8px;
+  padding: 6px 8px 6px var(--shin-hist-rules-pl, 8px);
+  margin: 0 2px 8px var(--shin-hist-rules-ml, 2px);
   font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6;
   background: var(--background-secondary);
   border-radius: var(--radius-s);
 }
 .shin-hist-rules.hidden { display: none; }
+.shin-hist-list.hidden { display: none; }
 .shin-hist-item {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 8px; border-radius: var(--radius-s); cursor: pointer;
@@ -857,6 +875,441 @@ body {
 /* 面板里的小弹窗（重命名 / 删除确认） */
 .shin-hist-input { width: 100%; }
 .shin-hist-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+/* ⚠️ 「选择导入的文档」弹窗的候选列表样式 2026-10-09 撤了 —— 那块自画列表改成挂 Obsidian 原生的
+   `AbstractInputSuggest`（就是编辑器里敲 `[[` 那个面板），样式由 Obsidian 自己管，不用我们再写。 */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   文档面板（「用思维导图管理文档」，2026-10-08）—— 与历史面板同一套原生侧栏做法：
+   .view-content 给内边距、面板自己 display:block，列表走自然流（不用 flex + overflow:hidden，会塌成 0 高）。
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 可调旋钮（2026-10-09 用户定）────────────────────────────────────────────
+   下面这几组**只影响各自那一小块**，改数字即可；改完要「禁用再启用 28 Notes 插件」才生效
+   （CSS 只在插件启用时读一次 —— 与上面标题栏那段同一规矩）。
+   ⚠️ 变量定义在**面板容器**上，只有本面板的后代读得到，不会外溢到别处。
+   🔴 **颜色一律「基础色 + 透明度」两个旋钮**（用户 2026-10-09 定，以后加颜色旋钮都照这个来）：
+      基础色可以直接填色号（`#7a5b00`），也可以填主题变量（`var(--text-muted)`）；
+      透明度填 0~1（**0 = 完全透明、1 = 实色**，想淡一点就写 0.1 / 0.35 这种）。
+      两个值会被 `color-mix` 合起来用 —— 所以**永远调得动**，不用去猜某个变量的值是多少。 */
+.workspace-leaf-content[data-type="28notes-doclib"] {
+  /* 顶部那排分页图标：**未选中**的压一层透明度（默认 .5；0 = 全透明、1 = 不压）*/
+  --shin-doc-tab-idle-a: .5;
+
+  /* 🔴 2026-10-09 实验：**被多处管理**的文档图标 / 「跳到第 4 页」那颗按钮的**警告色**。
+     基础色 + 透明度两个旋钮（默认 #f7ce46 = 画布那套 `--multi-ref-color` 同一档黄）。 */
+  --shin-doc-warn-color: #f7ce46;
+  --shin-doc-warn-color-a: 1;
+
+  /* 分组之间的**分隔线**的上下边距 —— **上、下分开两个旋钮**（2026-10-09 用户定：
+     原来合成一个 `--shin-doc-sep-my`，这次拆成 `-mt` / `-mb`）。
+     ⚠️ 现在只有一处用它：孤儿块**下方**（孤儿组与下面那些导图组之间）。
+     线的颜色跟主题的分隔线色走（`--background-modifier-border`），没做成旋钮。 */
+  --shin-doc-sep-mt: 6px;
+  --shin-doc-sep-mb: 12px;
+
+  /* 🎚 「有几处」那个数字**往左挪多少**（正数往左、负数往右）—— 用来跟文档行那颗 ⋯ 对齐。
+     2026-10-09 用户定：「数字你还要往左移一点。然后你可以给我一个参数，我自己来对也行。」
+     默认 4px = 先按他说的"往左移一点"给的；不够就往大调（8px / 12px…），调过头就减小或给负数。 */
+  --shin-doc-grp-count-shift: 8px;
+
+  /* ⚠️ 原来那条 `--shin-doc-mgr-lead`（第 4 页底部那行的左边距，18px）2026-10-09 撤了 ——
+     那行现在挂 `.shin-doc-blk-title`（左右边距走 `--shin-doc-blk-title-ml/-mr`）。 */
+
+  /* ⚠️ 分页的**小标题**已整条删掉（2026-10-09 用户定：「每个面板它下面不是有标题吗……把所有的标题都给去掉」）
+     → 原来那组 `--shin-doc-mgr-sec-*`（上/下边距、字号、字重、颜色）连同 `.shin-doc-sec` 规则一并撤了。
+        分页名仍然保留在图标按钮的 tooltip 上（`aria-label` / `title`）。 */
+
+  /* ── 🔴 2026-10-09 用户定：**第 4 页分三块**，每块一行小字标题（三块**共用下面这一组旋钮**）────
+     三块 = ①「文档」②「管理此文档的思维导图」③「为什么不建议一个文档被多处管理 ↗」（链接）。
+     颜色照本面板的老规矩：**基础色 + 透明度**两个旋钮（`-color` / `-color-a`）。 */
+  --shin-doc-blk-title-fs: 11px;          /* 字号 */
+  --shin-doc-blk-title-color: #9a9a9a;    /* 文字颜色（想跟随主题就写 var(--text-faint)）*/
+  --shin-doc-blk-title-color-a: 0.5;      /* 文字透明度（0 = 全透明，1 = 实色）*/
+  --shin-doc-blk-title-mt: 0px;           /* 上边距 */
+  --shin-doc-blk-title-mb: 6px;           /* 下边距 */
+  --shin-doc-blk-title-ml: 2px;           /* 左边距 */
+  --shin-doc-blk-title-mr: 2px;           /* 右边距 */
+}
+/* ── 🔴 2026-10-09 用户定：**每个分页顶上那行小标题**（= 这一页的名字）+ 标题下分隔线 ──────
+   设计照上面那组「三块标题」（`.shin-doc-blk-title`），但**颜色默认黑**、独立一组旋钮。
+   ⚠️ 这组旋钮**两个面板共用**（文档库 + 历史），所以挂在两个 data-type 上。
+   🔴 `--shin-doc-tsep-on` = **开关**：1 = 显示，0 = 关掉（高度和透明度一起归零，整条消失）。
+      用户定：**默认 0（不要分隔线）**，想看的时候自己拨回 1。
+   ⚠️ 下面这些**值是用户自己调好的**（透明度 0.4 / 边距 4·10·4·2 / 分隔线关），别改回去。 */
+.workspace-leaf-content[data-type="28notes-doclib"],
+.workspace-leaf-content[data-type="28notes-history"] {
+  --shin-doc-ptitle-fs: 11px;             /* 字号 */
+  --shin-doc-ptitle-color: #000000;       /* 文字颜色（默认黑；想跟随主题就写 var(--text-normal)）*/
+  --shin-doc-ptitle-color-a: 0.4;           /* 文字透明度（0 = 全透明，1 = 实色）*/
+  --shin-doc-ptitle-mt: 4px;              /* 上边距 */
+  --shin-doc-ptitle-mb: 10px;              /* 下边距 */
+  --shin-doc-ptitle-ml: 4px;              /* 左边距 */
+  --shin-doc-ptitle-mr: 2px;              /* 右边距 */
+  --shin-doc-tsep-on: 0;                  /* 1 = 显示 / 0 = 关（用户定：默认关）*/
+  --shin-doc-tsep-color: var(--background-modifier-border);  /* 线的颜色（默认跟随主题分隔线）*/
+  --shin-doc-tsep-color-a: 1;             /* 线的透明度（0 = 全透明）*/
+  --shin-doc-tsep-mt: 0px;                /* 上边距 */
+  --shin-doc-tsep-mb: 8px;                /* 下边距 */
+}
+.workspace-leaf-content[data-type="28notes-doclib"] .view-content { padding: 8px 10px 12px; }
+/* ⚠️ 必须带 data-type 前缀：主题那条 `button:not(.clickable-icon)` 是 **(0,1,1)** ——
+   `:not(.clickable-icon)` 自己算一个类 (0,1,0) + `button` 元素 (0,0,1)，
+   比任何**裸类名**（0,1,0）都高（历史面板那颗「⋯」踩过同一个坑：不加前缀就常驻一层底色）。
+   🔴 2026-10-09 用户实报「背景色不管怎么都调不了、字的颜色调也怎么都不显示」——
+   根因就是这里：`.shin-doc-learn` / `.shin-doc-why` 当时是**裸类名**，
+   主题的 `background-color: var(--interactive-normal)`（灰）+ `color: var(--text-color)`
+   把两个颜色旋钮整个压掉了（顺带 padding / font-size / white-space / height 也全被压住）。
+   → 这两个「帮助链接」按钮**也必须带前缀**（见下面那两条 `.shin-doc-learn` / `.shin-doc-why`）。
+   ⚠️ 反面也要注意：前缀选择器（0,3,0）比裸的 `:hover` / `.is-on`（0,2,0）**更高** ——
+      所以下面这条 transparent 会把「悬停 / 选中要有底色」的裸规则一起压掉。
+      凡是**要变底色**的按钮，它的 hover / 选中规则也必须是前缀写法。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-btn,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-tab,
+.workspace-leaf-content[data-type="28notes-history"] .shin-doc-tab,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-viewbtn,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-tri,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-locate,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-learn { background: transparent; border: none; box-shadow: none; }
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-tab:hover,
+.workspace-leaf-content[data-type="28notes-history"] .shin-doc-tab:hover,
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-viewbtn:hover { background: var(--background-modifier-hover); }
+/* 🔴 2026-10-09 用户定（当天二次）：分页按钮照 Obsidian 自带「大纲」面板顶部那排 `.clickable-icon` 复刻 ——
+   **选中的那一页常驻一层底色**（用 hover 那层 `--background-modifier-hover`，暗示"当前就在这一页"）；
+   ⚠️ 不许再用 `--background-modifier-active-hover`（在主题下是**浅紫色**，用户明确不要）。
+   两个面板（文档库 / 历史）都要这一条。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-tab.is-on,
+.workspace-leaf-content[data-type="28notes-history"] .shin-doc-tab.is-on { background: var(--background-modifier-hover); }
+.shin-doc-panel { display: block; }
+/* 面板顶部的**图标**分页（2026-10-09 用户定）—— 尺寸 / 颜色 / 悬停 / 间距照 **Obsidian 自带「大纲」面板
+   顶部那排图标按钮**（app.css 的 `.clickable-icon` + `svg.svg-icon` + `--icon-*` 变量）复刻，一点不自己发明：
+   padding `4px 6px`（--size-2-2 / --size-2-3）、圆角 `--clickable-icon-radius`（= --radius-s = 4px）、
+   图标 18px（--icon-m）+ 描边 1.75px（--icon-m-stroke-width）、
+   opacity .85 → 悬停 1（--icon-opacity / --icon-opacity-hover）、
+   颜色 --icon-color（= text-muted）→ 悬停 --icon-color-hover / 选中 --icon-color-focused（= text-normal）。
+   ⚠️ **选中态没有底色**（只有 hover 有）—— 与大纲面板一致。
+   ⚠️ 两个面板共用这套类（文档面板 + 历史面板），所以下面带前缀的规则要**同时挂两个 data-type**。 */
+.shin-doc-tabs { display: flex; align-items: center; gap: 2px; justify-content: center; padding: 0 0 6px; }
+/* 🔴 2026-10-09：「全部折叠 / 全部展开」落在这条分页条的**最右边** →
+   图标装进一个 flex:1 的**居中容器**，左侧再放一个与那颗按钮**等宽（24px）**的占位，
+   图标才落在正中间；那颗按钮靠这套布局被撑到最右边（不用 margin-left:auto）。
+   ⚠️ **占位与那颗按钮都常驻**（按钮不用时走 `visibility: hidden`，见下面 `.shin-doc-viewbtn.hidden`）——
+   否则切到「已转入的全部」那一页时它们一显一隐，整排图标会左右挪位（用户实报「点第二个图标就动了」）。 */
+.shin-doc-tabs-icons { flex: 1 1 auto; display: flex; gap: 2px; justify-content: center; }
+.shin-doc-tabs-pad { flex: 0 0 24px; }
+.shin-doc-tab {
+  --icon-size: var(--icon-m, 18px);
+  --icon-stroke: var(--icon-m-stroke-width, 1.75px);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--size-2-2, 4px) var(--size-2-3, 6px);
+  border-radius: var(--clickable-icon-radius, var(--radius-s, 4px));
+  cursor: var(--cursor, pointer);
+  color: var(--icon-color, var(--text-muted));
+}
+.shin-doc-tab .svg-icon {
+  opacity: var(--icon-opacity, .85);
+  margin-right: 0;   /* 压掉 Obsidian 给 .svg-icon 的 margin-right（按钮里要居中） */
+  transition: opacity var(--anim-duration-fast, 140ms) ease-in-out;
+}
+.shin-doc-tab:hover { color: var(--icon-color-hover, var(--icon-color-focused, var(--text-normal))); }
+.shin-doc-tab:hover .svg-icon { opacity: var(--icon-opacity-hover, 1); }
+.shin-doc-tab.is-on { color: var(--icon-color-focused, var(--text-normal)); }
+.shin-doc-tab.is-on .svg-icon { opacity: var(--icon-opacity-hover, 1); }
+/* 顶部那排分页：**未选中**的图标压一层透明度（2026-10-09 用户定，默认 .8）→ 一眼看出当前在哪一页。
+   ⚠️ 这条 (0,3,0) 比上面 `:hover` / `.is-on` 那两条 (0,2,0) 高 → 悬停那条得跟着提到同样权重，
+      否则"悬浮变亮"会被这条压掉（下面那条 `:not(.is-on):hover` 就是干这个的）。 */
+.shin-doc-tab:not(.is-on) .svg-icon { opacity: var(--shin-doc-tab-idle-a, .8); }
+.shin-doc-tab:not(.is-on):hover .svg-icon { opacity: var(--icon-opacity-hover, 1); }
+/* 第 4 个分页（管理此文档的思维导图）**只在选中"被多处管理的文档节点"时才出现**（2026-10-09 用户定）：
+   平时 3 个图标，选中那种带警告的节点才变 4 个。显隐由 render() 按条件 toggle 这个类。 */
+/* 🔴 分页的**小标题**整条删掉（2026-10-09 用户定：「每个面板它下面不是有标题吗……把所有的标题都给去掉」）
+   → 原来那三条规则（基础 `.shin-doc-sec` / `.shin-doc-sec.hidden` / `.shin-doc-sec.is-manage` + 它那组
+     `--shin-doc-mgr-sec-*` 旋钮）**全部撤了**，main.js 里 `this.sectEl` 也删干净了。
+   分页名还在图标按钮的 tooltip 上（`aria-label` / `title`），悬停能看见，所以功能没丢。
+   ⚠️ 别再往回加。 */
+/* 🔴 2026-10-09 用户定：隐藏的分页**保留占位**（`visibility: hidden`，不是 `display: none`）——
+   第 4 个分页出现 / 消失时，整排图标不会左右挪位（用户实报「点回原来那个 tab，图标会动来动去」）。 */
+.shin-doc-tab.hidden { visibility: hidden; }
+/* 第三个分页（问号）的全部内容：一行「了解如何用思维导图管理文档 ↗」 */
+.shin-doc-helpbody { padding: 2px; }
+.shin-doc-helpbody.hidden { display: none; }
+/* 「了解如何用思维导图管理文档 ↗」：浅色小字，悬停变主题色，点开在线文档。
+   ⚠️ 必须允许换行（2026-10-09 用户实报）：英文那句长得多，`nowrap` 会直接挤出面板外。
+   🔴 **必须带 data-type 前缀**（2026-10-09 补）：它是 `<button>`，而主题那条
+      `button:not(.clickable-icon)` 是 (0,1,1) —— 比裸类名 (0,1,0) 高 →
+      不加前缀的话 padding / font-size / white-space / height **全被主题压住**
+      （`white-space: normal` 会被主题的 `nowrap` 顶掉，英文那句照样挤出面板外）。
+   ⚠️ `height: auto` 也是压主题的：主题给 button 设了 `height: var(--input-height)`。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-learn {
+  display: block; width: 100%; height: auto; margin: 0 0 8px; padding: 2px 2px;
+  font-size: var(--font-ui-smaller); color: var(--text-faint); text-align: left;
+  background: transparent; border: none; box-shadow: none; cursor: pointer;
+  white-space: normal; overflow-wrap: anywhere; line-height: 1.5;
+}
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-learn:hover { color: var(--text-accent); }
+/* 🔴 2026-10-09 用户定：**第 4 页三块的小字标题**（①「文档」②「管理此文档的思维导图」
+   ③「为什么不建议一个文档被多处管理 ↗」）—— 三块**共用这一组旋钮**：
+   字号 `-fs` / 颜色「基础色 × 透明度」(`-color` / `-color-a`) / 上下边距 `-mt` `-mb` / 左右边距 `-ml` `-mr`。
+   ⚠️ 块三是**按钮**（链接）→ 必须带 data-type 前缀，否则被主题的 `button:not(.clickable-icon)` (0,1,1) 压掉
+      （背景会常驻主题灰、文字常驻 --text-color，旋钮全部失灵 —— 这条坑踩过一次）。
+   ⚠️ 这条写在 `.shin-doc-learn` **之后**（同权重 (0,3,0)）→ 覆盖得上它的 font-size / color / margin / padding。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-blk-title {
+  display: block; width: 100%; height: auto; text-align: left;
+  margin: var(--shin-doc-blk-title-mt, 0px) var(--shin-doc-blk-title-mr, 2px) var(--shin-doc-blk-title-mb, 6px) var(--shin-doc-blk-title-ml, 2px);
+  padding: 0;
+  font-size: var(--shin-doc-blk-title-fs, 11px);
+  color: color-mix(in srgb, var(--shin-doc-blk-title-color, #9a9a9a) calc(var(--shin-doc-blk-title-color-a, 1) * 100%), transparent);
+  line-height: 1.5; white-space: normal; overflow-wrap: anywhere;
+  background: transparent; border: none; box-shadow: none;
+}
+/* 块三那条是链接：悬停给主题色（只命中挂 `.shin-doc-learn` 的那条，①②是纯标题不给 pointer/悬停色） */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-blk-title.shin-doc-learn:hover { color: var(--text-accent); }
+/* 🔴 2026-10-09 用户定：**每个分页顶上那行小标题**（= 这一页的名字），下面接一条分隔线（可开关）。
+   设计照上面那组「三块标题」，颜色默认**黑**、透明度独立可调。
+   ⚠️ **两个面板共用**（文档库 + 历史面板都长这样）。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-panel-title,
+.workspace-leaf-content[data-type="28notes-history"] .shin-doc-panel-title {
+  margin: var(--shin-doc-ptitle-mt, 0px) var(--shin-doc-ptitle-mr, 2px) var(--shin-doc-ptitle-mb, 6px) var(--shin-doc-ptitle-ml, 2px);
+  font-size: var(--shin-doc-ptitle-fs, 11px);
+  color: color-mix(in srgb, var(--shin-doc-ptitle-color, #000000) calc(var(--shin-doc-ptitle-color-a, 1) * 100%), transparent);
+  line-height: 1.5;
+}
+/* 标题下面那条分隔线：照第 3 页那条 `.shin-doc-sep`，但**上下边距 / 颜色透明度 / 开关**独立一组旋钮。
+   🔴 开关 `--shin-doc-tsep-on` 拨 0 → 高度和透明度一起归零，整条线消失（占位也没了）。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-title-sep,
+.workspace-leaf-content[data-type="28notes-history"] .shin-doc-title-sep {
+  margin: var(--shin-doc-tsep-mt, 0px) 0 var(--shin-doc-tsep-mb, 8px);
+  height: calc(var(--shin-doc-tsep-on, 1) * 1px);
+  opacity: var(--shin-doc-tsep-on, 1);
+  background: color-mix(in srgb, var(--shin-doc-tsep-color, var(--background-modifier-border)) calc(var(--shin-doc-tsep-color-a, 1) * 100%), transparent);
+}
+/* 「全部折叠 / 全部展开」（2026-10-09 用户定）：落在**顶部分页条的最右边**，只放图标。
+   ⚠️ 尺寸必须**正方形**（用户实报：悬浮底色是个长方形，要正方形）→ 给死宽高 + `padding: 0`。
+   ⚠️ 底色 / 悬停底色走上面那两条带 `data-type` 前缀的规则（裸类名会被主题 button 压掉）。 */
+.shin-doc-viewbtn {
+  flex: 0 0 auto; padding: 2px 8px;
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  border-radius: var(--radius-s); cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 没得折时整颗「藏」起来（由 _syncAllBtn 打这个类）—— 🔴 用 `visibility: hidden` 而**不是** `display: none`：
+   位置要**一直占着**，否则切分页时整排图标会挪位（跟上面那个 24px 占位配对）。 */
+.shin-doc-viewbtn.hidden { visibility: hidden; }
+.shin-doc-tabs .shin-doc-allbtn {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
+}
+.shin-doc-tabs .shin-doc-allbtn .svg-icon { width: 15px; height: 15px; margin-right: 0; }
+/* 分组之间的**分隔线**：上下边距 = `--shin-doc-sep-mt` / `-mb` 两个旋钮。
+   ⚠️ 现在只剩一处：孤儿组与下面那些导图组之间（「按文档查看」已删）。 */
+.shin-doc-sep {
+  height: 1px; background: var(--background-modifier-border);
+  margin: var(--shin-doc-sep-mt, 6px) 0 var(--shin-doc-sep-mb, 6px);
+}
+/* 「已转入思维导图的所有文档」那一页：组头一行（折叠三角 + 名字 + 条数）+ 下面挂被管理的文档。
+   组头**整排可点**折叠（is-fold），名字是链接（点 = 打开那张导图）。
+   间距照 Obsidian 的树行：行距 `--nav-item-margin-bottom`（2px）、圆角 `--nav-item-radius`。 */
+.shin-doc-grp {
+  display: flex; align-items: center; gap: 4px; padding: 4px 4px 4px 0;
+  margin-bottom: var(--size-2-1, 2px);
+  border-radius: var(--nav-item-radius, var(--radius-s));
+}
+.shin-doc-grp:hover { background: var(--background-modifier-hover); }
+.shin-doc-grp.is-fold { cursor: var(--cursor, pointer); }
+/* 🔴 2026-10-09 用户定：第 4 页（管理此文档的思维导图）的设计**照「已转入的所有文档」那一页复刻** →
+   组头不再用独立的那套 `.is-mgr` 边距（原来 `.shin-doc-grp.is-mgr{…}` 与
+   `.shin-doc-grp.is-mgr .shin-doc-grp-count{…}` 两条已撤），直接用上面那条基础 `.shin-doc-grp`
+   + 基础 `.shin-doc-grp-count`（「有几处」那个数字跟着 `--shin-doc-grp-count-shift` 走）。 */
+/* 折叠三角：照 Obsidian 的 `.collapse-icon` —— svg **10px + stroke 4px**（那根粗短的 V 就是这么来的）；
+   展开 = 淡色（--collapse-icon-color = text-faint），**收起 = 主题色**（--collapse-icon-color-collapsed = text-accent）。 */
+.shin-doc-tri {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0; flex: 0 0 auto;
+  cursor: var(--cursor, pointer);
+  color: var(--nav-collapse-icon-color, var(--collapse-icon-color, var(--text-faint)));
+}
+.shin-doc-tri .svg-icon { width: 10px; height: 10px; stroke-width: 4px; margin-right: 0; }
+.shin-doc-tri.is-collapsed { color: var(--collapse-icon-color-collapsed, var(--text-accent)); }
+.shin-doc-grp-name {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--font-ui-smaller); color: var(--text-normal);
+}
+.shin-doc-grp-name.is-link { cursor: pointer; }
+.shin-doc-grp-name.is-link:hover { color: var(--text-accent); }
+/* 「有几处」那个数字：装进**跟右侧 ⋯ 按钮同宽（22px）的盒子并居中** →
+   数字中心与下面文档行那颗 ⋯ 的中心落在同一条竖线上（2026-10-09 用户定：
+   「你这个思维导图右边不就出现一个数字 3 嘛，那你的更多按钮跟那个数字能不能在同一个位置」）。
+   ⚠️ ⋯ 是 22×22 的盒子、图标居中，图标离盒子右缘还有几像素；数字是纯文字、右缘直接顶到 padding 上 →
+   不这么包一层的话，数字看着比 ⋯ 靠外几像素。 */
+.shin-doc-grp-count {
+  flex: 0 0 22px; margin-inline-start: auto;
+  /* 🎚 **数字往左挪多少**（正数往左、负数往右）—— 用来跟下面文档行那颗 ⋯ 对齐。
+     2026-10-09 用户定：「数字你还要往左移一点。然后你可以给我一个参数，我自己来对也行。」
+     ⚠️ 理论算下来两者应该是对齐的（两个盒子都是 22px、右缘同一条线、内容都居中），
+        但用户看实物说偏 → 给旋钮让他自己定，别硬算。 */
+  margin-inline-end: var(--shin-doc-grp-count-shift, 0px);
+  text-align: center; font-size: var(--font-ui-smaller); color: var(--text-faint);
+}
+.shin-doc-sub { display: flex; align-items: center; gap: 5px; padding: 3px 4px 3px 22px; border-radius: var(--radius-s); }
+.shin-doc-sub:hover { background: var(--background-modifier-hover); }
+/* 树形二级行右侧那几颗按钮（定位 / 复制链接 / ⋯）—— 2026-10-09 用户定：
+   跟「按文档查看」的文档行一样挂上「复制链接」（悬浮才出现）+「⋯」（常驻），
+   所以这里要一个**推到行尾**的按钮容器。 */
+.shin-doc-sub-acts { flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 2px; }
+.shin-doc-sub-name {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--font-ui-smaller); color: var(--text-muted); cursor: pointer;
+}
+.shin-doc-sub-name:hover { color: var(--text-accent); }
+/* 树形二级行右边那颗「定位」按钮（2026-10-09 用户定）：**鼠标悬浮这一行才出现**，
+   点了 = 打开这张导图并把管它的节点选中 + 挪到中央。图标 = 那只「当前关注」小图钉。 */
+.shin-doc-locate {
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; flex: 0 0 auto;
+  margin-inline-start: auto; opacity: 0; cursor: var(--cursor, pointer);
+  color: var(--text-faint);
+}
+.shin-doc-sub:hover .shin-doc-locate { opacity: 1; }
+.shin-doc-locate:hover { color: var(--text-normal); }
+.shin-doc-locate .svg-icon { width: 14px; height: 14px; margin-right: 0; }
+.shin-doc-opts { padding: 0 2px 8px; }
+.shin-doc-opts.hidden { display: none; }
+.shin-doc-optrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shin-doc-optlabel { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-ui-smaller); color: var(--text-muted); cursor: pointer; }
+.shin-doc-check { margin: 0; }
+/* 「了解孤儿文档」：浅色文字链接（**不要边框 / 底色**，用户 2026-10-08 定），按下去才给一点反馈 */
+.shin-doc-help-btn {
+  flex: 0 0 auto; padding: 1px 4px;
+  font-size: var(--font-ui-smaller); color: var(--text-faint);
+  background: transparent; border: none; box-shadow: none; cursor: pointer;
+}
+.shin-doc-help-btn:hover { color: var(--text-muted); }
+.shin-doc-help-btn:active { background: var(--background-modifier-hover); }
+.shin-doc-help {
+  margin-top: 6px; padding: 6px 8px;
+  font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6;
+  background: var(--background-secondary); border-radius: var(--radius-s);
+}
+.shin-doc-help.hidden { display: none; }
+.shin-doc-empty { padding: 14px 2px; font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6; }
+/* 一条 = 一行（左文件名 + 右两颗操作），第二行浅色小字在下面 —— 与历史面板那条一样窄、不胖 */
+.shin-doc-item {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  padding: 4px 8px; border-radius: var(--nav-item-radius, var(--radius-s));
+  margin-bottom: var(--size-2-1, 2px);   /* 行距照 Obsidian 树行（--nav-item-margin-bottom） */
+}
+.shin-doc-item:hover { background: var(--background-modifier-hover); }
+/* 第一行：**图标 + 文件名**（2026-10-08 用户定）。图标两档：捷径文件 = ↗（与左侧文件列表那个徽章同形）、
+   普通文档 = 画布上文档节点用的那只文档图标。省略号落在文字那一段上（图标不许被压扁）。 */
+.shin-doc-name {
+  grid-column: 1; grid-row: 1; min-width: 0; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--font-ui-smaller); color: var(--text-normal);
+}
+.shin-doc-name:hover { color: var(--text-accent); }
+/* 分页①那行的「图标 + 名字」也是**一个热区**（图标就装在 `.shin-doc-name` 里）→ 悬停两者一起变主题色 */
+.shin-doc-name:hover .shin-doc-ico { color: var(--text-accent); opacity: 1; }
+.shin-doc-ico { display: flex; align-items: center; flex: 0 0 auto; opacity: .75; }
+.shin-doc-ico .svg-icon { width: 13px; height: 13px; }
+/* 图标作为热区（2026-10-09 用户定：组头的导图图标、文档行左边的文件图标都点得开）——
+   跟 `.shin-doc-grp-name.is-link` 一档，hover 透明度拉满 */
+.shin-doc-ico.is-link { cursor: pointer; }
+.shin-doc-ico.is-link:hover { opacity: 1; }
+/* 🔴 2026-10-09 用户定：**[图标 + 名字] 合成一个热区**（`.shin-doc-hit`）——
+   ① 点中间那条**缝隙**也算（原来图标、名字各是一个热区，缝里点不动）；
+   ② 悬停时**图标和名字一起变主题色**（一眼看出是个按钮）。
+   ⚠️ 它只包「图标 + 名字」：组头那一条的其余部分（计数 / 背景）点下去仍然是折叠（`head.onclick`）。 */
+.shin-doc-hit { display: flex; align-items: center; gap: 4px; min-width: 0; cursor: var(--cursor, pointer); }
+.shin-doc-hit:hover .shin-doc-ico { color: var(--text-accent); opacity: 1; }
+.shin-doc-hit:hover .shin-doc-grp-name,
+.shin-doc-hit:hover .shin-doc-sub-name { color: var(--text-accent); }
+/* 🔴 2026-10-09：**被多处管理**的文档 —— 左边只有**一颗警告三角按钮**（`.shin-doc-warn`，
+   点它 = 切到第 4 个分页「管理此文档的思维导图」），染黄。
+   ⚠️ 组头那颗导图图标换成的警告三角**不染黄**（用普通颜色，2026-10-09 用户定）→ 所以这里只针对按钮。
+   颜色照本面板的老规矩：**基础色 + 透明度**两个旋钮（`--shin-doc-warn-color` / `-a`）。 */
+.shin-doc-btn.shin-doc-warn {
+  color: color-mix(in srgb, var(--shin-doc-warn-color, #f7ce46) calc(var(--shin-doc-warn-color-a, 1) * 100%), transparent);
+}
+.shin-doc-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ⚠️ 原来那条「第二行：每个引用它的导图各占一行」的样式（`.shin-doc-refs` / `.shin-doc-ref-line` /
+   `.shin-doc-ref-name` / `.shin-doc-ref-sep` / `.shin-doc-chip`）随「按文档查看」一起删掉了
+   （2026-10-09：那一套查看方式整体撤掉）—— 现在要看"被哪些导图管着"走第 4 个分页。 */
+/* 右侧两颗操作：「⋯」**常驻**（这一条唯一的操作入口，藏起来等于没有）；「复制链接」悬停这一条才出现。
+   两颗都没有底色 —— 主题 button 的底色由上面那条 data-type 规则压掉（历史面板「⋯」踩过同一个坑）。 */
+.shin-doc-acts { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 2px; }
+.shin-doc-copy { opacity: 0; }
+.shin-doc-item:hover .shin-doc-copy { opacity: 1; }
+/* ⚠️ 树形（按思维导图查看）的**文档行**也要接上，否则「复制链接」永远是透明的 ——
+   点了能复制、但看不见图标（2026-10-09 用户实报：「那个复制链接，那个图标看不见了，但是点击可以复制链接」）。
+   根因：树形的文档行挂的是 `.shin-doc-sub`，不是 `.shin-doc-item`，上面那条 hover 规则接不到它。 */
+.shin-doc-sub:hover .shin-doc-copy { opacity: 1; }
+.shin-doc-btn {
+  position: relative;   /* 给悬停底色的伪元素当定位参照（照历史面板那条「⋯」的做法） */
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0;
+  cursor: pointer; color: var(--text-faint);
+}
+.shin-doc-btn:hover { color: var(--text-normal); }
+/* 悬停给一层**小底色**（用户 2026-10-08 定：照历史面板来）。用 ::before 画、图标提到它上面，
+   底色不影响图标位置；圆角与历史面板同一档。 */
+.shin-doc-btn:hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--background-modifier-active-hover, var(--background-modifier-hover));
+  border-radius: var(--radius-s);
+  pointer-events: none;
+}
+.shin-doc-btn .svg-icon { width: 14px; height: 14px; position: relative; z-index: 1; }
+/* 分页①每行的「定位」按钮（2026-10-09 用户定）：在「复制链接」**左边**，**悬浮这一条才出现**；
+   该文档在当前导图里有多处时按钮上带个数（图标 + 数字是一个整体 → 宽度跟着数字走，所以 width: auto）。 */
+.shin-doc-locatebtn { width: auto; padding: 0 3px; gap: 1px; opacity: 0; }
+.shin-doc-item:hover .shin-doc-locatebtn { opacity: 1; }
+.shin-doc-locate-n { font-size: var(--font-ui-smaller); line-height: 1; color: inherit; }
+/* 第 4 个分页「管理此文档的思维导图」（2026-10-09 用户定）：
+   一行一处引用，左边导图名（点 = 打开那张图并定位到这一处），右边**常驻**一颗 ✕ = 取消这一处管理。
+   · **不放图标**（用户原话：「把前面那些图标都不要了，左边那些图标都不要了」）；
+   · 🔴 2026-10-09 用户定：这一页的设计**照「已转入的所有文档」那一页复刻** ——
+     行盒子完全对齐那边的 `.shin-doc-sub`（`padding: 3px 4px 3px 22px` / `gap: 5px` /
+     `margin-bottom: var(--size-2-1, 2px)`）；缩进 22px 正好与组头**名字**（三角 18px + gap 4px）同一条竖线，
+     所以**不再需要** `is-child` 那种"组里的行再单独缩进一次"的做法（那条已撤）。 */
+.shin-doc-mgr {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 4px 3px 22px;
+  border-radius: var(--nav-item-radius, var(--radius-s));
+  margin-bottom: var(--size-2-1, 2px);
+}
+.shin-doc-mgr:hover { background: var(--background-modifier-hover); }
+.shin-doc-mgr-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--font-ui-smaller); color: var(--text-normal); cursor: var(--cursor, pointer);
+}
+.shin-doc-mgr-name:hover { color: var(--text-accent); }
+/* ✕ 推到行尾：行里的热区（`.shin-doc-hit`）不撑满整行，靠这颗的 `margin-left: auto` 顶到最右 */
+.shin-doc-mgr-x { flex: 0 0 auto; margin-left: auto; color: var(--text-faint); }
+.shin-doc-mgr-x:hover { color: var(--text-error, var(--text-normal)); }
+/* 🔴 2026-10-09 用户定：第 3 页里每份文档**展开后**那一块（「管理此文档的思维导图」+ 导图列表）
+   整体缩进一级 —— "前面有个小缩进，给它塞进去"。 */
+.shin-doc-mgr-body { padding-left: 18px; }
+/* 筛选态（从「管理该文档」跳进来）不画文档行 → 整块升为顶层，不再缩进（2026-10-11 用户定）。
+   ⚠️ 行盒子的 22px 左衬（对着组头名字）同批缩到 4px —— 组头没了，22px 会平白错位。 */
+.shin-doc-mgr-body.is-flat { padding-left: 0; }
+.shin-doc-mgr-body.is-flat .shin-doc-mgr { padding-left: 4px; }
+/* 第 3 页顶部的**筛选条**：从「管理该文档」跳进来时才出现（一颗「清除筛选 ✕」按钮，**居中**） */
+.shin-doc-filterbar { display: flex; align-items: center; justify-content: center; padding: 2px 2px 8px; }
+/* ⚠️ 必须带 data-type 前缀：它是 `<button>`，主题那条 `button:not(.clickable-icon)` (0,1,1) 会压掉
+   padding / height 之类；不带前缀时按钮会被压成 22×22 的小方块 → **文字整个看不见**（2026-10-09 实踩）。
+   另外文字要在 `setIcon` **之后**补（setIcon 会清空元素），见 main.js 里的注释。 */
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-btn.shin-doc-clearfilter {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  width: auto; height: auto; min-width: 0; padding: 2px 10px;
+  border-radius: var(--radius-s); color: var(--text-muted);
+  background: transparent; border: none; box-shadow: none;
+}
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-btn.shin-doc-clearfilter:hover { color: var(--text-normal); }
+.workspace-leaf-content[data-type="28notes-doclib"] .shin-doc-btn.shin-doc-clearfilter .svg-icon { width: 13px; height: 13px; }
+.shin-doc-clearfilter-txt { font-size: var(--font-ui-smaller); white-space: nowrap; }
 
 /* 「⋯」按钮背景（2026-09-14 用户定：默认**全透明** —— 主题会给 button 加椭圆底色，压掉它）。
    想要淡淡一层：把 transparent 改成如 rgba(0,0,0,.06)。⚠️ 这里必须用高优先级选择器
@@ -866,6 +1319,11 @@ body {
   /* hover 底色块的整体下移量（正数往下、负数往上）。底色由伪元素画，调这个就能单独微调它的位置：
      觉得底色偏上就调大（如 3px / 4px），偏下就调小或给负值。2026-09-23 用户定。 */
   --shin-hist-hover-shift: 2px;
+  /* 🔴 2026-10-10 用户定：「保存规则」那块说明文字**离左边有点远** → 左边距拆成两个旋钮：
+     内层 padding-left + 外层 margin-left，两个加起来 = 它离面板左缘的距离（面板自身还有 10px，
+     那是 `.view-content` 的 padding，整块内容共用的 —— 要连它一起调说一声再加）。 */
+  --shin-hist-rules-pl: 2px;   /* 内层左 padding（默认 8px，想贴左就调小或 0）*/
+  --shin-hist-rules-ml: 2px;   /* 外层左 margin（默认 2px，可以给负数再往左）*/
 }
 .workspace-leaf-content[data-type="28notes-history"] .shin-hist-more {
   background: var(--shin-hist-more-bg);
@@ -1025,7 +1483,8 @@ body.shin-mm-fs-noanim *::after {
       本项目走声明式（保留二级页 + 自带搜索），整页必须由定义拼出，渲染前 append 会被清。
    ============================================================ */
 /* 关掉卡片视觉：直接覆盖官方那几个变量最省事，不跟内部结构耦合 */
-.setting-group.shin-appreciation-isolated {
+.setting-group.shin-appreciation-isolated,
+.setting-group.shin-exp-warn-isolated {   /* 2026-10-08：「实验性功能」下面那行说明小字，复用同一套去卡片 */
   --setting-items-background: transparent;  /* 卡片底色 */
   --setting-items-padding-x: 0;
   --setting-items-padding-y: 0;
@@ -1034,7 +1493,8 @@ body.shin-mm-fs-noanim *::after {
   --setting-items-border-width: 0;
 }
 /* 双保险：万一主题自己写了 `.setting-items` 的规则压过变量，这里直接点名那一层 */
-.setting-group.shin-appreciation-isolated > .setting-items {
+.setting-group.shin-appreciation-isolated > .setting-items,
+.setting-group.shin-exp-warn-isolated > .setting-items {
   background-color: transparent;
   border: none;
   border-radius: 0;
@@ -1071,6 +1531,18 @@ body.shin-mm-fs-noanim *::after {
 .nm-footer-meta { color: var(--text-faint); }
 .nm-footer-sig { cursor: pointer; }
 .nm-footer-sig:hover { color: var(--text-accent); }
+
+/* 「实验性功能」下面那行说明小字（2026-10-08 用户定：复用尾注那排的设计 —— 去卡片 + 浅灰小字）。
+   字号 / 粗细 / 与上方那一项的间距都跟尾注同一批旋钮（--nm-footer-fs / -fw / -mt），要单独调再另加旋钮。 */
+.nm-exp-warn {
+  font-size: var(--nm-footer-fs, 12px);
+  font-weight: var(--nm-footer-fw, 400);
+  color: var(--text-faint);
+  /* 🎚 与上方那一项（「AI 功能」那张卡片）的间距 —— **单独一个旋钮**（2026-10-08 用户定：
+     这一处不跟尾注那批共用，只想单独调它；字号 / 粗细仍与尾注同源，没另开旋钮）。 */
+  margin-top: var(--nm-exp-warn-mt, -10px);
+  padding: 0 var(--shin-settings-row-pad-x, 20px);
+}
 
 .shin-appreciation-link {
   display: block;

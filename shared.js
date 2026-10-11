@@ -108,6 +108,137 @@ function attachmentLookupVariants(name) {
   return Array.from(out);
 }
 
+// ===== 删除已放入思维导图数据库的文档时：把导图里的引用替换成纯文字（2026-10-08）=====
+// 认的写法：`[[名字]]` / `[[路径/名字]]` / `![[名字]]`（嵌入）/ 带别名的 `[[名字|别名]]` / `[[路径/名字|别名]]`
+//   —— wikilink 本来就不带 .md 后缀，所以名字与路径都按**不带后缀**的形式比。
+// ⚠️ 正则尾部锚死 `]]`：这样「测试」不会误伤「测试待转入」（那串后面跟的是 `待转入]]`，匹配不上）。
+// ⚠️ 只替换**链接那一整段**（含可能的 `!` 前缀与别名），节点其它内容 / 子节点 / 备注一个字不动。
+// 放在 shared.js（而不是 main.js）就是为了**能被 test.mjs 直接跑真用例** —— 这是本功能唯一会改用户文件的地方。
+function replaceDocLinks(text, base, docPath, placeholder) {
+  let out = String(text || '');
+  const stems = [String(base || ''), String(docPath || '').replace(/\.md$/i, '')];
+  for (const n of stems) {
+    if (!n) continue;
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp('!?\\[\\[' + esc + '(?:\\|[^\\]\\n]*)?\\]\\]', 'g'), placeholder);
+  }
+  return out;
+}
+
+// ===== 删除已放入思维导图数据库的文档时：节点里**只有这一个链接** → 整个节点删掉（2026-10-08 用户定）=====
+// 与 replaceDocLinks 的分工：
+//   - 节点里除了这个链接还有别的文字 → 那个节点还有意义 → 只把链接换成纯文字占位符；
+//   - 节点里**只有这一个链接** → 这个节点存在的唯一理由就是指向那份文档 → 整行删掉。
+// 子节点**保留**：被删行下面缩进更深的连续行整体减一级（提升到上一层），内容一个字不丢。
+// 同样放 shared.js：这是唯一会改用户文件的地方，必须能被 test.mjs 直接跑真用例。
+function docRefLinkEscapes(base, docPath) {
+  return [String(base || ''), String(docPath || '').replace(/\.md$/i, '')]
+    .filter(Boolean)
+    .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+}
+// 行尾注释里的**节点级标记**（与前端 commentFor() 写的字段一一对应：fold / color / minor / now / ainode）。
+// 只要带一个，这个节点就**不是空壳** —— 用户 2026-10-09 明确：节点上有标记（todo / now / 关注 / 改过色…）时
+// 不要把它删掉，只把链接换成占位文字。
+//   `id:` 不算 —— 它只是身份标记，几乎每个被复制过链接的节点都有，不代表用户在这个节点上放了东西。
+const DOC_REF_NODE_FLAGS = ['fold:', 'color:', 'minor:', 'now:', 'ainode:'];
+// 这一行是不是「只有一个指向目标文档的链接」的节点行（行首列表标记 + 行尾注释都不算内容）。
+function docRefLineOnlyLink(line, base, docPath) {
+  const m = String(line || '').match(/^[ \t]*[-*+][ \t]+([\s\S]*)$/);
+  if (!m) return false;
+  const cm = m[1].match(/\s*<!--([\s\S]*?)-->\s*$/);
+  const comment = cm ? cm[1] : '';
+  if (DOC_REF_NODE_FLAGS.some((f) => comment.indexOf(f) >= 0)) return false;
+  const body = m[1].replace(/\s*<!--[\s\S]*?-->\s*$/, '').trim();
+  if (!body) return false;
+  return docRefLinkEscapes(base, docPath)
+    .some((esc) => new RegExp('^!?\\[\\[' + esc + '(?:\\|[^\\]\\n]*)?\\]\\]$').test(body));
+}
+// 这个节点行是不是**空壳**：除了那一行链接，自己身上**没有别的任何东西**。
+//   「别的东西」= 多行标题的续行（同缩进、非列表标记开头）/ 备注（`> `）/ 图片嵌入 / 不认得的行 / AI 规则块。
+//   子节点（更深的列表行）**不算** —— 那种情况照既定设计删掉这行、把子节点提升一级（用户 2026-10-08 定）。
+//   ⚠️ 用户 2026-10-09 定：节点有备注 / 标记 / 图片 / AI 标记时**不要**删节点，只把链接换成占位文字。
+function docRefNodeIsShell(lines, i, base, docPath) {
+  if (!docRefLineOnlyLink(lines[i], base, docPath)) return false;
+  const ind = (String(lines[i]).match(/^[ \t]*/) || [''])[0];
+  for (let j = i + 1; j < lines.length; j++) {
+    const ln = lines[j];
+    if (!ln.trim()) continue;                                  // 空行中性，不打断
+    const nind = (ln.match(/^[ \t]*/) || [''])[0];
+    if (nind.length < ind.length) break;                       // 缩进更浅 → 这个节点结束了
+    const isItem = /^[ \t]*[-*+][ \t]/.test(ln);
+    if (nind.length === ind.length && isItem) break;           // 同缩进的兄弟节点 → 结束
+    if (nind.length > ind.length && isItem) continue;          // 更深的子节点 → 不算"自己的内容"
+    return false;                                              // 续行 / 备注 / 图片 / raw / AI 规则 → 不是空壳
+  }
+  return true;
+}
+// 这份正文用的是哪种缩进单位：优先 Tab；否则取最短的一段行首空格（导图正文本来就只有一种）。
+function detectIndentUnit(text) {
+  const s = String(text || '');
+  if (/(?:^|\n)\t/.test(s)) return '\t';
+  let best = '';
+  const re = /(?:^|\n)( +)\S/g;
+  let m;
+  while ((m = re.exec(s))) { if (!best || m[1].length < best.length) best = m[1]; }
+  return best || '\t';
+}
+// 这一行里有几个指向目标文档的链接（用于「只取消某一处」时定位到第 N 个所在的行）
+function docRefCountIn(line, base, docPath) {
+  let n = 0;
+  for (const esc of docRefLinkEscapes(base, docPath)) {
+    const m = String(line || '').match(new RegExp('!?\\[\\[' + esc + '(?:\\|[^\\]\\n]*)?\\]\\]', 'g'));
+    if (m) n += m.length;
+  }
+  return n;
+}
+// 逐行过一遍：**空壳**节点整行删掉（子节点提升一级），其余的行只把链接替换成占位文字。
+// ⚠️ 提升上来的子块**自己可能还是空壳**（`- [[X]]` 套 `- [[X]]`）→ 递归再处理一遍，
+//    否则那层链接不会被替换、会留在文件里指着一个已经不存在的文档。
+// `only`（2026-10-09 加，可选）：只处理**第 only 个**链接所在的那一行（0 基），其余行原样。
+//   用途 = 「取消某一处管理」—— 一处一处地取消，不能一次把这张图里的引用全清掉。
+function removeDocRefs(text, base, docPath, placeholder, only) {
+  const src = String(text || '');
+  const unit = detectIndentUnit(src);
+  const lines = src.split('\n');
+  let onlyLine = -1;
+  if (only != null) {
+    let k = 0;
+    for (let i = 0; i < lines.length && onlyLine < 0; i++) {
+      const c = docRefCountIn(lines[i], base, docPath);
+      if (c && k + c > only) onlyLine = i; else k += c;
+    }
+    if (onlyLine < 0) return src;   // 找不到（内容已经变了）→ 原样返回，别乱改
+  }
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (onlyLine >= 0 && i !== onlyLine) { out.push(lines[i]); i++; continue; }   // 只动那一行
+    if (!docRefNodeIsShell(lines, i, base, docPath)) {
+      out.push(replaceDocLinks(lines[i], base, docPath, placeholder));
+      i++;
+      continue;
+    }
+    // 空壳节点：这一行丢掉，把它的子树（更深的行）整体提升一级，再重新处理这段提升后的内容
+    const ind = (lines[i].match(/^[ \t]*/) || [''])[0];
+    let j = i + 1;
+    const kids = [];
+    while (j < lines.length) {
+      const nx = lines[j];
+      if (!nx.trim()) { kids.push(nx); j++; continue; }               // 空行原样留着
+      const nind = (nx.match(/^[ \t]*/) || [''])[0];
+      if (nind.length <= ind.length || !nind.startsWith(ind)) break;  // 不再是它的子节点 → 子树结束
+      kids.push(nx.startsWith(unit) ? nx.slice(unit.length) : nx.replace(/^[ \t]+/, ''));
+      j++;
+    }
+    if (kids.length) {
+      const sub = removeDocRefs(kids.join('\n'), base, docPath, placeholder);
+      if (sub) for (const s of sub.split('\n')) out.push(s);   // sub 为空 = 子块整个也没了 → 一行都别吐
+    }
+    i = j;
+  }
+  return out.join('\n');
+}
+
 // 孤儿判定（纯函数，可单测）：候选附件名逐个去全库文本（已合并为单串）里找，
 // 任何形态出现过 = 被引用保留；所有形态都没出现 = 真孤儿。
 // 硬性要求：宁可漏删一千，不可误删一张——匹配一律往「多保留」方向偏。
@@ -126,5 +257,6 @@ module.exports = {
   splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText,
   SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE, mindmapFm,
   buildMmlinkText, sanitizeAttachmentName, sanitizeFileName, uniqueAttachmentName,
+  replaceDocLinks, removeDocRefs, docRefLineOnlyLink, docRefNodeIsShell, DOC_REF_NODE_FLAGS,
   ATTACH_DIR, attachmentLookupVariants, findOrphanAttachmentNames,
 };

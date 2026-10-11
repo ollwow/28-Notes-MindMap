@@ -15,6 +15,7 @@ var I18N = {
     'common.mindmap': '思维导图', // 标签页标题兜底（视图未绑定到文件时 Obsidian 显示的视图名）
     'common.cancel': '取消', // 弹窗的「取消」按钮（保存版本命名框、还原确认框等）
     'common.ok': '确定', // 弹窗的「确定」按钮（同上；历史还原的危险确认框也用它）
+    'common.vaultRoot': 'vault 根目录', // 转出兜底落点（转出专用文件夹建不出来时用）
 
     // ============ 导图画面骨架（iframe 里的静态 HTML；切语言随视图重建刷新）============
     'frame.nowSide': '只显示 Now 节点', // 左侧 Now 按钮的初始 tooltip（运行时会被动态文案覆盖，改了可能看不到）
@@ -39,7 +40,7 @@ var I18N = {
     'footer.version': '版本',
     'toast.featureSoon': '功能开发中，敬请期待',   // AI 输入条「＋」在非作者本机上点了弹这句（2026-10-07 用户定）   // 未激活时点受控功能（含快捷键）弹的提示（2026-10-07 用户定）
     'tip.alreadyDefault': '当前已是默认路径',
-    'tip.toggleSidebar': '显示 / 隐藏文件列表',   // 全屏时那颗「侧边栏」按钮的悬停提示（2026-10-06）   // 主页菜单里那两项**不可点**时的悬停提示（2026-10-06 用户定；可点时不给提示）   // 2026-10-06 用户定：就这四个字，别再自己写「点击后可以…」那种解释
+    'tip.toggleSidebar': '显示文件列表',   // 全屏时那颗「侧边栏」按钮的悬停提示（2026-10-06）   // 主页菜单里那两项**不可点**时的悬停提示（2026-10-06 用户定；可点时不给提示）   // 2026-10-06 用户定：就这四个字，别再自己写「点击后可以…」那种解释
     'more.splitRight': '左右分屏',
     'more.showInFolder': '在访达中显示',
     'more.revealInFiles': '在文件列表中显示',
@@ -75,6 +76,8 @@ var I18N = {
     'notice.fileMissing': '文件链接指向的文件不存在：', // 点本地文件链接但文件不存在时（后接路径）
     'notice.openFileFail': '打开文件失败：', // 打开本地文件出错时（后接错误）
     'notice.noteMissing': '找不到笔记：', // 点笔记链接但 vault 里找不到时（后接笔记名）
+    'notice.importDocFail': '转入失败：', // 「转入思维导图」出错时（后接错误信息，2026-10-08）
+    'notice.moveOutDocFail': '转出失败：', // 「转出到 vault」出错时（后接错误信息，2026-10-08）
     'notice.openNoteFail': '打开笔记失败：', // 打开笔记出错时（后接错误）
     'notice.copyFailSnap': '创建副本失败：', // 从历史快照创建副本失败时（后接错误）
     'notice.githubUnset': 'GitHub 链接尚未配置', // 设置页点「↗ GitHub」按钮但链接还没填时
@@ -108,6 +111,7 @@ var I18N = {
     'cmd.todoNode': '编辑节点｜（不）设为待办 Todo 节点',
     'cmd.todoDoneNode': '编辑节点｜（不）设为完成 Done 节点', // 2026-09-20 第三轮新增：⌥⌘L，与按钮 ⌥+点击同款
     'cmd.copyNodeLink': '其它｜复制节点链接', // 2026-09-21 由右键菜单注册成命令（⌥⌘C）
+    'cmd.addChildDoc': '其它｜新增子文档', // 2026-10-09：与「＋添加 → 子文档」同一个动作（选中节点下挂一份新建的文档）
     'cmd.copyAILocate': 'AI｜复制 AI 定位路径', // 2026-10-07 用户定：分类从「其它」改成「AI」
     'cmd.saveShortcut': '视图整体｜保存为捷径', // 同上（⌘/；对当前视图的主节点建捷径）
     'cmd.aiMark': 'AI｜添加 AI 生成标记', // 2026-10-05：一次打标、再触发清除（名字 2026-10-07 用户定成「添加…」，别管它也能删，就叫这个）
@@ -137,6 +141,7 @@ var I18N = {
     'badge.bookmark': '↗', // 文件列表里书签文件右侧的小字（触发点在 main.js updateBookmarkBadges：拼进文件树徽章 CSS）
     'badge.mindmap': '28 Notes', // 文件列表里导图文件右侧的小字（同上，main.js updateBookmarkBadges）
     'menu.newMindmap': '新建思维导图（28 Notes）', // 文件面板右键空白处/文件夹 → 新建菜单项（2026-09-01）
+    'menu.importToMap': '转入思维导图（28 Notes）', // 文件列表右键文件 → 把文件搬进 28Notes-Files/docs/ 并新建导图（2026-10-08；「用思维导图管理文档」开关开着才出现）
     'menu.copyAiLocate': '复制 AI 定位路径（28Notes）', // 文件面板右键文件名 → 复制「绝对路径（+选中节点 ID）」供 AI Agent 定位编辑（2026-09-02）
     'fold.moreLevels': '更多层级', // 折叠层级「+更多」按钮的悬停提示（Obsidian 状态栏）
 
@@ -199,7 +204,17 @@ var I18N = {
     'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
     'settings.motion': '动效', // 高级页（2026-09-20）：节点位移过渡的开关，默认开
     'settings.motionDesc': '如果交互时出现卡顿，可关闭动效以减少性能消耗。',
-    'settings.aiEditBtn': 'AI 编辑按钮', // 高级页（2026-09-28）：左下那颗 AI 按钮的开关；实验性功能，默认关
+    'settings.motionSysOff': '监测到你的电脑已关闭动画，请在系统设置内打开。', // 系统 prefers-reduced-motion 时替换说明 + 开关置灰（2026-10-10）
+    // ---- 「高级」页的两个分组标题（2026-10-08 用户定：上面「基础」、下面「实验性功能」）----
+    'settings.advancedBasic': '基础',
+    'settings.advancedExp': '实验性功能',
+    'settings.expWarn': '实验期间，功能设计会经常调整，甚至删除。请勿过度依赖。',
+    'settings.aiFeatures': 'AI 功能', // 「实验性功能」组（2026-10-08）：AI 入口总开关，**默认关**
+    'settings.aiFeaturesDesc': '开启后，界面会出现 AI 编辑按钮。',
+    'settings.docsLibrary': '用思维导图管理文档', // 「实验性功能」组（2026-10-08）：把 vault 里的文件收进思维导图，**默认关**
+    'settings.docsLibraryDesc': '开启后，支持将已有文档转入思维导图进行管理，你也能在思维导图内新增子文档。',
+    // ⚠️ 下面两个是 2026-09-28 那版「AI 编辑按钮」的键（2026-10-08 已被上面那对取代）；键先留着，防旧引用报错
+    'settings.aiEditBtn': 'AI 编辑按钮',
     'settings.aiEditBtnDesc': '开启后，会在视图左下角出现 AI 编辑按钮。实验性功能，默认关闭。',
     // ---- 「界面简化」页里的两个分组标题（2026-09-21 改版：不再进二级页，直接摊在这一页）----
     'settings.general': '通用', // 分组标题一：文件类型徽标 / 新增页面提示
@@ -304,10 +319,30 @@ var I18N = {
     'hint.line1': '选中节点 + Tab → 新增子节点', // 空图提示第一行
     'hint.line2': '选中子节点 + 回车 → 新增同级节点', // 空图提示第二行
     'hint.line3': '按住空格 + 拖动鼠标 → 移动视图', // 空图提示第三行
+    // 🔴 2026-10-10：**主节点自己就是文档节点**时（转入生成的导图）换这两行，且**不受设置页
+    //   「新增页面提示」开关影响**（那张图"看起来像空图"但不是空图，这是它唯一的用法说明）。
+    //   语感照旧版那句「已转入，请剪切并粘贴至适当位置 →」；把"剪切"改成"复制"是因为
+    //   2026-10-11 改回「剪切」：母节点现在真的能剪切了（整棵带走，本图随之变空），
+    //   复制会让同一份文档被多张图管理、触发「多处管理」警告，剪切才是正解。第二行不再需要
+    //   （剪走之后这张图就是空的，画面上直接给「新建母节点」按钮，不用再教用户删图）。
+    'hint.docLine1': '请选中节点，剪切并粘贴至适当位置。',
+    'emptyRoot.btn': '新建母节点', // 空图（没有主节点）时画面中间那枚按钮（2026-10-11）
+    'emptyRoot.placeholder': '请输入节点名', // 点「新建母节点」后预置的占位文字（进编辑即全选，直接敲字覆盖）
+    'tb.closeSplits': '关闭右侧分屏', // 画布右边缘那颗图标（2026-10-11）：一键关掉右侧的文档分屏
+    'cut.drillRootOut': '已剪切，画面退回上一层', // 下钻里把当层母节点剪切走后的提示（画面忽然换层要说一声）
     // ============ 导图画面：节点图标 / 折叠箭头 / 备注等悬停提示 ============
     'tip.todoIconTodo': '设为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20；2026-10-06 撤掉 ⌘ 那段）
     'tip.todoIconDone': '已完成：点击小图标标记为待办',
     'tip.todoIconProgress': '子节点完成进度：{0}%', // 母节点自己是待办 + 有子待办时的合并模式提示（{0} = 只算子节点的完成百分比，2026-09-24）
+    // 整个**文档 / 附件节点**悬停的提示（2026-10-09 用户定）：挂在卡片上（不是那个小图标），
+    //   告诉用户"点它干嘛"以及 ⌘ 点击的额外效果。
+    // 🔴 2026-10-10 用户定（行为反转）：默认 = 右侧分屏打开，按住 ⌘/Ctrl 才是新标签页。
+    //   括号那一段由 `NM_HINT_PAREN_RE` 自动染灰（别往文案里塞标记）。
+    'tip.openDocNode': '点击在右侧打开（按住 {Mod} 点击：在新标签页打开）',
+    'tip.openFileNode': '点击在右侧打开该文件（按住 {Mod} 点击：在新标签页打开）',
+    // 「文档警告节点」（被多处管理的）的悬浮小字（2026-10-09 用户定）：换这句 + **黄底**样式，
+    //   括号里那截自动走 nm-tip-h（浅色）。
+    'tip.multiRefDoc': '此文档正在被多处管理，建议减少为一处（右键管理）',
     // 节点前缀图标「点一下 = 取消这个标记」的悬停提示（2026-10-05）：四个图标统一走 data-tip 黑色小字
     'tip.icoClearNow': '清除 Now 标记',
     'tip.icoClearMinor': '清除 Minor 标记',
@@ -355,6 +390,10 @@ var I18N = {
     // ⚠️ 不与 more.aiEdit 共用：那个键同时是 AI 定位弹窗的标题，改它会把弹窗标题一起改掉。
     // {Mod} 走 modStr（Mac=⌘ / Win=Ctrl），与其它 tb.* 提示同一套写法。
     'tb.aiEdit': 'AI 编辑', // 左下那颗 AI 按钮的提示（2026-10-05：⌘/Ctrl 那条说明已撤）
+    'tb.doclib': '思维导图文档库', // 左下那颗文档面板按钮的提示（2026-10-10 用户定：按钮放回来了，名字跟面板新名）
+    'tb.joinGroupBtn': '加入群聊（可在设置页面隐藏此按钮）', // 左下那颗群聊按钮（2026-10-10；括号段自动染灰）
+    'tb.guideBtn': '查看使用教程（可在设置页面隐藏此按钮）', // 左下那颗教程按钮（2026-10-10；括号段自动染灰）
+    'tb.sideClose': '收起文件列表', // 全屏滑出的文件列表侧边栏、最右边那颗大关闭按钮（2026-10-10）
     // AI 输入条（2026-09-28）：点左下「AI 编辑」→ 底部弹出的输入框。
     // 关闭叉与加号**不挂**悬浮提示（看图标就懂，用户定），只有发送挂。
     'aiBar.send': '发送',
@@ -458,6 +497,14 @@ var I18N = {
     'more.addNodeLink': '关联节点',
     'more.addNodeLinkTip': '点击后，可添加关联节点，一键跳转至对应节点（可直接粘贴）',
     'more.addNodeLinkHint': '选中要关联的节点，右键「复制节点链接」，并粘贴至此处即可关联。支持跨思维导图粘贴；支持选中节点后直接粘贴。',
+    // 导入仓库文档（2026-10-09 用户定）：排在「子文档」**上面** —— 从 vault 里挑一份**已有**文档挂上来。
+    'more.importRepoDoc': '导入仓库文档',
+    'more.importRepoDocTip': '点击后，可导入左侧文件列表文档',
+    // 子文档（2026-10-09 用户定）：排在「关联节点」下面 —— 在选中节点下挂一份**新建的**文档
+    //   （文件真建在数据区 `28Notes-Files/docs/` 里，节点就是指向它的文档节点）。
+    //   提示的键位段走 tipAct（绑了键才显示，没绑就连括号一起不显示）。
+    'more.addChildDoc': '子文档',
+    'more.addChildDocTip': '点击后，可新增子文档',
     // 两个输入框的**预设文字**（2026-09-20 从代码里抽出来）：英文界面曾露出中文「文件」/「文件名」
     'more.addFileLinkPh': '/Users/…/文件.pdf',
     'more.pickLocal': '从本机选择',   // 「本地文件链接」弹窗左下角那颗（2026-10-07 用户定）：拉起系统文件选择器
@@ -530,6 +577,12 @@ var I18N = {
     'toast.versionDeleted': '已删除该版本', // 删除单条历史版本成功后
     'toast.versionRenamed': '已重命名该版本', // 重命名单条历史版本成功后
     'toast.aiLocateCopied': '已复制，请在 Agent 里粘贴', // 复制 AI 定位路径 成功后
+    'toast.docImported': '已转入：{0}', // 转入成功提示（{0} = 文档名，2026-10-08）
+    'toast.docMovedOut': '已转出：{0}（存放于 {1}）', // 转出成功提示（{0} = 文档名，{1} = 落点目录，2026-10-08）
+    'toast.doclibLinkCopied': '已复制双链，可直接粘贴到导图里', // 文档面板里点「复制链接」成功
+    'toast.docRefGone': '那个引用已经不在了（导图内容可能被改过）', // 面板点 1/2/3 定位时，树里找不到对应节点
+    'toast.docDeleted': '已删除：{0}', // 删除已放入思维导图数据库的文档成功（{0} = 文档名）
+    'notice.docDeleteFail': '删除失败：', // 删除已放入思维导图数据库的文档出错时（后接错误信息）
     'toast.nodeLinkCopied': '已复制，请粘贴至需关联的节点', // 复制节点链接 成功后
 
     // ============ 格式警告（打开文件时顶部的黄色警告条）============
@@ -568,7 +621,64 @@ var I18N = {
     'more.kbdTab': 'Tab', // 添加子节点
     'more.kbdEnter': 'Enter', // 添加同级节点
     'ctx.copyLink': '复制节点链接', // 菜单项：复制 [[文件名#pid]] 节点链接
+    'ctx.manageDoc': '管理该文档', // 菜单项（**只给「文档警告节点」**，放最前面，2026-10-09 用户定）
+    'ctx.openDoc': '打开该文档', // 菜单项（仅已放入思维导图数据库的文档节点）：新标签页打开这份被收纳的文档（2026-10-08）
+    'ctx.moveOutDoc': '转出思维导图', // 菜单项（仅已放入思维导图数据库的文档节点）：把文档搬回 vault 根目录（2026-10-08）
+    'ctx.deleteDoc': '删除该文档', // 菜单项（仅已放入思维导图数据库的文档节点）：删除这份文档（二次确认 + 替换导图里的引用，2026-10-08）
+    'ctx.renameDoc': '重命名该文档', // 菜单项（同上）：改**文件**名，走 Obsidian 官方改名（引用自动更新，2026-10-08 方案 §4.7）
+    // 附件节点（图片 / 视频 / 音频）的右键菜单（2026-10-08 用户定）：只有打开 / 转出 / 删除三项 ——
+    // 「重命名」对附件没意义，不给。文案按类型分，用户一眼知道自己在操作什么。
+    'ctx.openImage': '打开该图片',
+    'ctx.openVideo': '打开该视频',
+    'ctx.openAudio': '打开该音频',
+    'ctx.deleteImage': '删除该图片',
+    'ctx.deleteVideo': '删除该视频',
+    'ctx.deleteAudio': '删除该音频',
     'ctx.bookmark': '保存为捷径', // 菜单项：为该节点创建书签文件
+    // ---- 转出思维导图（2026-10-10 用户定；把原来文档节点那项「转出到 vault」合并进来了）----
+    'ctx.exportMap': '转出思维导图',
+    'ctx.exportMapTip': '点击后，可将此节点树转出思维导图',   // 黑色小字提示
+    'export.untitled': '未命名',
+    // ⛔ 退役（2026-10-10 用户改主意）：母节点转出现在**直接删掉整张导图**，不再保留 + 改名
+    'export.doneRootTitle': '已转出',
+    'export.doneToast': '已转出，画布已更新',
+    'export.doneNotice': '已转出「{0}」→ {1}',
+    'export.snapName': '转出前',
+    'notice.exportMapFail': '转出思维导图失败：',
+    // 确认弹窗（树里带"标题以外的东西"时）
+    'export.warnTitle': '转出提示',
+    // ⚠️ 弹窗正文走的是 setText（不解析 markdown）→ 文案里**不要写 `**加粗**`**，会原样显示出来
+    'export.warnBody': '此节点树包含以下附属内容，转出后将会清除。请确认无误后再转出。（转出后，你仍可以在思维导图的历史记录里查看被清除内容）',
+    'export.warnOk': '确定转出',
+    // 母节点转出（= 整张图都出去，导图本身也会被删）→ 换这一句，把"不可找回、不可撤销"说清
+    //（2026-10-10 用户给的原文；普通节点仍用上面那句）
+    'export.warnRootBody': '此节点树包含以下附属内容，转出后将会清除。请确认无误后再转出。（转出后，清除的内容不可找回，不可撤销）',
+    // 「转出」被拦下时的弹窗 —— **与转入分开**（2026-10-10 用户定：不能共用一个弹窗，
+    //   转入讲"搬进数据区"、转出讲"导成文件夹"，标题 / 正文 / 原因都不一样）
+    'export.blockedTitle': '无法转出',
+    'export.blockedBody': '转出失败。本次没有转出任何内容。请按以下提示更改后再转出：',
+    'export.warnNotes': '· {0} 个节点包含备注，转出后会清除',
+    'export.warnMedia': '· {0} 个节点包含图片 / 视频，不会同步转出，请提前处理（即使未处理，原件也不会删除）',
+    'export.warnTodo': '· {0} 个节点带待办标记，转出后会清除',
+    'export.warnRules': '· {0} 个节点带 AI 更改规则，转出后会清除',
+    // 体检不过时逐条列出的原因 + 怎么改
+    'export.badEmpty': '「{0}」的标题为空',
+    'export.badEmptyFix': '请给添加标题',
+    'export.badSpace': '「{0}」的标题首/尾有多余的空格',
+    'export.badSpaceFix': '请把标题首/尾的空格删除',
+    'export.badChar': '「{0}」的标题里有「{1}」',
+    'export.badCharFix': '此字符无法作为文件夹名/文件名，请去除或更换成其它字符',
+    'export.badFs': '「{0}」的标题里有文件名禁用的字符（\\ / : * ? " < > |）',
+    'export.badFsFix': '请将此类字符删除或换成别的字',
+    'export.badLong': '「{0}」的标题过长（超过 {1} 个字符）',
+    'export.badLongFix': '请将标题改短',
+    'export.badDeep': '「{0}」层级过深（超过 {1} 层）',
+    'export.badDeepFix': '请分批次转出',
+    'export.refDupInTree': '「{0}」在这棵子树里被多个节点管理',
+    'export.refDupInTreeFix': '同一份文件只能落一个位置，请先把重复的节点清除',
+    'export.refUsedElsewhere': '「{0}」还在被别的节点管理',
+    'export.refUsedElsewhereFix': '请右键该节点，清除额外的管理项，再转出',
+    'export.missingDoc': '找不到这份文件（可能已经被删 / 移走）：',
     'ctx.bookmarkHint': '不写默认为节点名', // 书签命名弹框输入框里的灰色占位提示
     'ctx.editLink': '编辑链接', // 菜单项：双击编辑链接的菜单版（仅文件/URL 链接显示）
     // 清除项的悬浮说明按当前标记分两版（2026-10-05）：一句话里说清「现在是什么」+「点了会怎样」
@@ -632,7 +742,7 @@ var I18N = {
     'hist.promptTitle': '给这个版本起个名字', // 「保存此版本」弹框标题
     'hist.promptHint': '（可空）', // 「保存此版本」弹框输入框占位提示
     'hist.confirmRestore': '用这一版覆盖当前文件？', // 点「还原此版本」后的确认弹窗文字（⚠️ 弹窗标题走纯文本，别放 <br>）
-    'hist.empty': '无历史版本。<br>编辑时会自动存档，你也可在左下角「更多」菜单里，点击「保存此版本」手动存档。', // 面板/列表没有历史快照时的占位（<br> = 换行）
+    'hist.empty': '无历史版本。<br>编辑时会自动存档，你也可在右上角「更多」菜单里，点击「保存此版本」手动存档。', // 面板/列表没有历史快照时的占位（<br> = 换行）
     'hist.auto': '自动保存', // 自动快照在时间线里的标签（手动命名的显示你起的名字）
     'hist.justNow': '刚刚 · {0}', // 时间线时间：3 分钟内（{0}=时:分）
     'hist.today': '今天', // 时间线时间：当天
@@ -650,12 +760,142 @@ var I18N = {
     'hist.renameHint': '（留空 = 记为「自动保存」）', // 重命名弹框输入框占位
     'hist.confirmDelete': '确定删除？删除后此版本会移入系统废纸篓。', // 删除版本确认弹窗
     // ---- 原生「历史记录」右侧面板（2026-09-14）----
-    'hist.panelTitle': '28 Notes Mind Map 历史记录', // 面板标签名 / tooltip / 面板顶部标题
+    // ---- 文档面板「用思维导图管理文档」（2026-10-08）----
+    'doclib.title': '思维导图文档库', // 面板标签名 / tooltip（2026-10-09 用户定：原来叫「用思维导图管理文档」）
+    // 顶部三个分页改成**图标**（2026-10-09 用户定，照 Obsidian 大纲面板那种小图标条）：
+    //   📌 图钉（=「设为当前关注」那只）= 被当前思维导图管理的文档；
+    //   面板自己那只图标 = 已转入思维导图的所有文档；？ = 了解如何用思维导图管理文档。
+    // 图标塞不下文字 → 分页名挪到下面当**小标题**（secCur / secAll），同时也是图标按钮的 tooltip。
+    'doclib.secCur': '被当前思维导图管理的文档', // 分页①（图钉）的小标题 + tooltip
+    'doclib.secAll': '已转入思维导图的所有文档', // 分页②（面板图标）的小标题 + tooltip
+    'doclib.tabHelp': '管理教程', // 分页③（问号）的小标题 + tooltip
+    // 分页④（警告三角，2026-10-09 用户定）：列出**当前选中节点那份文档**被哪些导图管理，一处一行
+    'doclib.secManage': '被多处管理的问题文档', // 分页④（警告三角）的名字 / tooltip（2026-10-09 用户定）
+    'doclib.blkMaps': '管理此文档的思维导图', // ⚠️ 2026-10-09 起**不再使用**（用户要求把展开后那行小字标题去掉）
+    'doclib.clearFilter': '清除筛选', // 第 3 页顶部的「清除筛选 ✕」（从「管理该文档」跳进来时才出现）
+    'doclib.noMultiDoc': '暂无一个文档被多处管理。', // 第 3 页空态（2026-10-09 用户定）
+    'doclib.blkDoc': '文档', // ⚠️ 2026-10-09 起**不再使用**（第 3 页改成"每份文档可折叠"，没有这一栏标题了）
+    'doclib.manageNoSel': '请先在思维导图里选中一个文档节点',
+    'doclib.manageNone': '这份文档目前没有被任何思维导图管理', // 没选中 / 选中的不是文档节点时的空态
+    'doclib.whyMultiRef': '为什么不建议一个文档被多处管理 ↗', // 分页④ 最下面那行小字（点开在线文档）
+    'doclib.mgrOccurrence': '第 {0} 处', // 同一张导图里引用多处时，折叠里面那几行（{0}=第几处）
+    // 「取消某一处管理」（分页④ 每行右边那颗 ✕）：只去掉**这一处**引用，文件不动
+    'doclib.unmanageTitle': '取消这一处管理？',
+    'doclib.unmanageBody': '此操作只影响这一个节点，其它管理此文档的节点不受影响。此操作不可撤销。', // 用户 2026-10-09 改成不带占位符的短句
+    'doclib.unmanageOk': '取消这一处',
+    'doclib.unmanagedPlaceholder': '「已取消管理：{0}」', // 取消一处管理时写进导图里的**纯文字**（会落进文件）
+    'toast.docUnmanaged': '已取消一处管理：{0}',
+    'notice.unmanageFail': '取消管理失败：',
+    // ⚠️ 「查看方式」那三个键（`doclib.viewMode` / `viewFlat` / `viewByMap`）2026-10-09 随
+    //   「按文档查看」那一套**整体删掉**了（用户定：两个查看方式合并成一个，只留按思维导图查看）。
+    // 这一行**最右边**那颗按钮的两态提示（2026-10-09 用户定：照 Obsidian 官方「大纲」面板那颗按钮，
+    //   文案也照它那两条 ——「全部折叠」/「全部展开」）。图标：chevrons-down-up / chevrons-up-down
+    'doclib.collapseAll': '全部折叠',
+    'doclib.expandAll': '全部展开',
+    // 分页②「按文档查看」的三块（2026-10-09 用户定，**每块可折叠**；组名已说明是什么，行里不再写小字）
+    'doclib.grpOrphan': '暂未被管理的孤儿文件', // 第一块：没有任何导图引用它（「按思维导图查看」的孤儿组也用它，2026-10-09 用户定）
+    'doclib.grpMulti': '被多处管理的文档', // 第二块：被 2 个及以上节点管理
+    'doclib.grpSingle': '被单处管理的文档', // 第三块：只被 1 个节点管理
+    'doclib.toggle': '展开 / 收起',
+    // 「定位到该节点」（2026-10-09 用户定）：面板条目「⋯」里 / 树形二级行悬浮那颗按钮。
+    // 效果 = 打开（或激活）那张导图 + 把引用这份文件的节点**选中并挪到画面中央**。
+    'doclib.locate': '定位到该节点',
+    'doclib.warnJump': '此文档正在被多处管理，建议减少为一处（点击管理）', // 2026-10-09 实验：被多处管理的文档行那颗警告按钮（点了切到第 4 个分页）
+    'doclib.locateN': '定位到第 {0} 处', // 同一张图里引用多次时，一项一处
+    // ⚠️ 下面两条 2026-10-09 起**不再使用**（用户要求把「了解孤儿文档」那个按钮删掉 ——
+    //   组名「暂未被管理的孤儿文件」已经说得很清楚）。键先留着，万一要放回来。
+    'doclib.helpToggle': '了解孤儿文档',
+    'doclib.helpText': '孤儿文档指已导入思维导图数据库，但未被任何思维导图管理的文档。',
+    'doclib.noMap': '请先打开一个思维导图。', // 分页① 的空态（另一栏照常列）
+    'doclib.empty': '当前思维导图未管理任何文档。',
+    'doclib.copyLink': '复制链接', // 条目右侧那颗按钮
+    'doclib.delete': '删除', // 条目「更多」菜单里那一项（2026-10-08）
+    'doclib.confirmDeleteTitle': '删除此文档？', // 二次确认弹窗标题（入口 = 面板「更多 → 删除」）
+    'doclib.confirmDeleteNodeTitle': '同时删除该节点管理的文档？', // 二次确认弹窗标题（入口 = 画布上文档节点右键，2026-10-08 用户定）
+    'doclib.confirmDeleteNodesTitle': '同时删除这些节点管理的文件？', // 同上，但**多选**（画布上选了不止一个被管理的节点，2026-10-09）
+    // 面板入口用这两条（用户 2026-10-08 定：**面板保持原来那套提示**，别加"去哪儿看"那句）
+    'doclib.confirmDeleteRefs': '此文档正在被 {2} 张思维导图管理。删除后，此文档将会进入 Obsidian 废纸篓。\n此操作不可撤销，请谨慎操作。', // {0}=文档名 {1}=引用次数 {2}=导图张数
+    'doclib.confirmDeleteOrphan': '此文档没有被任何思维导图管理。删除后将会进入 Obsidian 废纸篓。\n此操作不可撤销，请谨慎操作。',
+    // 画布节点入口用这两条（多一句"去哪儿看" —— 用户 2026-10-08 定）
+    'doclib.confirmDeleteNodeRefs': '此文档正在被 {2} 张思维导图管理，可在视图右上角「更多」→「查看被管理的文档」里查看。\n删除后，此文档将会进入 Obsidian 废纸篓。此操作不可撤销，请谨慎操作。',
+    'doclib.confirmDeleteNodeOrphan': '此文档没有被任何思维导图管理。\n删除后将会进入 Obsidian 废纸篓。此操作不可撤销，请谨慎操作。',
+    // 画布上**选中一个文档节点直接按删除键**时的询问（2026-10-08 用户定）：三个出口 —— 取消 / 只删节点 / 连文档一起删
+    // 这份文档**只有当前这一个节点**在管（2026-10-08 用户定的两版文案）
+    'docNode.askOnly': '此节点管理着「{0}」文档。是否同时删除该文档？',
+    // 这份文档**还被别的节点**管着 —— 多一句"去哪儿看"，并给出管它的**节点数**
+    'docNode.askShared': '此节点管理着「{0}」文档。此文档还被 {1} 个节点管理（可在视图右上角「更多」→「查看被管理的文档」里查看），是否同时删除该文档？', // {0}=文档名 {1}=管它的节点数
+    // **多选**里含被管理的文件时（2026-10-09 用户定）：一次只弹一个窗，说清有几个、其中几处还被别的节点管
+    'docNode.askMulti': '正在删除的节点里有 {0} 个被管理的文件，其中 {1} 处还被别的节点管理（可在视图右上角「更多」→「查看被管理的文档」里查看），是否同时删除这些文件？', // {0}=选中的文件数 {1}=别处的引用数
+    // 多选、但**一处都没被别的地方管**时用这条（2026-10-09 用户实报：写「其中 0 处还被别的节点管理」很奇怪）
+    'docNode.askMultiOnly': '正在删除的节点里有 {0} 个被管理的文件，是否同时删除这些文件？', // {0}=选中的文件数
+    'docNode.onlyNode': '只删节点', // 第二个按钮
+    'docNode.nodeAndDoc': '删除节点和文档', // 第三个按钮（危险动作，走 mod-warning）
+    'docNode.nodesAndDocs': '删除节点和文件', // 同上，但**多选**（可能既有文档又有附件，2026-10-09）
+    // 删文档时写进导图里替换掉那串链接的**纯文字**（会落进文件）。外面这对「」是用户 2026-10-08 点名要的
+    // —— 有了它才能和节点里的普通文字一眼分开。（节点里**只有**这个链接时不写这句，直接整行删掉）
+    'doclib.deletedPlaceholder': '「已删除：{0}」',
+    'doclib.learnMore': '了解如何用思维导图管理文档 ↗', // 分页下面那行小字：点开在线文档（2026-10-08 用户定）
+    'mm.doclib': '查看被管理的文档', // 系统标题栏「更多」菜单里那一项（排在历史记录上面；左下那颗按钮已撤）
+    // ---- 「转入思维导图」新建的那张导图：文件名 + 根节点 + 说明链接（2026-10-08 用户定，照他手写的参考文件）----
+    // ⚠️ 文件名里不能出现半角冒号（Obsidian 全平台禁 `:`，create 会直接抛错）
+    // ⛔ 以下三条**已退役**（2026-10-10 用户定改版：导图文件名 = 被转入的文档名 / 文件夹名，
+    //   根节点就是文档本身 / 文件夹名，那两行「已转入…→」+ 说明链接被用户称为"一堆废话"、已撤）。
+    //   键**留着**（不删，防老存档 / 外部引用报错），但代码里一个字都不许再引用。
+    'import.mapPrefix': '已转入 →', // ⛔ 退役（曾是新导图的文件名）
+    'import.rootTitle': '已转入，请剪切并粘贴至适当位置 →', // ⛔ 退役（曾是根节点文字）
+    'import.helpLink': '了解如何用思维导图管理文档', // ⛔ 退役（曾是根节点下那行说明链接）
+    // ---- 「重命名该导入文件」（2026-10-08 方案 §4.7）----
+    'doclib.renameTitle': '重命名该导入文件',
+    'doclib.renameHint': '输入新的文件名（不用带扩展名）',
+    // 新建子文档（2026-10-09 用户定）：「＋添加 → 子文档」/ 命令「其它｜新增子文档」都走这个输入框。
+    //   建出来的文件真放进数据区 docs/，节点写成 `[[28Notes-Files/docs/名字]]`（带路径，防同名歧义）。
+    'doclib.newChildDocTitle': '请输入文档名',
+    'doclib.newChildDocPh': '不能包含特殊符号，例如 \\ / : * ? " < > # ^ 等',
+    // 「选择导入的文档」弹窗（2026-10-09 用户定）：正文那两行是他原话，别改口径
+    'doclib.pickDocTitle': '选择导入的文档',
+    'doclib.pickDocBody': '导入后，文档会从左侧文件列表转入思维导图管理。你可点击视图右上方 ···（更多按钮），查看被管理的文档。\n\n如果你只是想链接文档，请关闭本窗口，并使用双链功能。',
+    'doclib.pickDocPh': '请输入文档名',
+    'notice.importRepoFail': '导入文档失败：',
+    'toast.childDocCreated': '已新建子文档：{0}',
+    'notice.newChildDocFail': '新建子文档失败：',
+    'notice.docNameBad': '这个名字不能用作文档名（不能带 \\ / : * ? " < > | 与 # | ^ [ ]）：',
+    'toast.docRenamed': '已重命名：{0}',
+    'notice.renameTaken': '该名字已被占用：',
+    'notice.renameFail': '重命名失败：',
+    'notice.renameBadName': '名字里不能包含 \\ / : * ? " < > | 这些字符，也不能带 # | ^ [ ]',
+    // ---- 文件夹批量转入（2026-10-08 方案 §4.3）----
+    'toast.folderImported': '已转入文件夹：{0}',
+    // 本批发生过重名顺延 → 完成提示后面补这句（2026-10-10 用户定）
+    'toast.renamedNote': '（包含重名内容，已重命名）',
+    'notice.importFolderFail': '转入文件夹失败：',
+    'notice.importFolderSkipped': '有 {0} 个文件的名字写不出链接（带 # | ^ [ ] 等），已跳过、留在原处',
+    // ---- 转入被拦下的告知弹窗（2026-10-10 用户定：不合格就一个都不搬，但要讲清哪个、为什么、怎么改）----
+    'doclib.blockedTitle': '无法转入',
+    // 正文开头：{0} = 被拦下的文件数；后面接「路径 + 原因 + 怎么改」的清单，**全部列出**（不截断），
+    // 条与条之间空一行；条数多时靠弹窗正文区自己滚（`max-height: 55vh; overflow-y: auto`）。
+    'doclib.blockedBody': '有 {0} 个文件名包含错误，整体取消转入。请按以下提示修复后再尝试转入：',
+    // 文件夹转入时的第二行：告诉用户这批文件属于哪个文件夹
+    'doclib.blockedWhere': '所在文件夹：{0}',
+    'doclib.blockUnknown': '（未指明文件）',
+    // 五种拦下原因（{0} = 出问题的那个字符 / 字段）
+    'doclib.blockEmptyName': '文件名为空',
+    'doclib.blockEmptyNameFix': '请给它起个名字',
+    'doclib.blockChar': '此文件名里含有「{0}」字符',
+    'doclib.blockCharFix': '该字符在 Obsidian 双链语法 [[链接]] 里有语法含义，会造成冲突。请删除该字符，或换成别的字符。',
+    // 首尾带空格：链接文字会被 trim 掉，指不到这个文件（用户 2026-10-10 实报 `优化版 .md`）
+    'doclib.blockSpace': '此文件名首尾有多余的空格',
+    'doclib.blockSpaceFix': '双链 [[名字]] 里首尾的空格会被忽略，链接就指不到这个文件了（点节点会提示「找不到笔记」）。请把文件名首尾的空格删掉。',
+    // 没有扩展名的文件：Obsidian 解析 [[链接]] 时**会自动补上 .md 再去找文件**，所以它永远链接不上
+    //（2026-10-10 用户实报「点了提示找不到笔记」，扒 obsidian.asar 的 getLinkpathDest 源码确认，不是推断）
+    'doclib.blockNoExt': '此文件没有扩展名',
+    'doclib.blockNoExtFix': 'Obsidian 解析 [[链接]] 时会自动补上 .md 再去找文件，没有扩展名的文件永远点不开。请给它加一个扩展名（纯文本笔记加 .md 即可）。',
+    'hist.panelTitle': '思维导图历史记录', // 面板标签名 / tooltip / 面板顶部标题
     'hist.rules': '保存规则', // 面板顶部右侧小按钮：点开/收起下面的规则说明
     // 点「保存规则」展开的说明（走 innerHTML：文案里可能带 <br>，用 text 会把标签当字面量显示出来）
     'hist.rulesText': '编辑时会高频保留历史版本，后续会自动精简冗余版本（精简至每周 1-7 份）；手动存储 / 重命名 / 锁定的版本不会被自动精简。',
-    'hist.noMap': '当前没有打开的思维导图', // 面板空态：没有可跟随的导图（非 28 Notes 文件时列表直接清空，不显示文案）
+    'hist.noMap': '请先打开一个思维导图。', // 面板空态：没有可跟随的导图（非 28 Notes 文件时列表直接清空，不显示文案）
     'cmd.openHistory': '其它｜打开历史记录面板', // 命令：面板被关掉后的找回入口
+    'cmd.openDoclib': '其它｜打开文档面板（28 Notes）', // 命令：打开「用思维导图管理文档」面板（2026-10-08；开关关着时命令不出现）
     'notice.panelFail': '打开右侧历史面板失败', // 右侧栏取不到 leaf 时的提示
 
     // ============ 图片预览 / 图片缺失 ============
@@ -684,6 +924,7 @@ var I18N = {
     'common.mindmap': 'Mind Map',
     'common.cancel': 'Cancel',
     'common.ok': 'OK',
+    'common.vaultRoot': 'the vault root', // Fallback destination for "move out" (used when the export folder cannot be created)
 
     'frame.nowSide': 'Show Now Nodes Only',
     'frame.mdPlaceholder': '- Top-Level Node\n  - Child Node',
@@ -703,7 +944,7 @@ var I18N = {
     'footer.version': 'Version',
     'toast.featureSoon': 'Coming soon',
     'tip.alreadyDefault': 'Already the Default Path',
-    'tip.toggleSidebar': 'Show / Hide File List',
+    'tip.toggleSidebar': 'Show File List',   // 2026-10-10: shortened to mirror 「显示文件列表」
     'more.splitRight': 'Split Right',
     'more.showInFolder': 'Reveal in Finder',
     'more.revealInFiles': 'Reveal in File List',
@@ -738,6 +979,8 @@ var I18N = {
     'notice.fileMissing': 'The File This Link Points to Does Not Exist: ',
     'notice.openFileFail': 'Failed to Open File: ',
     'notice.noteMissing': 'Note Not Found: ',
+    'notice.importDocFail': 'Import failed: ', // "Import into mind map" failed (error follows, 2026-10-08)
+    'notice.moveOutDocFail': 'Move out failed: ', // "Move out to vault" failed (error follows, 2026-10-08)
     'notice.openNoteFail': 'Failed to Open Note: ',
     'notice.copyFailSnap': 'Failed to Create a Copy: ',
     'notice.githubUnset': 'GitHub Link Is Not Configured yet',
@@ -752,6 +995,7 @@ var I18N = {
     'cmd.todoNode': 'Node | (Un)Set as To-Do',
     'cmd.todoDoneNode': 'Node | (Un)Set as Done',
     'cmd.copyNodeLink': 'Other | Copy Node Link',
+    'cmd.addChildDoc': 'Other | Add Child Document', // 2026-10-09: same action as "Add → Child Document"
     'cmd.copyAILocate': 'AI | Copy AI Locate Path',
     'cmd.saveShortcut': 'View | Save as Shortcut',
     'cmd.aiMark': 'AI | Add AI-Generated Mark',
@@ -779,6 +1023,7 @@ var I18N = {
     'badge.bookmark': '↗',
     'badge.mindmap': 'Mind Map',
     'menu.newMindmap': 'New Mind Map (28 Notes)',
+    'menu.importToMap': 'Import into Mind Map (28 Notes)', // File list right-click → move the file into 28Notes-Files/docs/ and create a map (2026-10-08; only when the document-management switch is on)
     'menu.copyAiLocate': 'Copy AI Locate Path (28Notes)',
     'fold.moreLevels': 'More Levels',
 
@@ -849,7 +1094,17 @@ var I18N = {
     'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
     'settings.motion': 'Motion', // Under "Advanced" (2026-09-20): node shift transition, on by default
     'settings.motionDesc': 'If Interaction Feels Laggy, Turn Motion off to Reduce Performance Cost.',
-    'settings.aiEditBtn': 'AI Edit Button', // Under "Advanced" (2026-09-28): shows the AI button at the bottom-left; experimental, off by default
+    'settings.motionSysOff': 'Animations Are Turned off by Your System. Enable Them in System Settings to Use Motion.', // Shown (with the toggle greyed out) when the system prefers-reduced-motion is on (2026-10-10)
+    // ---- Two group headings inside "Advanced" (2026-10-08: "Basics" on top, "Experimental Features" below) ----
+    'settings.advancedBasic': 'Basics',
+    'settings.advancedExp': 'Experimental Features',
+    'settings.expWarn': 'During the experimental period, features may change frequently or even be removed. Please do not rely on them too heavily.',
+    'settings.aiFeatures': 'AI Features', // Under "Experimental Features" (2026-10-08): master switch for AI entries, OFF by default
+    'settings.aiFeaturesDesc': 'When on, AI edit buttons appear in the interface.',
+    'settings.docsLibrary': 'Manage Documents with Mind Maps', // Under "Experimental Features" (2026-10-08): collect vault files into mind maps, OFF by default
+    'settings.docsLibraryDesc': 'When on, you can import existing documents into a mind map to manage them, and embed documents inside a mind map.',
+    // Kept from 2026-09-28 (superseded by the pair above); left in place so stale refs do not break
+    'settings.aiEditBtn': 'AI Edit Button',
     'settings.aiEditBtnDesc': 'Turn this on to show an AI Edit button at the bottom-left of the view. Experimental feature, off by default.',
     // ---- Two group headings inside "Interface simplification" (2026-09-21: no more sub-page) ----
     'settings.general': 'General',
@@ -951,10 +1206,32 @@ var I18N = {
     'hint.line1': 'Select a Node + Tab to Add',
     'hint.line2': 'Select a Child Node + Enter to Add a Sibling Node',
     'hint.line3': 'Space + Drag to Pan',
+    // When the root node itself IS a document node (a map created by "import"): different copy, and the
+    // "New-Page Hint" setting does not apply (this is the only explanation of how to use that map).
+    // Phrasing follows the old "Imported — cut and paste it wherever you like →" line. Back to "cut"
+    // (2026-10-11): the root node can really be cut now (the whole tree goes with it, and the map
+    // becomes empty); copying would leave the same document managed from multiple maps and trigger
+    // the "managed in multiple places" warning — cutting is the right way. The second line is no
+    // longer needed (after the cut the map is empty and shows a "New root node" button — no need to
+    // teach deleting the map).
+    'hint.docLine1': 'Select the node, then cut and paste it where you want it.',
+    'emptyRoot.btn': 'New root node', // button shown in the middle of an empty map (no root line yet, 2026-10-11)
+    'emptyRoot.placeholder': 'Enter node name', // placeholder pre-filled after clicking the button (selected, so typing replaces it)
+    'tb.closeSplits': 'Close split panes', // icon on the canvas right edge (2026-10-11): closes the doc split panes on the right
+    'cut.drillRootOut': 'Cut — the view moved up one level', // shown after cutting the root of a drilled-in view
 
     'tip.todoIconTodo': 'Mark as Done', // to-do node prefix icon (2026-09-20; the {Mod} hint was removed 2026-10-06)
     'tip.todoIconDone': 'Done: Click the Icon to Mark as To-Do',
     'tip.todoIconProgress': 'Child Progress: {0}%', // merged mode: parent is a to-do + has to-do children ({0} = children-only percentage, 2026-09-24)
+    // Hovering the whole document / attachment NODE (2026-10-09): attached to the card, not the little icon.
+    // {Mod} is turned into ⌘ / Ctrl by T() → modStr (the "no hard-coded Mac keys in i18n" rule).
+    // 2026-10-10 (behaviour reversed): plain click opens in a split on the right; hold {Mod} for a new tab.
+    // The parenthesised part is auto-dimmed by `NM_HINT_PAREN_RE` (do not add markup here).
+    'tip.openDocNode': 'Click to open in a split on the right (hold {Mod} to open in a new tab)',
+    'tip.openFileNode': 'Click to open this file in a split on the right (hold {Mod} to open in a new tab)',
+    // Hover tip for a multi-managed document node (2026-10-09): yellow style + this wording.
+    // The parenthetical becomes the lighter nm-tip-h segment automatically.
+    'tip.multiRefDoc': 'This document is managed in more than one place; keeping it in one is recommended (right-click to manage)',
     'tip.icoClearNow': 'Clear Now Mark',
     'tip.icoClearMinor': 'Clear Minor Mark',
     'tip.icoClearAi': 'Clear the AI-Generated Mark',
@@ -995,6 +1272,10 @@ var I18N = {
     'tb.viewFilterRcHide': 'Hide Minor Nodes (Right-Click to Expand More Filters)', // 2026-09-30: right-click expand mode
     'tb.viewFilterRcShow': 'Show Minor Nodes (Right-Click to Expand More Filters)',
     'tb.aiEdit': 'AI Edit', // bottom-left AI button (the Hold-Mod hint was removed 2026-10-05)
+    'tb.doclib': 'Mind Map Document Library', // tooltip of the bottom-left documents button (back 2026-10-10, renamed)
+    'tb.joinGroupBtn': 'Join the group chat (hide this button in Settings)', // bottom-left group button (2026-10-10; the parenthetical renders gray)
+    'tb.guideBtn': 'Open the user guide (hide this button in Settings)', // bottom-left guide button (2026-10-10; the parenthetical renders gray)
+    'tb.sideClose': 'Collapse File List', // the big close button on the right edge of the fullscreen sidebar (2026-10-10)
     'aiBar.send': 'Send', // AI 输入条（2026-09-28）：关闭叉与加号不挂提示，只有发送挂
     'aiBar.placeholder': 'What do you want AI to do?',
     'aiBar.hintView': 'Edit Current View',
@@ -1080,6 +1361,13 @@ var I18N = {
     'more.addNodeLink': 'Linked Node',
     'more.addNodeLinkTip': 'Click to Add a Linked Node That Jumps to It (Paste Directly)',
     'more.addNodeLinkHint': 'Select the target node in the other mind map, right-click "Copy node link", then paste it here. Works across mind maps; you can also select a node and paste directly.',
+    // Child document (2026-10-09): sits right below "Linked Node" — creates a NEW document under the
+    // selected node (the file really lands in 28Notes-Files/docs/, the node points at it).
+    // The key segment comes from tipAct (shown only when the user has bound a hotkey).
+    'more.importRepoDoc': 'Import a Vault Document',
+    'more.importRepoDocTip': 'Click to import a document from the vault',
+    'more.addChildDoc': 'Child Document',
+    'more.addChildDocTip': 'Click to Add a Child Document',
     // Input placeholder presets (2026-09-20): these used to be hard-coded Chinese and leaked into the English UI
     'more.addFileLinkPh': '/Users/…/File.Pdf',
     'more.pickLocal': 'Choose from This Mac',
@@ -1149,6 +1437,12 @@ var I18N = {
     'toast.versionDeleted': 'Version Deleted',
     'toast.versionRenamed': 'Version Renamed',
     'toast.aiLocateCopied': 'Copied — Paste It into Your AI Agent',
+    'toast.docImported': 'Imported: {0}', // Import success ({0} = document name, 2026-10-08)
+    'toast.docMovedOut': 'Moved out: {0} (saved in {1})', // Move-out success ({0} = document name, {1} = destination folder, 2026-10-08)
+    'toast.doclibLinkCopied': 'Wikilink copied — paste it into a mind map', // "Copy Link" in the documents panel succeeded
+    'toast.docRefGone': 'That reference is gone (the mind map may have changed)', // Locating from the panel found no matching node
+    'toast.docDeleted': 'Deleted: {0}', // Stored document deleted successfully ({0} = document name)
+    'notice.docDeleteFail': 'Delete failed: ', // Deleting a stored document failed (error follows)
     'toast.nodeLinkCopied': 'Copied — Paste It on the Node to Link', // node link copied
 
     'warn.root': 'Line {0}: unrecognized (the first line should be the central topic `- Central topic`); kept as-is',
@@ -1186,7 +1480,59 @@ var I18N = {
     'more.kbdTab': 'Tab',
     'more.kbdEnter': 'Enter',
     'ctx.copyLink': 'Copy Node Link',
+    'ctx.manageDoc': 'Manage This Document', // Context menu item (multi-managed document nodes only, listed first, 2026-10-09)
+    'ctx.openDoc': 'Open this document', // Context menu (stored-document nodes only): open the stored document in a new tab (2026-10-08)
+    'ctx.moveOutDoc': 'Move Out of Mind Map', // Context menu (managed-file nodes only): move the file back to the vault root (2026-10-08; renamed 2026-10-09 to match the Chinese)
+    'ctx.deleteDoc': 'Delete This Document', // Context menu (stored-document nodes only): delete the document (confirm + rewrite the links, 2026-10-08)
+    'ctx.renameDoc': 'Rename This Document', // Context menu (same nodes): renames the **file** via Obsidian's rename API, so links update themselves (spec §4.7)
+    // Attachment nodes (image / video / audio) get only Open / Move out / Delete — renaming an attachment is pointless.
+    'ctx.openImage': 'Open This Image',
+    'ctx.openVideo': 'Open This Video',
+    'ctx.openAudio': 'Open This Audio',
+    'ctx.deleteImage': 'Delete This Image',
+    'ctx.deleteVideo': 'Delete This Video',
+    'ctx.deleteAudio': 'Delete This Audio',
     'ctx.bookmark': 'Save as Shortcut',
+    // ---- Export mind map (2026-10-10, user's call; the old per-document "Move out of vault" is merged in) ----
+    'ctx.exportMap': 'Export Mind Map',
+    'ctx.exportMapTip': 'Click to export this node tree as a mind map',
+    'export.untitled': 'Untitled',
+    // ⛔ RETIRED (2026-10-10): exporting the root now deletes the whole map instead of keeping + renaming it
+    'export.doneRootTitle': 'Exported',
+    'export.doneToast': 'Exported — the canvas has been updated',
+    'export.doneNotice': 'Exported "{0}" → {1}',
+    'export.snapName': 'Before export',
+    'notice.exportMapFail': 'Export failed: ',
+    'export.warnTitle': 'Confirm Before Exporting',
+    // NOTE: the dialog body uses setText (no markdown) — do not use **bold** markup here.
+    'export.warnBody': 'This node tree contains the following extra content, which will be cleared on export. Please confirm before continuing. (You can still review the cleared content in the mind map history afterwards.)',
+    'export.warnOk': 'Export Anyway',
+    // Exporting the ROOT node means the whole map goes out and the map file itself is deleted → different copy.
+    'export.warnRootBody': 'This node tree contains the following extra content, which will be cleared on export. Please confirm before continuing. (Once exported, the cleared content cannot be recovered or undone.)',
+    // The "export blocked" dialog is SEPARATE from the import one (2026-10-10): different titles, body and reasons.
+    'export.blockedTitle': 'Cannot Export',
+    'export.blockedBody': 'Export failed. Nothing was exported this time. Please fix the issues as suggested below and then export again:',
+    'export.warnNotes': '· {0} node(s) have notes — notes are discarded',
+    'export.warnMedia': '· {0} node(s) embed images / videos — these are NOT carried over, please handle them yourself',
+    'export.warnTodo': '· {0} node(s) have to-do marks — dropped',
+    'export.warnRules': '· {0} node(s) have AI editing rules — dropped',
+    'export.badEmpty': '"{0}" has an empty title',
+    'export.badEmptyFix': 'Please give it a title',
+    'export.badSpace': '"{0}" has extra spaces at the start or end of its title',
+    'export.badSpaceFix': 'Please remove them',
+    'export.badChar': '"{0}" contains "{1}"',
+    'export.badCharFix': 'That character cannot be used in a folder / file name — remove it or replace it with another character',
+    'export.badFs': '"{0}" contains characters not allowed in file names (\\ / : * ? " < > |)',
+    'export.badFsFix': 'Please remove them or use other characters',
+    'export.badLong': '"{0}" is too long (over {1} characters)',
+    'export.badLongFix': 'Please shorten it (folder / file names have a length limit)',
+    'export.badDeep': '"{0}" is nested too deeply (over {1} levels)',
+    'export.badDeepFix': 'Please flatten this subtree a bit before exporting',
+    'export.refDupInTree': '"{0}" appears more than once in this subtree',
+    'export.refDupInTreeFix': 'One file can only land in one place — please remove the duplicate node first',
+    'export.refUsedElsewhere': '"{0}" is still managed somewhere else',
+    'export.refUsedElsewhereFix': 'Exporting would move it away and break the other place — please unmanage it there first (right-click → Manage This Document)',
+    'export.missingDoc': 'File not found (may have been deleted or moved):',
     'ctx.bookmarkHint': "(Optional — defaults to the node's title)",
     'ctx.editLink': 'Edit Link',
     // AI locate text (2026-09-20): single line wrapped in 【】 (user wants to paste it as one block), {0} = path, {1} = node ID.
@@ -1236,7 +1582,7 @@ var I18N = {
     'hist.promptTitle': 'Name This Version',
     'hist.promptHint': '(Optional)',
     'hist.confirmRestore': 'Overwrite the current file with this version? ',
-    'hist.empty': 'No history yet.<br>A version is saved automatically as you edit (only when the content changed and at least 20s after the previous one). You can also use "Save this version" in the canvas "More" menu to save a named one.',
+    'hist.empty': 'No history yet.<br>A version is saved automatically as you edit (only when the content changed and at least 20s after the previous one). You can also use "Save this version" in the "More" menu at the top right to save a named one.',
     'hist.auto': 'Auto Save',
     'hist.justNow': 'Just Now · {0}',
     'hist.today': 'Today',
@@ -1253,11 +1599,145 @@ var I18N = {
     'hist.renameTitle': 'Rename This Version',
     'hist.renameHint': '(Empty = "Auto Save")',
     'hist.confirmDelete': 'Delete this version? It will be moved to the system trash.',
-    'hist.panelTitle': '28 Notes Mind Map History',
+    // ---- Documents panel "Manage Documents with Mind Maps" (2026-10-08) ----
+    'doclib.title': 'Mind Map Document Library', // Panel tab name / tooltip (renamed 2026-10-09)
+    // The three tabs became **icons** (2026-10-09): pin = documents managed by the current map,
+    // the panel's own icon = all documents imported into the database, "?" = how-to.
+    // Icons can't hold text, so the tab names moved below as **section titles** (secCur / secAll)
+    // and double as the icon buttons' tooltips.
+    'doclib.secCur': 'Documents Managed by the Current Mind Map', // Section title + tooltip of tab 1 (pin)
+    'doclib.secAll': 'All Documents Imported into the Mind Map Database', // Section title + tooltip of tab 2
+    'doclib.tabHelp': 'Guide', // Section title + tooltip of tab 3 (shortened 2026-10-09, mirrors 「管理教程」)
+    // Tab 4 (warning triangle, 2026-10-09): which maps manage the document of the CURRENTLY SELECTED node
+    'doclib.secManage': 'Problem Documents Managed in Multiple Places', // Name / tooltip of tab 4 (alert triangle)
+    'doclib.blkMaps': 'Mind Maps Managing This Document', // Unused since 2026-10-09 (that heading row was removed)
+    'doclib.clearFilter': 'Clear filter', // "Clear filter ✕" at the top of tab 4 (only when arrived via "Manage This Document")
+    'doclib.noMultiDoc': 'No document is managed in more than one place yet.', // Empty state of tab 4
+    'doclib.blkDoc': 'Document', // Unused since 2026-10-09 (tab 4 now lists foldable documents, no such heading)
+    'doclib.manageNoSel': 'Select a document node in a mind map first',
+    'doclib.manageNone': 'This document is not managed by any mind map right now', // Empty state (nothing / non-document selected)
+    'doclib.whyMultiRef': 'Why a document should not be managed in more than one place ↗', // Small link at the bottom of tab 4
+    'doclib.mgrOccurrence': 'Occurrence {0}', // Rows inside the fold when one map references it several times
+    // "Stop managing this occurrence" (the ✕ on each row of tab 4): drops just THIS reference, file untouched
+    'doclib.unmanageTitle': 'Stop managing this occurrence?',
+    'doclib.unmanageBody': 'This only affects this one node; the other nodes managing this document are untouched. This cannot be undone.',
+    'doclib.unmanageOk': 'Stop managing it',
+    'doclib.unmanagedPlaceholder': '"No longer managed: {0}"', // Plain text written into the map (persisted to disk)
+    'toast.docUnmanaged': 'Stopped managing one occurrence: {0}',
+    'notice.unmanageFail': 'Could not stop managing it: ',
+    // The three "view as" keys (viewMode / viewFlat / viewByMap) were removed 2026-10-09
+    // together with the "By document" view (the two view modes were merged into one).
+    // The right-most button in that row (two states, mirroring Obsidian's own Outline pane)
+    'doclib.collapseAll': 'Collapse all',
+    'doclib.expandAll': 'Expand all',
+    // Tab 2 "By document" has three collapsible groups (2026-10-09); the group name says it all,
+    // so rows inside no longer carry the "not managed by any mind map" sub-line.
+    'doclib.grpOrphan': 'Orphaned Files Not Managed Yet', // Group 1: no mind map references it (also the tree view's orphan group)
+    'doclib.grpMulti': 'Managed in More Than One Place', // Group 2: referenced by 2+ nodes
+    'doclib.grpSingle': 'Managed in One Place', // Group 3: referenced by exactly 1 node
+    'doclib.toggle': 'Expand / collapse',
+    // "Locate the node" (2026-10-09): in a row's "More" menu / the hover button in the tree's second level.
+    // Opens (or activates) that mind map and selects + centres the node referencing this file.
+    'doclib.locate': 'Locate the node',
+    'doclib.warnJump': 'This document is managed in more than one place; keeping it in one is recommended (click to manage)',
+    'doclib.locateN': 'Locate occurrence {0}', // One entry per reference when a map references it several times
+    // ⚠️ These two are UNUSED since 2026-10-09 (the "What Are Orphaned Documents?" button was removed —
+    //    the group name "Orphaned Files Not Managed Yet" says it all). Keys kept in case it comes back.
+    'doclib.helpToggle': 'What Are Orphaned Documents?',
+    'doclib.helpText': 'Orphaned documents are documents that were imported into the mind map database but are not managed by any mind map.',
+    'doclib.noMap': 'Open a mind map first.', // Empty state of tab 1 (the other tab still lists)
+    'doclib.empty': 'The current mind map does not manage any documents yet.',
+    'doclib.copyLink': 'Copy Link', // Button on the right of each row
+    'doclib.delete': 'Delete', // Item in each row's "More" menu (2026-10-08)
+    'doclib.confirmDeleteTitle': 'Delete this document?', // Confirmation dialog title (from the panel)
+    'doclib.confirmDeleteNodeTitle': 'Delete the document managed by this node?', // Confirmation dialog title (from a canvas node, 2026-10-08)
+    'doclib.confirmDeleteNodesTitle': 'Also delete the files managed by these nodes?', // Same, but for a MULTI-selection on the canvas (2026-10-09)
+    // Panel entry uses these two (2026-10-08: the panel keeps its original wording, without the "where to look" line)
+    'doclib.confirmDeleteRefs': 'This document is managed by {2} mind map(s). After deleting, it will be moved to the Obsidian trash.\nThis cannot be undone.', // {0}=document name {1}=reference count {2}=map count
+    'doclib.confirmDeleteOrphan': 'This document is not managed by any mind map. It will be moved to the Obsidian trash.\nThis cannot be undone.',
+    // Canvas-node entry uses these two (one extra line telling where to look)
+    'doclib.confirmDeleteNodeRefs': 'This document is managed by {2} mind map(s). You can view them via "More" at the top right of the view → "View managed documents".\nAfter deleting, it will be moved to the Obsidian trash. This cannot be undone.',
+    'doclib.confirmDeleteNodeOrphan': 'This document is not managed by any mind map.\nIt will be moved to the Obsidian trash. This cannot be undone.',
+    // Pressing Delete on a selected document node (2026-10-08): three ways out — cancel / node only / node + document
+    // This document is managed by **this node only** (the two variants were fixed 2026-10-08)
+    'docNode.askOnly': 'This node manages the document "{0}". Delete that document as well?',
+    // It is **also managed by other nodes** — one extra line telling where to look, plus the node count
+    'docNode.askShared': 'This node manages the document "{0}". It is also managed by {1} node(s) (see "More" at the top right of the view → "View managed documents"). Delete that document as well?', // {0}=document name {1}=node count
+    // A **multi-selection** containing managed files (2026-10-09): one single dialog, saying how many and how
+    // many of those references live elsewhere.
+    'docNode.askMulti': 'The nodes being deleted include {0} managed file(s), {1} of whose references are managed elsewhere (see "More" at the top right of the view → "View managed documents"). Delete those files as well?', // {0}=selected file count {1}=references elsewhere
+    // Multi-selection where **none** of them is managed anywhere else (2026-10-09 — "0 of whose references…" read badly)
+    'docNode.askMultiOnly': 'The nodes being deleted include {0} managed file(s). Delete those files as well?', // {0}=selected file count
+    'docNode.onlyNode': 'Delete node only', // Second button
+    'docNode.nodeAndDoc': 'Delete node and document', // Third button (destructive → mod-warning)
+    'docNode.nodesAndDocs': 'Delete nodes and files', // Same, but for a MULTI-selection (may mix documents and attachments, 2026-10-09)
+    // Plain text written into mind maps to replace the link when a document is deleted (persisted to disk).
+    // The surrounding quotes were requested 2026-10-08 so it reads as one chunk, distinct from the rest of the node.
+    // (When the node holds nothing but that link, the whole line is removed instead — no placeholder at all.)
+    'doclib.deletedPlaceholder': '"Deleted: {0}"',
+    'doclib.learnMore': 'Learn How to Manage Documents with Mind Maps ↗', // Line under the tabs: opens the online doc (2026-10-08)
+    'mm.doclib': 'View Managed Documents', // Item in the title-bar "More" menu (above History; the bottom-left button was removed)
+    // ---- The map created by "Import into mind map": file name + root node + help link (2026-10-08) ----
+    // ⚠️ The file name must not contain a half-width colon (Obsidian forbids `:` on every platform; create() throws)
+    // ⛔ RETIRED (2026-10-10 rework): the map is now named after the imported document / folder, and the
+    // root node IS that document / folder name — the "Imported →" + help-link lines were dropped.
+    // The keys stay (so old data / external references don't break) but must not be referenced in code.
+    'import.mapPrefix': 'Imported →', // ⛔ RETIRED (was the new map's file name)
+    'import.rootTitle': 'Imported — cut and paste it wherever you like →', // ⛔ RETIRED (was the root node text)
+    'import.helpLink': 'Learn how to manage documents with mind maps', // ⛔ RETIRED (was the help link under the root node)
+    // ---- "Rename the imported file" (2026-10-08, spec §4.7) ----
+    'doclib.renameTitle': 'Rename the Imported File',
+    'doclib.renameHint': 'Enter a new file name (no extension needed)',
+    // New child document (2026-10-09): the "Add → Child Document" row and the "Add Child Document"
+    // command both go through this input. The file really lands in 28Notes-Files/docs/, and the node
+    // is written as `[[28Notes-Files/docs/name]]` (with the path, to stay unambiguous).
+    'doclib.newChildDocTitle': 'Enter a Document Name',
+    'doclib.newChildDocPh': 'No special characters — e.g. \\ / : * ? " < > # ^',
+    // "Choose a Document to Import" dialog (2026-10-09): the two body lines are the user's own wording
+    'doclib.pickDocTitle': 'Choose a Document to Import',
+    'doclib.pickDocBody': 'Once imported, the document moves out of the file list and into mind map management. Use ··· (More) at the top right of the view to see managed documents.\n\nIf you only want to link it, close this window and use a wiki link instead.',
+    'doclib.pickDocPh': 'Enter a document name',
+    'notice.importRepoFail': 'Could not import the document: ',
+    'toast.childDocCreated': 'Child document created: {0}',
+    'notice.newChildDocFail': 'Could not create the child document: ',
+    'notice.docNameBad': 'That name cannot be used for a document (no \\ / : * ? " < > | or # | ^ [ ]): ',
+    'toast.docRenamed': 'Renamed: {0}',
+    'notice.renameTaken': 'That name is already taken: ',
+    'notice.renameFail': 'Rename failed: ',
+    'notice.renameBadName': 'A name cannot contain \\ / : * ? " < > | or # | ^ [ ]',
+    // ---- Folder import (2026-10-08, spec §4.3) ----
+    'toast.folderImported': 'Folder imported: {0}',
+    'toast.renamedNote': ' (duplicate names were renamed)',
+    'notice.importFolderFail': 'Folder import failed: ',
+    'notice.importFolderSkipped': '{0} file(s) have names that cannot be written as links (# | ^ [ ] etc.) — skipped and left in place',
+    // ---- "Import blocked" dialog (2026-10-10, user's call): if anything fails the check, nothing is moved
+    // at all — but say which file, where it is, why, and how to fix it. ----
+    'doclib.blockedTitle': 'Cannot Import',
+    // Opening line: {0} = number of blocked files; followed by a "path + reason + how to fix" list —
+    // **every entry is listed** (no truncation), a blank line between entries; a long list scrolls
+    // inside the dialog body (`max-height: 55vh; overflow-y: auto`).
+    'doclib.blockedBody': '{0} of the file names contain invalid characters, so the entire import was cancelled. Fix them as suggested below and try importing again:',
+    'doclib.blockedWhere': 'Folder: {0}',
+    'doclib.blockUnknown': '(no file specified)',
+    'doclib.blockEmptyName': 'The file name is empty',
+    'doclib.blockEmptyNameFix': 'Please give it a name',
+    'doclib.blockChar': 'This file name contains the character "{0}"',
+    'doclib.blockCharFix': 'That character has a special meaning in the Obsidian wiki-link syntax [[...]] and will cause a conflict. Remove it, or replace it with another character.',
+    // Leading/trailing spaces: the link text gets trimmed, so the link cannot find this file
+    // (reported by the user 2026-10-10 with `优化版 .md`).
+    'doclib.blockSpace': 'This file name has extra spaces at the start or end',
+    'doclib.blockSpaceFix': 'Spaces at the start or end of [[link]] text are ignored, so the link cannot find this file (clicking the node shows "Note Not Found"). Please remove them from the file name.',
+    // A file with no extension: Obsidian's link resolver **appends `.md`** before looking the file up,
+    // so such a file can never be linked (reported by the user 2026-10-10; confirmed by reading
+    // getLinkpathDest in obsidian.asar — this is a verified fact, not a guess).
+    'doclib.blockNoExt': 'This file has no extension',
+    'doclib.blockNoExtFix': 'Obsidian appends .md when resolving [[links]], so a file without an extension can never be opened. Give it an extension (for a plain-text note, .md will do).',
+    'hist.panelTitle': 'Mind Map History', // Panel tab name / tooltip / the small title on both history tabs (shortened 2026-10-10)
     'hist.rules': 'Save Rules',
     'hist.rulesText': 'Versions are kept frequently while editing; redundant ones are later auto-trimmed (down to 1-7 per week). Manually saved / renamed / locked versions are never auto-trimmed.',
     'hist.noMap': 'No Mind Map Is Open',
     'cmd.openHistory': 'Other | Open History Panel',
+    'cmd.openDoclib': 'Other | Open Documents Panel (28 Notes)', // Command: open the "Manage Documents with Mind Maps" panel (2026-10-08; hidden while the switch is off)
     'notice.panelFail': 'Failed to Open the Right Sidebar History Panel',
 
     'img.prev': 'Previous (Left Click / ←)',
