@@ -488,6 +488,7 @@ var I18N = {
     'more.customPanel': '自定义该面板', // 二级面板底部入口：点开 → 设置页「添加面板简化」
     'more.customPanelTip': '可选择隐藏部分操作按钮',
     'more.addNoteTip': '点击后，可添加备注', // 添加面板「备注」行的悬浮提示（2026-10-06 用户定；键位段由 tipAct='editNote' 自动接）
+    'more.moreAdd': '更多添加项', // ＋添加面板的二级入口行（2026-10-12 拆两级；悬浮 / 点击展开右侧二级面板；不挂黑字提示——悬浮直接出面板）
     'more.addImage': '图片',
     'more.addImageTip': '点击后，可添加图片（可直接粘贴）', // 用户指定文案
     'more.addVideo': '视频',
@@ -555,7 +556,7 @@ var I18N = {
     'pay.path': '在 Obsidian → 设置 → 第三方插件 → 28 Notes 里激活',
     'pay.alt3': '如遇激活问题，请发送邮件 / 联系开发者微信：{0} 解决',
     'pay.thanks': '=) 谢谢你的支持！',
-    'more.addUrlLink': '网页链接',
+    'more.addUrlLink': '网页',
     'more.addUrlLinkTip': '点击后，可添加网页链接（可直接粘贴）',
     'more.urlText': '显示文字',
     'more.urlAddr': '链接地址',
@@ -1404,13 +1405,14 @@ var I18N = {
     'more.customPanel': 'Customize Panel',
     'more.customPanelTip': 'Choose Which Buttons to Hide',
     'more.addNoteTip': 'Click to Add a Note', // note row in the Add panel (2026-10-06; the hotkey comes from tipAct)
+    'more.moreAdd': 'More Items',
     'more.addImage': 'Image',
     'more.addImageTip': 'Click to Add an Image (Paste Directly)',
     'more.addVideo': 'Video',
     'more.addVideoTip': 'Click to Add a Video',
     'more.addAudio': 'Audio',
     'more.addAudioTip': 'Click to Add an Audio',
-    'more.addVaultAttach': 'Obsidian Vault Attachment',
+    'more.addVaultAttach': 'Vault Attachment',
     'more.addVaultAttachTip': 'Click to Reference Images / Videos Already in Your Vault (Paste Directly)',
     'more.addVaultAttachHint': 'When you paste an image / video into a normal note, Obsidian saves the file into its default attachment folder. Paste its file name (e.g. xxx.png) or path here and the mind map will find and render it. (This only creates a reference — the file is not copied.)',
     'more.addFileLink': 'Local File Link',
@@ -1424,11 +1426,11 @@ var I18N = {
     // Child document (2026-10-09): sits right below "Linked Node" — creates a NEW document under the
     // selected node (the file really lands in 28Notes-Files/docs/, the node points at it).
     // The key segment comes from tipAct (shown only when the user has bound a hotkey).
-    'more.importRepoDoc': 'Move a Vault Document Here',
+    'more.importRepoDoc': 'Move Vault Document Here',
     'more.importRepoDocTip': 'Click to Move a Document in from the File List on the Left',
     // Move a vault folder in (2026-10-12): sits right below "Move a Vault Document Here"; the modal asks
     // for the folder's **absolute path** (Obsidian has no native folder picker).
-    'more.importRepoFolder': 'Move a Vault Folder Here',
+    'more.importRepoFolder': 'Move Vault Folder Here',
     'more.importRepoFolderTip': 'Click to Move a Folder in from the File List on the Left',
     'more.addChildDoc': 'Child Document',
     'more.addChildDocTip': 'Click to Add a Child Document',
@@ -1469,7 +1471,7 @@ var I18N = {
     'pay.path': 'Obsidian → Settings → Community Plugins → 28 Notes',
     'pay.alt3': 'Activation trouble? Email us, or reach the developer on WeChat: {0}',
     'pay.thanks': '=) Thank you for your support!',
-    'more.addUrlLink': 'Web Link',
+    'more.addUrlLink': 'Web Page',
     'more.addUrlLinkTip': 'Click to Add a Web Link (Paste Directly)',
     'more.urlText': 'Display Text',
     'more.urlAddr': 'URL',

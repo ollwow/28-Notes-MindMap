@@ -5247,16 +5247,19 @@ const NM_ADD_META = {
   //   2026-10-06 用户定：提示改成「点击后，可添加备注」+ 实时键位段（tipAct 自动接）——
   //   原来是直接把行文字「备注」当提示、后面硬接键位，跟其它行「点击后，可…」的写法不一致。
   note:        { icon: 'text-quote',            label: () => T('nm.note'),             tip: () => T('more.addNoteTip'),     tipAct: 'editNote' },
+  // 「更多添加项」（2026-10-12 拆两级）：一级末尾的**二级入口行**。sub: true → 悬浮即展开右侧二级面板
+  //   （#node-more-sub，2026-09-17 那套机制原样复用），点击也展开一次（触屏 / 键盘兜底）；
+  //   右侧小箭头 = .mm.has-sub::after，上方分隔线 = .mm-sep.mm-more-sep（--mm-more-sep 可整根收掉）。
+  //   ⚠️ 这一行**不挂黑色小字提示**：悬浮它就直接出二级面板了，提示纯属多余（还跟面板抢位置）。
+  moreAdd:    { icon: 'plus',                  label: () => T('more.moreAdd'), sub: true },
 };
-// 固定顺序（2026-09-21 用户亲自排定，2026-10-09 用户调过两处）：
-//   图片 / 视频 / 音频 / 网页链接 ｜ 附件 / 本地文件链接 ｜ 双链 / 子文档 / 导入仓库文档 ｜ 子节点 / 同级节点 / 关联节点 / 备注。
-// 2026-10-09 两处调整（用户定）：
-//   ① **关联节点** 挪到 **同级节点下面** —— 它本质也是"节点操作"，跟子节点/同级节点排一起；
-//   ② **导入仓库文档** 挪到 **子文档下面** —— 两条都是"挂一份文档上来"，挨着放。
-const NM_ADD_ORDER = ['image', 'video', 'audio', 'url', 'sep1',
-  'vault', 'file', 'sep2',
-  'wiki', 'childDoc', 'importDoc', 'importFolder', 'sep3',
-  'addChild', 'addSibling', 'node', 'note'];
+// 固定顺序（2026-10-12 用户在调教器「添加菜单」页排定的**拆级**）：
+//   moreAdd = 分界行 —— 它上面（含它自己）= 一级菜单，下面 = 「添加更多项」展开后的二级菜单。
+//   一级 = 图片 / 网页链接 / 备注 / 子文档 / 添加更多项；
+//   二级 = 视频 / 音频 ｜ 子节点 / 同级节点 / 关联节点 ｜ 仓库附件 / 本地文件链接 / 双链 ｜ 转入仓库文档 / 转入仓库文件夹。
+const NM_ADD_ORDER = ['image', 'url', 'note', 'childDoc', 'moreAdd',
+  'video', 'audio', 'sep1', 'addChild', 'addSibling', 'node', 'sep4',
+  'vault', 'file', 'wiki', 'sep3', 'importDoc', 'importFolder'];
 // 前端兜底顺序：宿主没下发时按这套渲染，与 main.js 的 ADD_PANEL_DEFAULT_ORDER 保持一致
 // （2026-09-20 起含底部一级按钮 btn* 与主操作分隔线 sep0 —— sep0 之前的是底部工具条按钮）
 // （前端兜底顺序常量已随「添加面板简化」设置机制一起删除：2026-09-21 起顺序写死在 NM_ADD_ORDER）
@@ -5274,13 +5277,20 @@ function nmCleanRows(rows) {
   while (out.length && nmIsSep(out[out.length - 1])) out.pop(); // 末行 → 去掉。
   return out;
 }
-// 面板内容（2026-09-21 用户定稿）：顺序固定 = NM_ADD_ORDER，不再有二级入口，也不再有用户显隐。
-// 仍返回 level1/level2/hasFunc/subUsable 四字段：下游（渲染 / 按钮显隐）不用跟着改。
+// 面板内容（2026-10-12 拆两级）：顺序固定 = NM_ADD_ORDER，moreAdd 把它切成一级 / 二级两段
+//   （一级末尾 = moreAdd 入口行；点 / 悬停它 → 右侧浮出二级面板）。仍返回 level1/level2/hasFunc/subUsable
+//   四字段：下游（渲染 / 按钮显隐）不用跟着改。
 // ⚠️ 2026-10-09 用户定：「子文档」= **新建一份文档并放进数据库** —— 与「转入」同一类**导入入口**，
 //   所以它跟总开关走：开关关掉时这一行整行不出现（其余各行不受影响）。
+// ⚠️ 二级一行都没有（全被门控滤掉）→ moreAdd 入口行也不出现，免得点开一个空面板。
 function nmAddSplit() {
-  const rows = nmCleanRows(NM_ADD_ORDER.filter(tk => (NM_ADD_META[tk] || nmIsSep(tk)) && nmAddRowUsable(tk)));
-  return { level1: rows, level2: [], hasFunc: rows.some(tk => !nmIsSep(tk)), subUsable: false };
+  const i = NM_ADD_ORDER.indexOf('moreAdd');
+  const usable = NM_ADD_ORDER.filter(tk => tk !== 'moreAdd' && (NM_ADD_META[tk] || nmIsSep(tk)) && nmAddRowUsable(tk));
+  const pos = tk => NM_ADD_ORDER.indexOf(tk);
+  const l2 = nmCleanRows(i < 0 ? [] : usable.filter(tk => pos(tk) > i));
+  const l1 = nmCleanRows(usable.filter(tk => i < 0 || pos(tk) < i));
+  if (!l2.length) return { level1: l1, level2: [], hasFunc: l1.some(tk => !nmIsSep(tk)), subUsable: false };
+  return { level1: l1.concat('moreAdd'), level2: l2, hasFunc: true, subUsable: true };
 }
 // 这一行当前能不能出现（跟总开关走的行在这里判；其余一律 true）
 // ⚠️ 2026-10-09 用户明确：开关关掉**只**隐藏这三行（子文档 / 转入仓库文档 / 转入仓库文件夹）—— 命令、快捷键、
@@ -5296,8 +5306,11 @@ function nmAddRowEl(tk) {
   const b = document.createElement('button');
   b.className = 'mm';
   b.dataset.act = tk;
-  nmApplyTip(b, meta.tip ? meta.tip() : '', meta.tipAct); // 悬浮时的黑色小字提示（键位段由 tipAct 自动接上）
+  // 悬浮的黑色小字提示（键位段由 tipAct 自动接上）：有文案才挂 ——
+  // 「更多添加项」那行没有 tip → 不设 data-tip，悬浮不会冒提示（它悬浮直接出二级面板）
+  if (meta.tip) nmApplyTip(b, meta.tip(), meta.tipAct);
   b.dataset.side = 'left';       // 提示弹到**左侧**：弹上方会盖住上面那几行（用户 2026-09-17）
+  if (meta.sub) b.classList.add('has-sub'); // 二级入口行：右侧挂一个小箭头（.mm.has-sub::after，2026-10-12）
   // 行 = 图标 + 文字（2026-09-21 二次定稿：右侧那列快捷键小字整列去掉，见 NM_ADD_META 的注）
   // 门控三行（子文档 / 转入仓库文档 / 转入仓库文件夹）的图标包一层 .mm-ic —— 照 AI 行（2026-10-07）的做法：
   //   Pro 门控锁定态悬浮时只换这一格、**不把文字标签一起抹掉**
@@ -5338,7 +5351,14 @@ function ensureMoreMenu() {
 function renderMoreMenu() {
   const m = ensureMoreMenu();
   clearEl(m);
-  nmAddSplit().level1.forEach(tk => { const el = nmAddRowEl(tk); if (el) m.appendChild(el); });
+  nmAddSplit().level1.forEach(tk => {
+    // 「添加更多项」上面那根分隔线（2026-10-12）：把它与上面那组隔开；上一行已是分隔线 / 它是首行时不再画。
+    //   css 旋钮 --mm-more-sep 设成 none 可整根收掉（试"要不要这根线"用的）。
+    if (tk === 'moreAdd' && m.lastElementChild && !m.lastElementChild.classList.contains('mm-sep')) {
+      const s = document.createElement('div'); s.className = 'mm-sep mm-more-sep'; m.appendChild(s);
+    }
+    const el = nmAddRowEl(tk); if (el) m.appendChild(el);
+  });
   moreMenuBuilt = true;
   return m;
 }
@@ -5353,14 +5373,20 @@ function ensureMoreSub() {
   document.body.appendChild(moreSubMenu);
   return moreSubMenu;
 }
-// 二级面板：「添加其他内容」（2026-09-17 建；2026-09-18 改由设置在「添加面板简化」页里的顺序驱动）。
-// 内容 = 当前排在二级入口下面的那些条目（含分隔线）。
+// 二级面板（2026-10-12 拆两级重新启用；2026-09-17 建、2026-09-21 曾随「添加面板简化」停用）。
+// 内容 = 排在 moreAdd 分界行下面的那些条目（含分隔线）。
 function renderMoreSub() {
   const s = ensureMoreSub();
   clearEl(s);
   nmAddSplit().level2.forEach(tk => { const el = nmAddRowEl(tk); if (el) s.appendChild(el); });
   moreSubBuilt = true;
   return s;
+}
+// 二级面板相对一级的额外右移量（2026-10-12）：css 旋钮 --mm-sub-offset-x（默认 0 = 原样贴着）。
+//   二级盖住一级时把值调大（如 12px）即可分开；只在「弹右侧」那一档生效，翻到左侧时不受影响。
+function nmSubOffsetX() {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mm-sub-offset-x'));
+  return isNaN(v) ? 0 : v;
 }
 function showMoreSub(row) {
   if (state.historyMode) return;
@@ -5369,7 +5395,7 @@ function showMoreSub(row) {
   s.classList.remove('hidden');
   const rr = row.getBoundingClientRect();
   const sw = s.offsetWidth, sh = s.offsetHeight;
-  let left = rr.right - 8;                                    // 贴一级面板右侧（左边叠 8px 做"过桥"，斜着划过去也不会掉）
+  let left = rr.right - 8 + nmSubOffsetX();                   // 贴一级面板右侧（左边叠 8px 做"过桥"，斜着划过去也不会掉）+ 旋钮右移量
   if (left + sw > window.innerWidth - 8) left = Math.max(8, rr.left - sw + 8); // 右边放不下 → 翻到左侧
   // 纵向：默认「与鼠标所在行顶边对齐」；NM_SUB_BOTTOM_ALIGN 打开时改成「与一级面板底边对齐」
   // （二级比一级高 → 整体上提，底边不再探到状态条下面；2026-09-18 用户反馈被状态条遮住）

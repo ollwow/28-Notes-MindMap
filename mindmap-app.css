@@ -495,6 +495,14 @@
   --ui-btn-anim: 160ms;                  /* 按钮状态变化（变亮 / 变暗 / 置灰）的过渡时长（0 = 瞬切） */
   --ui-bar-pad: 4.2px;                     /* 🎚 工具条「粗细」旋钮（用户 2026-09-11 要的可调项）：左下工具栏 / 底部节点工具条的内边距。
                                             调小 = 更瘦，调大 = 更胖（按钮大小不变，只变留白）。改完重载插件生效 */
+  --mm-more-sep: block;                    /* 🎚 「＋添加」面板里「更多添加项」上面那根分隔线（2026-10-12 拆两级）：
+                                            block = 画这根线；none = 整根收掉（要不要这根线还在试，改完重载生效） */
+  --mm-menu-min-w: 150px;                  /* 🎚 「＋添加」一级 / 二级菜单的**最小宽度**（2026-10-12）：
+                                            字少时菜单不再塌窄（低于这个宽也保持这么宽）；字多照样自然撑开。
+                                            一级（#node-more-menu）与二级（#node-more-sub）共用这一个值 */
+  --mm-sub-offset-x: 15px;                  /* 🎚 「＋添加」二级菜单相对一级的**额外右移量**（2026-10-12）：
+                                            0 = 原样贴着一级（默认）；二级盖住一级就调大（如 12px）把两块分开。
+                                            只在二级弹右侧时生效；空间不够翻到左侧那一档不受影响 */
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; color-scheme: light; } /* color-scheme（2026-09-20）：让浏览器画布/滚动条在首帧就用对应色调，
@@ -1058,8 +1066,9 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
   position: fixed; z-index: 87;  /* 高于 .node-menu(86)/#left-toolbar(85)/.toast-below(80)/.ctx-menu(60)；tooltip(90) 仍在最上层 */
   padding: var(--panel-pad, 6px); /* 与 #more-menu 一致；面板内条目的提示要用它算让位（见 --tip-inset 那组）*/
   display: flex; flex-direction: column; gap: 2px;
-  /* ⚠️ 宽度**不设 min-width**（2026-10-05 用户定）：让它跟随内容 ——
-     一行文字多宽，面板就多宽（左右各留一点内边距），不再是一个固定宽度把中文撑得空荡荡。 */
+  /* 最小宽度走旋钮（2026-10-12，取代 2026-10-05「完全不设 min-width」那条）：
+     只设**下限** —— 字少不塌窄（一个字也保持这么宽），字多照样自然撑开；嫌宽窄去 :root 调 --mm-menu-min-w。 */
+  min-width: var(--mm-menu-min-w, 180px);
   /* ⚠️ 这里**不能写 overflow / max-height**：条目提示是 .mm 的 ::after，会跑到面板外面去，
      一旦面板有 overflow 就被整块裁掉 —— 这正是"悬浮条目看不到黑色小提示"的根因（2026-09-17 修）。
      面板现在最多 9 行（约 310px），够短，不需要滚动。 */
@@ -1067,6 +1076,10 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 .node-more-menu.hidden { display: none; }
 /* 让条目提示以「被悬浮的那一条」为锚点向上弹（不加这句会以整个面板为锚点、弹到面板上方去） */
 .node-more-menu .mm { position: relative; }
+/* 「更多添加项」那一行（2026-10-12 拆两级）：右侧小箭头，示意这一行能展开二级面板 */
+.node-more-menu .mm.has-sub::after { content: '›'; margin-left: auto; font-size: 15px; line-height: 1; opacity: .5; }
+/* 「更多添加项」上面那根分隔线：要不要还在试 —— 不想看到就去 :root 把 --mm-more-sep 改成 none（改回 block 恢复），不用动 JS */
+.node-more-menu .mm-sep.mm-more-sep { display: var(--mm-more-sep, block); }
 /* 二级「添加其他内容」面板 / 底部「样式」面板：同一个外观，只是压在其它浮层之上（2026-09-17）
    z 跟随 #node-more-menu 一起上浮（2026-10-11：80/81 → 87/88，理由见 .node-menu 那条） */
 .node-more-sub, .node-style-menu { z-index: 88; }
