@@ -7,6 +7,11 @@
 // 宿主 → 前端走 iframe contentWindow.postMessage（下方 window message 监听不变）。
 const vscodeApi = (typeof window !== 'undefined' && window.__MM_HOST__) || { postMessage() {} };
 function wlog(t) { try { vscodeApi.postMessage({ type: 'log', text: String(t) }); } catch (_) {} }
+// 「分屏诊断」专用（2026-10-11 起，排查「左栏弹回去又弹回来」）：走单独的消息类型，
+//   让宿主把画布侧这几行也并进**同一条控制台时间轴**（都带 `[分屏诊断]` 前缀，筛一次就能全选粘出来）。
+//   ⚠️ 诊断日志**只许打控制台**，不许往 vault / 仓库里写文件（2026-10-12 用户定，规矩在 skill 日常纪律里）。
+//   宿主那边只在"本机开发仓库"落地，普通用户这条消息等于石沉大海。
+function dbgSplit(t) { try { vscodeApi.postMessage({ type: 'dbgSplit', text: String(t) }); } catch (_) {} }
 //（原 --img-missing-text 已于 2026-09-17 移除：缺失占位改用 <img> 的 alt 文本 —— 伪元素在替换元素上不渲染）
 function showError(msg) {
   const box = document.getElementById('error-box');
@@ -57,17 +62,25 @@ function toast(msg, isWarn, action) {
 }
 // 把「当前选中节点管理的那份文档」报给宿主（2026-10-09）：面板第 4 个分页（管理此文档的思维导图）要用。
 //   变化才发（选中在画布里动得很频繁，别每次都发一条消息）。
-let _lastSelDoc = '';
+// 🔴 2026-10-12 扩：除了「选中节点管理的那份文档」，再把**选中节点本身**（id + 标题）一起报上去 ——
+//   宿主用它判「转入 → 挂到当前导图的选中节点」能不能用（没选中就弹窗，别硬来）。
+//   挂载点没变：refreshSelectionClasses（所有改选中的路都会经过）与 render 末尾各调一次。
+let _lastSelDoc = '', _lastSelId = null;
 function notifySelDoc() {
-  let p = '';
+  let p = '', id = null, title = '';
   try {
     const r = state.selectedId ? findNode(state.tree, state.selectedId) : null;
     const mg = (r && r.node) ? nmManagedOf(r.node) : null;
     p = mg ? (docLinkPathOf(mg.note) || '') : '';
-  } catch (_) { p = ''; }
-  if (p === _lastSelDoc) return;
-  _lastSelDoc = p;
-  try { vscode.postMessage({ type: 'selDoc', path: p }); } catch (_) {}
+    if (r && r.node) {
+      id = r.node.id;
+      // 标题只作**提示文案**用（弹窗/通知里显示"挂到哪个节点下"）→ 压成一行、截断，别把多行/超长标题带过去
+      title = String(r.node.title || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    }
+  } catch (_) { p = ''; id = null; title = ''; }
+  if (p === _lastSelDoc && id === _lastSelId) return;
+  _lastSelDoc = p; _lastSelId = id;
+  try { vscode.postMessage({ type: 'selDoc', path: p, selId: id || '', selTitle: title }); } catch (_) {}
 }
 // 🔴 「被多处管理」的节点被选中 → 底部那条**常驻黄色警告 toast**：**2026-10-09 已整体删除**
 //   （用户原话：「我们底部那个 toast 不要了，就现在这个鼠标悬浮这个非常好用，就用这个」）。
@@ -621,6 +634,9 @@ const ICONS = {
   'file': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
   'folder-closed': '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/>',
   'file-input': '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/>',
+  // lucide:folder-input（2026-10-12）：「转入仓库文件夹」那行的图标 —— 上面那只 file-input 的**文件夹版**
+  //   （同款"一条横线 + 右箭头"）。与「转入仓库文档」上下挨着，一眼看出是同一族、一个管文件一个管文件夹。
+  'folder-input': '<path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/><path d="M2 13h10"/><path d="m9 16 3-3-3-3"/>',
   // lucide:brackets（2026-08-30 定：Obsidian 双链 [[ ]] 图标，替换原 file-input）
   'brackets': '<path d="M16 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-3"/><path d="M8 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/>',
   // lucide:file-text（2026-10-08）：「已放入思维导图数据库的文档」节点的图标。与 brackets 分开，一眼看出这个链接指向的是
@@ -1701,8 +1717,8 @@ function goTo(id, opts = {}) {
   // 2026-08-30：改同步执行。原来放 requestAnimationFrame 里 → render 后先显示旧视口位置、
   // 下一帧才跳到定位后的位置 = 用户看到的"下钻后画面跳一下"（与开屏那个 bug 同源）。
   // 同步执行：渲染与定位在同一帧完成，视觉上无中间态。render() 后 DOM 已更新，同步读布局是准确的。
-  // 下钻/返回后主节点（新根）放到 --locate-selected-x（定位选中节点 X，用户自定义的关注位）：
-  // goTo 会清 selectedId → 走 locateCenter 的无选中分支会把根放 --locate-first-x（默认 0.25），
+  // 下钻/返回后主节点（新根）放到中央（--locate-x）：
+  // goTo 会清 selectedId → 走 locateCenter 的无选中分支，同样把根放到中央（--locate-x），
   // 主节点偏左（2026-09-13 反馈）。这里显式按「主节点 = 当前关注」定位。
   const rootCard = document.querySelector('.node-row[data-id="' + currentRoot().id + '"] .card');
   // 2026-10-06：这条路径以前来过 → 回到上次离开时的位置（治「下钻一圈回来视图飘」）。
@@ -1721,7 +1737,7 @@ function goTo(id, opts = {}) {
     panX = kept.x * vr.width / zoom - c.x;
     panY = kept.y * vr.height / zoom - c.y;
     applyTreeTransform(); drawEdges();
-  } else if (rootCard) placeCardAtViewport(rootCard, cfgNum('--locate-selected-x', 0.5));
+  } else if (rootCard) placeCardAtViewport(rootCard, cfgNum('--locate-x', 0.5));
   else locateCenter(); // 极端兜底：根卡片不在（空树/时序）→ 走通用智能定位
   persistNow();
 }
@@ -3204,9 +3220,18 @@ function layoutSettled(cb) {
 }
 // 整树居中（兜底定位：无卡片可定位时用）。单坐标系下画布无限，居中 = 解 pan 使树中心落在视口中心：
 // screen = zoom*(world+pan) → pan = viewport/(2*zoom) - treeSize/2
+// #tree 自带**不对称**的上下 padding（40px / 120px，见 mindmap-app.css #tree，留给拖拽命中区用）——
+// 所以 treeEl.offsetHeight 是"盒高"不是"视觉内容高"，拿盒中心当内容中心会整体偏 (120-40)/2 = 40px
+// （2026-10-11 用户实报"开屏取景视觉偏上、量起来像 40%"的真凶）。要视觉居中一律走这里。
+function treeContentBox() {
+  const cs = getComputedStyle(treeEl);
+  const top = parseFloat(cs.paddingTop) || 0, bottom = parseFloat(cs.paddingBottom) || 0;
+  return { top: top, h: Math.max(treeEl.offsetHeight - top - bottom, 0) };
+}
 function centerView() {
-  panX = viewMap.clientWidth / (2 * (zoom || 1)) - treeEl.offsetWidth / 2;
-  panY = viewMap.clientHeight / (2 * (zoom || 1)) - treeEl.offsetHeight / 2;
+  const pad = treeContentBox();
+  panX = viewMap.clientWidth / (2 * (zoom || 1)) - treeEl.offsetWidth / 2;   // 左右无 padding，盒宽=内容宽
+  panY = viewMap.clientHeight / (2 * (zoom || 1)) - (pad.top + pad.h / 2);  // 内容中心 = pad.top + 内容高一半
   applyTreeTransform();
 }
 // 开屏观察期（2026-09-13 简化）：单坐标系下图片/字体晚到的 reflow 不会移动相机（无 flex 居中、无滚动裁剪），
@@ -3231,25 +3256,28 @@ function cfgBool(name, def) {
   if (v === '') return def;
   return v === '1' || v === 'true';
 }
-// 「画布中央」定位基准（2026-09-16 设置项「更多 → 画布中央」，下拉二选一）：
-//  · canvas 画布中央（默认）= 落点读 app.css :root 的 --center-canvas-x/y；
-//  · visual 视觉中央         = 落点读 app.css :root 的 --center-visual-x/y。
-// 两档的落点都在 app.css :root 里、挨着放，各自可自由调（互不影响）；选中哪档就把该档 x/y 覆写进下面三个变量。
-// 好处：所有定位入口（定位按钮 / 下钻·返回 / 重置 / 开屏归位 / 定位子菜单预览）都只读这三个变量 → 改一处即全局生效，无需逐个改代码。
-function applyCenterMode(mode) {
-  const m = (mode === 'visual') ? 'visual' : 'canvas';
-  const r = document.documentElement;
-  const x = cfgNum('--center-' + m + '-x', 0.4);
-  const y = cfgNum('--center-' + m + '-y', 0.4);
-  r.style.setProperty('--locate-selected-x', String(x));
-  r.style.setProperty('--locate-first-x', String(x));
-  r.style.setProperty('--locate-y', String(y));
+// 「窗口正中」校正（2026-10-11 用户实报："点定位后视觉上偏下面，要按整个窗口居中"）：
+//   画布（iframe）头顶还垫着标签栏 + 路径条（约 60px），"画布的 50%" 天然比"窗口的 50%"低半个头高 ——
+//   旧默认 40% 正好把这段补回来（这就是当年定 40% 的原因），全线改 50% 后就露馅了。
+//   做法：纵向落点一律按**整个窗口**解读 —— 把「窗口高 × ratio」换算回画布坐标里的比例再参与定位。
+//   同源可读 frameElement 拿画布在窗口里的位置；拿不到（非 iframe / 跨域）原样返回。
+//   横向不校正：画布左边贴着侧边栏，横向的"窗口中央"会把节点推得离侧边栏太近（用户没提横同理）。
+//   全屏时画布 top≈0，换算前后相等 → 无感。
+function winAlignY(ratio) {
+  try {
+    const fe = window.frameElement;
+    if (!fe) return ratio;
+    const r = fe.getBoundingClientRect();
+    const winH = fe.ownerDocument.defaultView.innerHeight;
+    if (!winH || r.height <= 0) return ratio;
+    return (winH * ratio - r.top) / r.height;
+  } catch (_) { return ratio; }
 }
 // 智能定位（定位按钮 / 下钻·返回后自动调用）：
-// - 选中节点或编辑中 → 该节点居中（水平=--locate-selected-x）
-// - 未选中 → 第一层级=最前面那个节点=当前根（currentRoot）居中（水平=--locate-first-x）
-// 垂直位置统一=--locate-y；是否重置缩放=--locate-reset-zoom（2026-09-13 单坐标系后 --locate-reset-pan 废弃）
-// 旋钮集中在 app.css :root 的「定位调参」区，改完重载插件生效
+// - 选中节点或编辑中 → 该节点到中央（水平=--locate-x）
+// - 未选中 → 第一层级=最前面那个节点=当前根（currentRoot）到中央（同一个 --locate-x）
+// 垂直位置统一=--locate-y（经 winAlignY 按「整个窗口」换算）；是否重置缩放=--locate-reset-zoom
+// 旋钮集中在 app.css :root 的「定位调参 · 中央」区，改完重载插件生效
 // 定位共用：算出目标 pan/zoom → animateScrollTo 从当前值按缓动曲线插值过去（rAF 循环）。
 // 缓动曲线用三次贝塞尔近似（视频软件那种"先缓后快再缓"=easeInOut），控制点走 CSS 变量可调。
 let scrollAnimRAF = null;
@@ -3323,11 +3351,101 @@ function placeCardAtViewport(el, xRatio, onDone) {
   const z2 = cfgBool('--locate-reset-zoom', true) ? 1 : zoom;
   const vr = viewMap.getBoundingClientRect();
   const c = worldCenter(el);
-  animateScrollTo(vr.width * xRatio / z2 - c.x, vr.height * cfgNum('--locate-y', 0.5) / z2 - c.y, z2, onDone);
+  animateScrollTo(vr.width * xRatio / z2 - c.x, vr.height * winAlignY(cfgNum('--locate-y', 0.5)) / z2 - c.y, z2, onDone);
 }
-function locateCenter() { // 定位按钮（2026-09-18 用户定改写）：**编辑中/已选中 → 该节点定位自定义位；未选中 → 主节点定位同一位**（替代原「选中节点定位」「主节点定位」两条命令；zoom 回 100% 是 placeCardAtViewport 的默认行为，旋钮 --locate-reset-zoom）
+// 等画布（iframe 视口）宽度**连续 2 帧不变**后回调（最多等 30 帧兜底）—— 2026-10-11 加。
+//   分屏「压窄 / 恢复」后要等布局定稿再动画面：宿主 await openFile / layout-change 的到达时刻
+//   都不确定（和磁盘快慢、Obsidian 重排时序有关），固定延时会测到中间态。
+function waitViewWidthStable(cb) {
+  let frames = 0, lastW = -1, stable = 0;
+  const tick = () => {
+    frames++;
+    const w = viewMap.clientWidth;
+    if (w === lastW) stable++; else { stable = 0; lastW = w; }
+    if (stable >= 2 || frames >= 30) { cb(); return; }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+// 相机**一步到位**（不走缓动）：给「点文档节点 → 分屏」用（2026-10-11 用户定）——
+//   布局刚变就该在正确位置，而不是"先错着、再滑过去"。
+//   stopViewAnim 先掐掉可能在跑的位移动画，否则它会继续写 pan/zoom 把这次落位带跑。
+function setScrollInstant(x, y, z) {
+  stopViewAnim();
+  panX = x; panY = y; zoom = z;
+  applyTreeTransform(); drawEdges();
+}
+// 把卡片中心**只沿 X 轴**放到视口 xRatio 处（Y 轴与缩放一律不动）—— 2026-10-11 加，给「分屏滑节点」用。
+//   为什么不走 placeCardAtViewport：那个会连 Y 一起动、还会按 --locate-reset-zoom 重置缩放；
+//   分屏场景用户明确要"**只动 X、Y 不动**"（纵向上下文不跳），X 落点也不用「中央」那组坐标，
+//   而是**左侧这半屏的正中**（旋钮 --locate-split-x，默认 0.5）。
+//   instant=true → 一步到位；wOverride>0 → 直接用宿主给的最终视口宽度（不必等宽度稳定）。
+function slideCardToX(el, xRatio, instant, wOverride) {
+  const w = (wOverride > 0) ? wOverride : viewMap.getBoundingClientRect().width;
+  const c = worldCenter(el);
+  const tx = w * xRatio / zoom - c.x;
+  if (instant) setScrollInstant(tx, panY, zoom);
+  else animateScrollTo(tx, panY, zoom, null);
+}
+// 点击文档节点、右侧分屏**新建**完成后（宿主回推 docSplitOpened）：
+//   把被点的节点摆到左半屏正中。
+//   🔴 2026-10-11 用户定：宿主会把**分屏后的视口宽度 wSplit** 一起发来 → **下一帧一步到位**摆好，
+//      不再 waitViewWidthStable + 缓动（用户看不到"先错位、再滑回来"）。
+//      ⚠️ 落点以**画布自己量到的** `viewMap` 宽度收敛（第一帧先用 wSplit 估、随后几帧校正）：
+//        宿主量的是 iframe 外框，画布量的是自己的视口 —— 两把尺子可能差一截，只用宿主的会**偏右**
+//        （2026-10-11 用户实报）。宽度还在变的帧就跟着重落，量很小、看不出跳动。
+//   找不到节点（被折叠 / 已被删）→ 记一行日志后放弃（不硬滑、不报错）。
+function locateAfterDocSplit(nodeId, wSplit) {
+  if (!nodeId) return;
+  dbgSplit('⑪ 收到落点回推 nodeId=' + nodeId + ' wSplit=' + wSplit);
+  const findEl = () => document.querySelector('.node-row[data-id="' + nodeId + '"] .card');
+  const skip = () => { dbgSplit('⑪ 落点被跳过：找不到节点 ' + nodeId); try { vscode.postMessage({ type: 'log', text: '分屏后定位被跳过：没找到节点 ' + nodeId }); } catch (_) {} };
+  const place = (w, instant) => { const el = findEl(); if (!el) return false; slideCardToX(el, cfgNum('--locate-split-x', 0.5), instant, w); return true; };
+  if (!(wSplit > 0)) {           // 老宿主 / 结构异常 → 老路：等宽度稳定 + 缓动
+    dbgSplit('⑪ 宿主没给宽度 → 退回"等宽度稳定 + 缓动"');
+    waitViewWidthStable(() => { if (!place(0, false)) skip(); });
+    return;
+  }
+  let last = -1, n = 0;
+  const tick = () => {
+    const w = viewMap.getBoundingClientRect().width || 0;
+    n++;
+    if (n === 1) {               // 第一帧：先按宿主给的宽度落位（它是在宿主那次布局之后量的，比此刻自己量的可靠）
+      dbgSplit('⑪ 第1帧落位：用宿主宽 ' + wSplit + '，画布自己量到 ' + Math.round(w));
+      if (!place(wSplit, true)) { skip(); return; }
+    } else if (w > 0 && Math.abs(w - last) > 0.5) {
+      dbgSplit('⑪ 第' + n + '帧宽度还在变 → 跟着重落：' + Math.round(last) + '→' + Math.round(w));
+      place(w, true);            // 布局还在落定 → 跟着重落（这一步的位移很小）
+    }
+    last = w;
+    if (n < 8) { try { requestAnimationFrame(tick); } catch (_) {} }
+    else dbgSplit('⑪ 落位收工：共 ' + n + ' 帧，末帧宽 ' + Math.round(w));
+  };
+  // 等一帧再动：让新布局先落定（这一帧里浏览器只会画一次 = 用户看不到中间态）
+  try { requestAnimationFrame(tick); } catch (_) { tick(); }
+}
+// 点「关闭分屏」图标后（宿主回推 docSplitsClosed）：画布恢复全宽 → 把画面**向右平移**，
+//   平移量 =（恢复的宽度 − 原画布宽度）× --close-split-slide（默认 0.5 = 让原本居中在左屏的内容，
+//   在新全宽里重新居中；1 = 挪"文档区那么宽"一整段；0 = 不移动）**+ extra**。只动 X，Y 与缩放不动。
+//   extra（2026-10-11）：关分屏顺带把左侧边栏放回来时，宿主给的补偿量。
+//   wFinal（2026-10-11）：宿主算好的**最终**视口宽度（侧边栏也算进去）→ 有它就**立刻开滑**。
+//     🔴 为什么要立刻：侧边栏一回来就从左边占掉一截，而锚定让画面在屏幕上不动 →
+//        画面在那一瞬其实被挤到侧边栏**底下**了（看不见 = 用户说的"白屏一下"），
+//        等锚定收工（≈320ms）再滑回来就是"然后再出现"。立刻开滑 = 画面在侧边栏盖过来之前就离开那块区域。
+function slideAfterSplitClose(wBefore, extra, wFinal) {
+  dbgSplit('⑫ 收到关分屏回推 wBefore=' + wBefore + ' extra=' + extra + ' wFinal=' + wFinal);
+  if (!(wBefore > 0)) { dbgSplit('⑫ 关分屏这一滑跳过：wBefore 无效'); return; }
+  const run = () => {
+    const w = (wFinal > 0) ? wFinal : viewMap.clientWidth;
+    const dx = (w - wBefore) * cfgNum('--close-split-slide', 0.5) + (+extra || 0);
+    dbgSplit('⑫ 开滑：用宽 ' + w + '（' + (wFinal > 0 ? '宿主给的最终宽' : '画布自己量的') + '），右移 ' + Math.round(dx) + 'px');
+    if (dx > 0.5) animateScrollTo(panX + dx / zoom, panY, zoom, null);
+  };
+  if (wFinal > 0) run(); else waitViewWidthStable(run);
+}
+function locateCenter() { // 定位按钮（2026-09-18 用户定改写）：**编辑中/已选中 → 该节点定位到中央；未选中 → 主节点定位到中央**（替代原「选中节点定位」「主节点定位」两条命令；zoom 回 100% 是 placeCardAtViewport 的默认行为，旋钮 --locate-reset-zoom）
   // 原「没选中 → 循环定位 Now」不再走这里（定位子菜单里的 Now 列表定位 locateToItem 不受影响）
-  const selX = cfgNum('--locate-selected-x', 0.5);
+  const selX = cfgNum('--locate-x', 0.5);
   const activeId = state.selectedId || state.editingTitleId || state.editingNoteId || state.editingAiRulesId || null;
   const el = activeId && document.querySelector('.node-row[data-id="' + activeId + '"] .card');
   if (el) { placeCardAtViewport(el, selX); return; }
@@ -3335,6 +3453,25 @@ function locateCenter() { // 定位按钮（2026-09-18 用户定改写）：**�
   const rootEl = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
   if (rootEl) { placeCardAtViewport(rootEl, selX); return; }
   centerView(); drawEdges(); // 兜底：当前根无卡片 → 整画布居中
+}
+// 「打开导图」的首次取景（2026-10-11 用户定）：按**整张内容**取景，不再按"主节点"对位 ——
+//   横向：内容中央对 --locate-x（= 唯一的「中央」，与定位按钮同源；内容越宽、画面越往左推）；
+//   左推极限：内容左端（母节点）距视口左缘留 --locate-left-gap（母节点永远可见，到这就停）；
+//   纵向：内容垂直中心对 --locate-y（经 winAlignY 按整个窗口换算）。缩放按 --locate-reset-zoom（与其它定位同款）。
+//   ⚠️ 只给「打开导图、且没有视角记忆」的开屏取景用（init 里那一处调用）；
+//     定位按钮 / 下钻返回 / 定位预览等「指向某节点」的场景**不换**（2026-10-11 用户明确：
+//     定位按钮同样到中央——2026-10-11 大统一后两者本就是一个落点）。
+//   ⚠️ 「内容」= #tree 整体（与 centerView 同一来源：treeEl 的布局尺寸就是整棵树的尺寸）。
+function placeContentAtCenter() {
+  const z2 = cfgBool('--locate-reset-zoom', true) ? 1 : zoom;
+  const w = treeEl.offsetWidth;
+  const pad = treeContentBox();          // 视觉内容高（扣掉 #tree 不对称上下 padding，别拿盒高当内容高）
+  const x = cfgNum('--locate-x', 0.5);
+  const y = winAlignY(cfgNum('--locate-y', 0.5));
+  let px = viewMap.clientWidth * x / z2 - w / 2;
+  px = Math.max(px, cfgNum('--locate-left-gap', 48) / z2); // 左推极限：内容左端（母节点）不许比 gap 更贴左缘
+  const py = viewMap.clientHeight * y / z2 - (pad.top + pad.h / 2);
+  animateScrollTo(px, py, z2, null);
 }
 function resetView() {
   render();
@@ -3452,7 +3589,7 @@ function inViewportRect(b) {
 function applyPendingKeepView() {
   if (!pendingKeepView) return;
   const p = pendingKeepView; pendingKeepView = null;
-  // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」的规矩沿用：
+  // 2026-09-01 修「切走再回 pan 被清零、永远回中央」的规矩沿用：
   // init 期间的视图位置由 init 自己的还原/定位分支全权负责，锚定补偿只服务正常使用期（booted 门闩）。
   if (!booted) return;
   let use = null, a = null;
@@ -3798,8 +3935,27 @@ viewMap.addEventListener('mousedown', (e) => {
           }
         }
       } else {
-        // B. 换节点：选中被点的那个（selectNode 不 render，直接作用在重建后的 DOM 上）
-        selectNode(id);
+        // B. 换节点（🔴 2026-10-12 用户定：**一次按下同时"选中 + 进编辑"**）：
+        //    原来只 selectNode（选中），用户还得再点一下才进编辑 —— 在 A 里打字时看到 B 要改，
+        //    就得"选中 B → 再点一下"两步。现在按"点哪儿编哪儿"一次到位：落点 = `.title` / `.note` /
+        //    AI 规则块，各自进对应的编辑会话，光标插在点击处（startEdit* 的 pos 参数）；
+        //    落在卡片留白（既不是标题也不是备注/AI 规则）→ 也按**正文**处理（用户说的是"点到另一个节点的某个位置"）。
+        //    ⚠️ 只在**编辑态**才这么做（这一段整个在前面的 `if (state.editingEl …)` 里）：平时点未选中的
+        //      节点仍是老规矩「第一下选中、第二下进编辑」—— 那是 2026-10-01 定的，别顺手改掉。
+        //    收尾保存已经在上面做过（blur + activeEditFinish），这里直接按 id 取重建后的新元素。
+        selectNode(id); // selectNode 不 render，直接作用在重建后的 DOM 上
+        const r = findNode(state.tree, id);
+        const freshCard = document.querySelector('.node-row[data-id="' + id + '"] > .card');
+        if (r && freshCard) {
+          const target = wantNote ? freshCard.querySelector('.note > div')
+            : wantAiRules ? freshCard.querySelector('.ai-rules > div')
+            : freshCard.querySelector('.title');
+          if (target) {
+            if (wantNote) startEditNote(r.node, target, { x: e.clientX, y: e.clientY });
+            else if (wantAiRules) startEditAiRules(r.node, target, { x: e.clientX, y: e.clientY });
+            else startEdit(r.node, target, { x: e.clientX, y: e.clientY });
+          }
+        }
       }
       // ⚠️ 必须 preventDefault（2026-10-01 实踩）：mousedown 的**默认动作**（按浏览器规矩改焦点）在事件
       //   处理完之后才执行 —— 那时刚 startEdit/startEditNote 进新编辑、焦点刚落进去，紧接着就被默认动作
@@ -3912,6 +4068,7 @@ viewMap.addEventListener('mousedown', (e) => {
 });
 function updateToolbar() {
   updateDefaultPathBtn();
+  updateLocateNowBadge(); // 定位按钮右下角的「当前关注」数量角标（2026-10-11 用户定）
   // 沙盒（2026-09-14 用户定）：历史界面里把「更多」按钮整个藏掉 —— 一次砍掉新增/删除/剪切/粘贴/
   // 撤销重做/保存版本/设置/提报 bug 这一整批"会改内容"的入口，比逐条加守卫省事也更不容易漏。
   const mw = document.getElementById('more-wrap');
@@ -4437,7 +4594,7 @@ function ensureCardVisible(card) {
   if (dx) { panX -= dx / (zoom || 1); applyTreeTransform(); drawEdges(); }
 }
 // 新建节点落点防遮挡（2026-09-18 用户定）：新建/编辑的卡与底部固定工具条（#node-menu，fixed bottom:32px）
-// 重叠时，**只做垂直**平移，把卡片中心挪到自定义 Y（--locate-y）—— 左右不动（用户明确不要横向位移）。
+// 重叠时，**只做垂直**平移，把卡片中心挪到中央 Y（--locate-y）—— 左右不动（用户明确不要横向位移）。
 // 复用出画拉回同款坐标换算（屏幕差 ÷ zoom）。
 function ensureNewCardAboveToolbar(id) {
   const card = document.querySelector('.node-row[data-id="' + id + '"] .card');
@@ -5077,6 +5234,10 @@ const NM_ADD_META = {
   // 导入仓库文档（2026-10-09 用户定）：排在「子文档」**上面**。点了弹窗从 vault 里挑一份**已有**文档，
   //   挑完把它搬进数据区 docs/、挂成选中节点的子节点。图标与「转入思维导图」同一只（语义一致）。
   importDoc:   { icon: 'file-input',            label: () => T('more.importRepoDoc'), tip: () => T('more.importRepoDocTip') },
+  // 转入仓库文件夹（2026-10-12 用户定）：**排在「转入仓库文档」下面** —— 两条是同一族（都从 vault 里搬东西进来），
+  //   只是这条搬的是**整个文件夹树**。点了弹窗粘**文件夹绝对路径**（Obsidian 没有原生的文件夹选择器）。
+  //   ⚠️ 它**不挂到选中节点**（转入文件夹 = 照树建一张**新导图**），所以不需要选中节点。
+  importFolder:{ icon: 'folder-input',          label: () => T('more.importRepoFolder'), tip: () => T('more.importRepoFolderTip') },
   // 子文档（2026-10-09 用户定）：排在「关联节点」下面。图标 = 文档节点渲染时那只文档图标。
   //   点了会先在数据区 docs/ 里**新建一份空文档**，再把它挂成选中节点的子节点（并选中 + 摆到中央）。
   childDoc:    { icon: 'file-text',             label: () => T('more.addChildDoc'),    tip: () => T('more.addChildDocTip'), tipAct: 'addChildDoc' },
@@ -5094,7 +5255,7 @@ const NM_ADD_META = {
 //   ② **导入仓库文档** 挪到 **子文档下面** —— 两条都是"挂一份文档上来"，挨着放。
 const NM_ADD_ORDER = ['image', 'video', 'audio', 'url', 'sep1',
   'vault', 'file', 'sep2',
-  'wiki', 'childDoc', 'importDoc', 'sep3',
+  'wiki', 'childDoc', 'importDoc', 'importFolder', 'sep3',
   'addChild', 'addSibling', 'node', 'note'];
 // 前端兜底顺序：宿主没下发时按这套渲染，与 main.js 的 ADD_PANEL_DEFAULT_ORDER 保持一致
 // （2026-09-20 起含底部一级按钮 btn* 与主操作分隔线 sep0 —— sep0 之前的是底部工具条按钮）
@@ -5122,9 +5283,9 @@ function nmAddSplit() {
   return { level1: rows, level2: [], hasFunc: rows.some(tk => !nmIsSep(tk)), subUsable: false };
 }
 // 这一行当前能不能出现（跟总开关走的行在这里判；其余一律 true）
-// ⚠️ 2026-10-09 用户明确：开关关掉**只**隐藏这两行（子文档 / 导入仓库文档）—— 命令、快捷键、
-//   画布节点右键、文档面板一概不隐藏。
-function nmAddRowUsable(tk) { return (tk !== 'childDoc' && tk !== 'importDoc') || docsLibraryOn; }
+// ⚠️ 2026-10-09 用户明确：开关关掉**只**隐藏这三行（子文档 / 转入仓库文档 / 转入仓库文件夹）—— 命令、快捷键、
+//   画布节点右键、文档面板一概不隐藏。（2026-10-12 加第三行：转入仓库文件夹也是文档库的入口。）
+function nmAddRowUsable(tk) { return (tk !== 'childDoc' && tk !== 'importDoc' && tk !== 'importFolder') || docsLibraryOn; }
 // 「添加」按钮要不要出现在节点底部工具条上：面板里一个可点的都没有 → 入口整个隐藏（2026-09-18 用户定）
 function nmAddHasRows() { return nmAddSplit().hasFunc; }
 // 造一个面板行：分隔线 → .mm-sep（复用左下「更多」那套样式）；其余 → 按钮
@@ -5138,7 +5299,11 @@ function nmAddRowEl(tk) {
   nmApplyTip(b, meta.tip ? meta.tip() : '', meta.tipAct); // 悬浮时的黑色小字提示（键位段由 tipAct 自动接上）
   b.dataset.side = 'left';       // 提示弹到**左侧**：弹上方会盖住上面那几行（用户 2026-09-17）
   // 行 = 图标 + 文字（2026-09-21 二次定稿：右侧那列快捷键小字整列去掉，见 NM_ADD_META 的注）
-  b.innerHTML = renderIcon(meta.icon, 16) + '<span class="mm-label">' + escapeHtml(meta.label()) + '</span>';
+  // 门控三行（子文档 / 转入仓库文档 / 转入仓库文件夹）的图标包一层 .mm-ic —— 照 AI 行（2026-10-07）的做法：
+  //   Pro 门控锁定态悬浮时只换这一格、**不把文字标签一起抹掉**
+  const gated = (tk === 'childDoc' || tk === 'importDoc' || tk === 'importFolder');
+  b.innerHTML = (gated ? '<span class="mm-ic">' + renderIcon(meta.icon, 16) + '</span>' : renderIcon(meta.icon, 16))
+    + '<span class="mm-label">' + escapeHtml(meta.label()) + '</span>';
   // 编辑态下 mousedown 不让按钮夺焦：否则点面板 = 编辑框立即失焦 = 编辑结束（照加粗按钮同款处理）
   b.addEventListener('mousedown', e => { if (state.editingEl) e.preventDefault(); });
   if (meta.sub) {
@@ -5149,6 +5314,7 @@ function nmAddRowEl(tk) {
   } else {
     b.onclick = e => { e.stopPropagation(); hideMoreMenu(); hideMoreSub(); moreMenuAction(tk); };
   }
+  if (gated) applyProGate(b); // Pro 拦截（2026-10-11）：子文档 / 转入仓库文档 / 转入仓库文件夹（文档库）
   return b;
 }
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
@@ -5349,6 +5515,8 @@ const NM_AI_ITEMS = [
 const NM_AI_GATED = { aiMark: 1, aiLocate: 1, aiRules: 1 };
 // 2026-10-08 用户定：这两项在**节点右键菜单里先屏蔽**（原话"不是给我删除，因为我后面说不定还加回来"）——
 //   从这个名单里去掉即恢复；底部 AI 面板不受影响（同一份 NM_AI_ITEMS，只是右键这边筛掉）。
+// ⚠️ 2026-10-11 用户定：**右键那一组的调用点整体撤了**（AI 只留底部一个入口，理由见 buildCtxMenu 尾部那段）。
+//   这个名单与 `ctxAiGroup` 渲染器**都留着**（"说不定还加回来"），只是当前没人调 —— 别当死代码删掉。
 const NM_AI_CTX_SKIP = { aiEdit: 1, aiMark: 1 };
 
 function ensureAiMenu() {
@@ -5688,31 +5856,35 @@ function makeNode(title) {
   if (nowVisibleSnapshot) nowVisibleSnapshot.add(n.id); // 只看 Now 快照模式下：新建节点注册进快照 → 保持可见（2026-08-28「按下后自由」）
   return n;
 }
-// 「子文档」（2026-10-09 用户定）：在选中节点下挂一份**新建的**文档。
-// 流程：画布发 `newChildDoc` → 宿主弹输入框、在数据区 docs/ 里真建一份空文档 → 回 `newChildDocRes`
-//   → 这里插子节点（`[[28Notes-Files/docs/名字]]`）、选中它、把它摆到画面中央。
+// 「子文档」（2026-10-09 建；2026-10-12 改版）：在选中节点下挂一份**新建的**文档，并当场开在右侧分屏。
+// 流程：画布发 `newChildDoc` → 宿主**不问名字**直接建一份（默认名「未命名」，重名顺延）→ 回 `newChildDocRes`
+//   → 这里插子节点（`[[28Notes-Files/docs/名字]]`）、选中它 → 再发 `openDoc` 让宿主把它开在右侧分屏
+//   → 分屏就绪后宿主回推 `docSplitOpened`，把新节点摆到左半屏正中（用户要的"点一下就到写作现场"）。
 // ⚠️ 等回包期间用户可能已经换了选中节点 → **发消息前先记住母节点 id**，回包时按那个 id 找。
-// ⚠️ 不进编辑态（名字在弹窗里已经给过了）；落盘靠 emitUpdate。
+// ⚠️ 落盘靠 emitUpdate（新节点自己带着刚生成的标题占位，不自动进编辑态）。
 let pendingChildDocParent = '';
 function addChildDoc() {
+  if (proGuard()) return;   // Pro 门控（2026-10-11）：子文档（文档库）；命令入口也走这里
   if (state.historyMode) return; // 历史页只读
   // ⚠️ 2026-10-09 用户明确：总开关关掉时**只隐藏「＋添加」面板里那两行 + 文件列表右键那个入口**，
   //   命令与快捷键照旧保留 —— 所以这里**不**判 docsLibraryOn（面板那一行已由 nmAddRowUsable 挡住）。
-  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  // ⚠️ 没选中节点时的提示用 `tb.selectFirst`（"请先选择节点"）—— 原来借用的是 `toast.pasteImg`
+  //   （"请先选中一个节点，再粘贴图片"），走命令/快捷键触发时那句话指着"粘贴图片"，纯误导（2026-10-12 改）。
+  if (!state.selectedId) { toast(T('tb.selectFirst'), true); return; }
   const r = findNode(state.tree, state.selectedId);
   if (!r) return;
   pendingChildDocParent = state.selectedId;
   vscode.postMessage({ type: 'newChildDoc' });
 }
-// 宿主建完文档后的回包：插子节点 + 选中 + 居中。ok:false（取消 / 名字不合法）→ 什么都不做。
-function addChildDocRes(msg) {
-  const parentId = pendingChildDocParent;
-  pendingChildDocParent = '';
-  if (!msg || !msg.ok || !msg.link) return;
-  const r = parentId ? findNode(state.tree, parentId) : null;
-  if (!r) return; // 母节点已经不在（用户删了 / 换了图）→ 安静放弃
+// 把一份文档挂成某个节点的子节点 —— 「子文档」与「转入到选中节点」**共用这一套收尾**（2026-10-12 抽出）。
+//   parentId 给了就挂它；**没给 = 挂到此刻选中的节点**（转入那条是宿主发起的，画布没有"母节点记忆"）。
+//   返回新节点的 id；挂不上（母节点不在 / 没选中）返回 ''。
+function attachDocNode(link, parentId) {
+  const r = parentId ? findNode(state.tree, parentId)
+                     : (state.selectedId ? findNode(state.tree, state.selectedId) : null);
+  if (!r) return '';
   pushUndo();
-  const newNode = makeNode('[[' + String(msg.link) + ']]');
+  const newNode = makeNode('[[' + String(link) + ']]');
   if (r.node.todo) newNode.todo = 'todo'; // 与 addChild 同口径：母节点是待办 → 新子节点默认也是待办
   r.node.children.push(newNode);
   r.node.fold = false;
@@ -5722,24 +5894,130 @@ function addChildDocRes(msg) {
   emitUpdate();
   requestDocLinks(); // 新节点是「文档节点」→ 立刻问一次判定表，别让它先闪一下普通双链
   renderWithMotion();
-  // 摆到画面中央（等一帧布局落定再量；与 locateDocRefOnce 的收尾同一套）
+  return newNode.id;
+}
+// 把某个刚建出来的节点摆到画面中央（等一帧布局落定再量；与 locateDocRefOnce 的收尾同一套）。
+//   ⚠️ 分屏时画布视口就是左半屏 → 落点天然落在左半屏正中，不用另算。
+function locateNewNode(id) {
   requestAnimationFrame(() => {
     try {
-      const el = document.querySelector('.node-row[data-id="' + newNode.id + '"] .card');
-      if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+      const el = document.querySelector('.node-row[data-id="' + id + '"] .card');
+      if (el) placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
     } catch (_) {}
   });
+}
+// 宿主建完文档后的回包：插子节点 + 选中 + 摆位置。ok:false（建失败）→ 什么都不做。
+//   ⚠️ 这条回包**三处共用**：「子文档」/「导入仓库文档」/「转入 → 挂到选中节点」。
+//      前两条画布发起（母节点记在 pendingChildDocParent），第三条由宿主发起、走 importToNodeRes。
+function addChildDocRes(msg) {
+  const parentId = pendingChildDocParent;
+  pendingChildDocParent = '';
+  if (!msg || !msg.ok || !msg.link) return;
+  if (!parentId || !findNode(state.tree, parentId)) return; // 母节点已经不在（用户删了 / 换了图）→ 安静放弃
+  const id = attachDocNode(msg.link, parentId);
+  if (!id) return;
+  // 🔴 「子文档」那条（2026-10-12 用户定）：**位置交给宿主** —— 接着让宿主把这份新文档开在右侧分屏里，
+  //   分屏一就绪宿主会回推 `docSplitOpened` → locateAfterDocSplit 把新节点摆到**左半屏正中**
+  //   （那套会盯几帧宽度收敛，比这里"量一次就落"准）。所以这里**不**自己摆，免得先滑一次再被瞬移纠正。
+  if (msg.openSplit && msg.path) {
+    vscode.postMessage({ type: 'openDoc', path: String(msg.path), split: true, nodeId: id, forceLocate: true });
+    return;
+  }
+  locateNewNode(id);   // 「导入仓库文档」那条：照旧在本地摆到画面中央
+}
+// 「转入 → 挂到当前导图的选中节点」的回包（2026-10-12 用户定）：宿主把文件搬进 docs/ 之后发过来，
+//   这里把它插到**此刻选中的节点**下面。
+//   🔴 用户定：「宁可转不转，都不能转错」—— 没选中节点**绝不许**随便找个地方放（更不许挂到最下面）。
+//     所以这里插不上就**回一条 fail 给宿主**，让宿主把文件放回原处（等于什么都没发生）；
+//     不在这里自己弹提示（消息统一由宿主出，免得用户看到两句不一样的话）。
+//   ⚠️ 宿主在搬文件**之前**已经判过"有导图 + 有选中"（没有就弹窗、压根不会走到这儿）；这一层是兜底
+//      —— 消息在路上时用户可能把选中清掉了，或画布刚好重载了。
+function importToNodeRes(msg) {
+  if (!msg || !msg.ok || !msg.link) return;
+  const seq = Number(msg.seq || 0);
+  const id = attachDocNode(msg.link, '');   // parentId 传空 = 挂到**此刻选中的节点**；没选中 → 返回 ''
+  try {
+    vscode.postMessage(id ? { type: 'importToNodeDone', seq: seq } : { type: 'importToNodeFail', seq: seq });
+  } catch (_) {}
+  if (id) locateNewNode(id);
+}
+// 「转入仓库文件夹（挂到选中节点）」的回包（2026-10-12 用户定）：宿主把整棵文件夹树搬进 docs/ 之后发过来，
+//   这里照结构**插到此刻选中的节点**下面 —— 子文件夹 = 普通节点、文件 = 文档节点、媒体 = 附件。
+//   🔴 媒体的口径与"建新导图"那条**一致**：那边正文里媒体就是 `![[名字]]` 子行，解析时**不建节点**、
+//      只挂到上一个节点的 images/embeds 上（本层没有就挂母节点）→ 这里照做，两种入口长出来的结构才一样。
+//   🔴 挂不上（没选中 / 消息到晚了）→ 回 fail 给宿主，让它把文件**整批搬回原处**（宁可转不转）。
+//   ⚠️ 先把整棵子树**建好**、再一次挂上：中途抛错 = 什么都没挂上，与"文件搬回去"两边一致。
+function importFolderRes(msg) {
+  const seq = Number((msg && msg.seq) || 0);
+  const fail = () => { try { vscode.postMessage({ type: 'importFolderFail', seq: seq }); } catch (_) {} };
+  try {
+    if (!msg || !msg.ok || !Array.isArray(msg.tree) || !msg.tree.length) { fail(); return; }
+    const r = state.selectedId ? findNode(state.tree, state.selectedId) : null;
+    if (!r) { fail(); return; }   // 兜底：消息在路上时选中被清掉了
+    const mediaOps = [];          // { node: 上一个建好的节点 | null, parent: 母节点, name }
+    let firstId = '';
+    // entries → 建好的节点数组（**先不挂**）；depth0 = 是不是直接挂在选中节点下的那一层
+    const build = (entries, depth0) => {
+      const out = [];
+      let last = null;
+      for (const e of entries) {
+        if (!e) continue;
+        if (e.media) { mediaOps.push({ node: last, name: String(e.media) }); continue; }
+        const n = makeNode(e.doc ? '[[' + String(e.doc) + ']]' : String(e.name || T('common.untitled')));
+        if (depth0 && r.node.todo) n.todo = 'todo';   // 与 addChild 同口径：母节点是待办 → 直接挂上来的这层默认也是
+        out.push(n);
+        if (!firstId) firstId = n.id;
+        last = n;
+        if (Array.isArray(e.kids) && e.kids.length) {
+          const kids = build(e.kids, false);
+          for (const k of kids) n.children.push(k);
+        }
+      }
+      return out;
+    };
+    const tops = build(msg.tree, true);
+    if (!tops.length) { fail(); return; }
+    pushUndo();
+    for (const n of tops) r.node.children.push(n);   // 一次性挂上（先建后挂：中途抛错不至于挂一半）
+    for (const m of mediaOps) {
+      const target = m.node || r.node;               // 本层还没有节点 → 挂到母节点上
+      if (isMediaFile(m.name)) (target.embeds = target.embeds || []).push(m.name);
+      else (target.images = target.images || []).push(m.name);
+    }
+    r.node.fold = false;
+    if (firstId) { state.selectedId = firstId; state.justCreated.add(firstId); }
+    keepView(r.node);   // 锚定母节点：新东西在它下面长出来，母节点自己不许跑
+    emitUpdate();
+    requestDocLinks();  // 新节点里有「文档节点」→ 立刻问一次判定表，别让它先闪一下普通双链
+    renderWithMotion();
+    if (firstId) locateNewNode(firstId);
+    try { vscode.postMessage({ type: 'importFolderDone', seq: seq }); } catch (_) {}
+  } catch (e) { showError('转入仓库文件夹失败: ' + e); fail(); }
 }
 // 「导入仓库文档」（2026-10-09 用户定）：在选中节点下挂一份**vault 里已有的**文档（搬进数据区 docs/）。
 // 与「子文档」同一套收尾：宿主弹窗挑文件 + 搬进 docs/ + 回 newChildDocRes（复用同一条回包），
 // 画布这边插子节点、选中、摆到中央。**所以这里也要先记住母节点 id**（同一个变量，两处共用）。
 function importRepoDoc() {
+  if (proGuard()) return;   // Pro 门控（2026-10-11）：导入仓库文档（文档库）
   if (state.historyMode) return; // 历史页只读
-  if (!state.selectedId) { toast(T('toast.pasteImg'), true); return; }
+  // 与「子文档」同款：没选中节点时用 `tb.selectFirst`（"请先选择节点"），别借 `toast.pasteImg`（2026-10-12 改）
+  if (!state.selectedId) { toast(T('tb.selectFirst'), true); return; }
   const r = findNode(state.tree, state.selectedId);
   if (!r) return;
   pendingChildDocParent = state.selectedId;
   vscode.postMessage({ type: 'pickRepoDoc' });
+}
+// 「转入仓库文件夹」（2026-10-12 用户定）：＋添加面板那一行 —— 宿主弹窗**搜索挑文件夹**，
+//   然后走与"文件列表右键文件夹"**同一套搬文件逻辑**，但收尾改成**挂到当前导图选中的节点**下
+//   （不建新导图）。🔴 所以**必须先选中节点**（没选中就提示，别让宿主白搬一趟）。
+function importRepoFolder() {
+  if (proGuard()) return;   // Pro 门控（2026-10-11）：转入仓库文件夹（文档库）
+  if (state.historyMode) return; // 历史页只读
+  // 与「转入仓库文档」同款：没选中节点时用 `tb.selectFirst`（"请先选择节点"）
+  if (!state.selectedId) { toast(T('tb.selectFirst'), true); return; }
+  const r = findNode(state.tree, state.selectedId);
+  if (!r) return;
+  vscode.postMessage({ type: 'pickRepoFolder' });
 }
 function addChild() {
   if (state.historyMode) return; // 历史页只读
@@ -5879,6 +6157,16 @@ function multiSelectedWholeView() {
     return true;
   } catch (_) { return false; }
 }
+// 新边缘情况（2026-10-11 用户定）：画面里有很多节点，但用户框选**恰好只选中了母节点**一个 ——
+//   本意同样是"把整棵树带走"。与「全选整视图」同待遇：剪切 / 删除都按 removeRootNode 走。
+//   （单选主节点本来就能整棵剪切；这条只是把"框选恰好只中母节点"从无操作改成同款。）
+function multiSelectedRootOnly() {
+  try {
+    if (state.multiSelected.size !== 1) return false;
+    const root = currentRoot();
+    return !!root && state.multiSelected.has(root.id);
+  } catch (_) { return false; }
+}
 // 母节点整棵走人（剪切 / 删除 / 多选"全选整视图"共用，2026-10-11）：真主节点 → 本图进空态；
 //   下钻里的母节点 → 从父节点摘掉 + 视图退回上一层 + 提示。toClipboard=true 时先写剪贴板（剪切的语义）。
 function removeRootNode(toClipboard) {
@@ -5935,7 +6223,9 @@ function deleteNode(skipDocAsk) {
     });
     // 「全选整视图」特例（2026-10-11 用户定）：框选覆盖了画面里每一行 → 对整张图动手，
     //   母节点也一起走（真主节点 → 空态；下钻里的 → 退回上一层）。判据见 multiSelectedWholeView。
-    if (multiSelectedWholeView()) { removeRootNode(false); return; }
+    //   「只框中母节点」特例（2026-10-11 用户定，同批）：画面里节点再多，框选恰好只选中母节点一个
+    //   → 本意同样是整棵带走。两个判据见 multiSelectedWholeView / multiSelectedRootOnly。
+    if (multiSelectedWholeView() || multiSelectedRootOnly()) { removeRootNode(false); return; }
     if (!items.length) return; // 2026-08-24 修：无可删对象时不 pushUndo（之前空按 Delete 也压快照，污染撤销栈）
     let hiddenMinor = 0;
     if (state.hideDone) items.forEach(r => { hiddenMinor += countMinorDescendants(r.node); });
@@ -6050,6 +6340,28 @@ function addUrlLinkChild(url) {
   emitUpdate(); render(); updateToolbar();
 }
 
+// 「刚新建的节点」占位标题的清除（🔴 2026-10-12 用户定）：新建节点后直接粘一张图 → 节点里只留图片、
+//   不留那句占位「新节点」（原来粘完还得手动把占位三个字删掉）。
+//   ⚠️ 原理 —— 判据**必须两条同时成立**，少一条都可能误伤（用户点名怕出"小 bug"）：
+//     ① 节点在 `state.justCreated` 里：这是"**刚建出来、还没正式命名**"的专用标记（新建即进；
+//        用户改过字、或按回车确认过占位原文，都会被清掉，见 editSession 的 onFinish 与 cancelNewNode）；
+//     ② 标题**正好等于**占位文案 `T('common.newNode')`。
+//   → 老节点（不在 justCreated 里）**哪怕标题恰好就叫「新节点」也一个字不动** ——
+//     所以"在别的节点里全选文字再粘图片把字冲掉"这种事不可能发生：那条路径压根判不过第 ① 条。
+//   → 正在编辑这个刚建节点时粘图：这里只改 node.title，编辑框里的占位由随后的 render→收尾
+//     （onFinish 的"没改"分支会 setTitleInner 按 node.title 重画）一并落定，不会把占位写回去。
+//   只碰标题，备注 / 附件 / 待办一律不碰。返回 true = 确实清了（给自检用）。
+function clearFreshPlaceholderTitle(id) {
+  if (!id) return false;
+  try {
+    if (!state.justCreated.has(id)) return false;                          // ① 不是"刚新建" → 一律不动
+    const r = findNode(state.tree, id);
+    if (!r) return false;
+    if (String(r.node.title || '') !== T('common.newNode')) return false;   // ② 标题不是占位 → 一律不动
+    r.node.title = '';
+    return true;
+  } catch (_) { return false; }
+}
 // 粘贴图片文本 `![](路径)` → 加到选中节点（可多张）
 function addImageToNode(relPath) {
   if (!relPath) return;
@@ -6058,6 +6370,7 @@ function addImageToNode(relPath) {
   if (!r) return; // 树刚被重建、id 失效的极端时序防崩（2026-08-27 体检修）
   pushUndo();
   r.node.images.push(relPath);
+  clearFreshPlaceholderTitle(r.node.id); // 刚新建的空节点 → 顺手把占位「新节点」清掉（2026-10-12）
   emitUpdate(); render();
 }
 
@@ -6173,6 +6486,7 @@ function addMediaNames(names, nodeId) {
   if (!r) return;
   pushUndo();
   list.forEach(n => { if (isMediaFile(n)) r.node.embeds.push(n); else r.node.images.push(n); });
+  clearFreshPlaceholderTitle(r.node.id); // 刚新建的空节点 → 顺手把占位「新节点」清掉（2026-10-12）
   emitUpdate(); render();
 }
 
@@ -6224,6 +6538,7 @@ function moreMenuAction(act) {
   if (act === 'node') { addNodeLink(); return; }
   if (act === 'childDoc') { addChildDoc(); return; }   // 子文档（2026-10-09）：新建一份文档并挂到选中节点下
   if (act === 'importDoc') { importRepoDoc(); return; } // 导入仓库文档（2026-10-09）：从 vault 里挑一份已有文档并挂到选中节点下
+  if (act === 'importFolder') { importRepoFolder(); return; } // 转入仓库文件夹（2026-10-12）：粘文件夹绝对路径 → 整棵转入 + 建新导图
   if (act === 'url') { addUrlLink(); return; }
   // 「AI 编辑」（2026-09-18 加，2026-09-27 抽成函数：左下工具栏的 AI 按钮也走它）
   if (act === 'aiEdit') { openAiEditOfSelected(); return; }
@@ -6359,7 +6674,8 @@ function cutSelectedNode() {
   if (state.multiSelected.size > 0) {
     // 「全选整视图」特例（2026-10-11 用户定）：框选把画面里每一行都选上了 → 用户本意就是对
     //   这一整张图动手（典型场景：画面里只剩母节点一个）→ 母节点也一起走（含真主节点进空态）。
-    if (multiSelectedWholeView()) { removeRootNode(true); return; }
+    //   「只框中母节点」特例（2026-10-11 用户定，同批）：节点再多、框选恰好只选中母节点 → 同款整棵带走。
+    if (multiSelectedWholeView() || multiSelectedRootOnly()) { removeRootNode(true); return; }
     // 剪切多选：复制顶层节点（祖先在选中集的跳过），然后删除（同样只删顶层，按深度反序）
     const parts = [];
     const items = [];
@@ -6499,6 +6815,22 @@ let ctxMenu = null;
 //                      （提示宽度随文案变，取一个够放一条中等长度提示的值；嫌翻得太早/太晚就改这里）
 const CTX_EDGE_GAP = 6;
 const CTX_TIP_FLIP_GAP = 240;
+// 右键菜单的**下边界**（2026-10-12 用户定：「右键菜单要浮在底部那排菜单上面」）：
+//   底部那条节点工具条（#node-menu，fixed bottom）显示着时 → 菜单一律排在它的**上沿**之上（留一道 CTX_EDGE_GAP）；
+//   它没显示（没选中节点 / 历史页）→ 用画面底边（老行为）。
+//   ⚠️ 只是**尽量**：菜单比"工具条上沿到画面顶"还高时（条目特别多）塞不回去 → 退回老口径（贴画面底边收），
+//      那种情况靠 .ctx-menu 的 z-index(89) 保证它**盖住**工具条，而不是被工具条盖住。
+function ctxBottomLimit() {
+  let limit = window.innerHeight - CTX_EDGE_GAP;
+  try {
+    const menu = document.getElementById('node-menu');
+    if (menu && !menu.classList.contains('hidden')) {
+      const mr = menu.getBoundingClientRect();
+      if (mr.height > 0) limit = Math.min(limit, mr.top - CTX_EDGE_GAP);
+    }
+  } catch (_) {}
+  return limit;
+}
 function hideCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } hideCtxSub(); } // 主菜单收掉时二级一起收
 // 右键行（2026-09-21 加 kbd = 右侧快捷键提示，形态与左下「更多」菜单里的 .kbd 一致）
 // na = 置灰（2026-09-23：剪贴板空时的「粘贴」）。⚠️ 置灰**只管视觉**：点了照样走 fn ——
@@ -6617,8 +6949,11 @@ function showCtxSub(anchor, items) {
   const ar = anchor.getBoundingClientRect();
   let left = ar.right + 2;
   if (left + ctxSub.offsetWidth > window.innerWidth - 6) left = Math.max(6, ar.left - ctxSub.offsetWidth - 2);
-  let top = ar.top - 4;
-  if (top + ctxSub.offsetHeight > window.innerHeight - 6) top = Math.max(6, window.innerHeight - 6 - ctxSub.offsetHeight);
+  // 竖直：与主菜单同款（2026-10-12）—— 先试「排到底部工具条上沿之上」，塞不进再退回贴画面底边。
+  //   主菜单已经让开了工具条，但二级是从**父项**那一行往下长的，父项可能就贴在菜单底部 → 二级照样会探到工具条里。
+  const keepOut = ctxBottomLimit();
+  let top = Math.min(ar.top - 4, keepOut - ctxSub.offsetHeight);
+  if (top < 6) top = Math.max(6, Math.min(ar.top - 4, window.innerHeight - 6 - ctxSub.offsetHeight));
   ctxSub.style.left = left + 'px';
   ctxSub.style.top = top + 'px';
   // 二级菜单也贴着右边 → 它条目的提示同样改往左弹（2026-10-07，与主菜单同一条判据）
@@ -6765,6 +7100,7 @@ function exportTreeOf(node) {
   };
 }
 function exportNodeTree(node) {
+  if (proGuard()) return;   // Pro 门控（2026-10-11）：转出思维导图（文档库）
   if (!node || !state.tree) return;
   // 「母节点」= 整张图的**主节点**（不是当前下钻的根）—— 母节点转出 = 整张图都出去了，导图本身会被删
   const isRoot = (state.tree.id === node.id);
@@ -6828,42 +7164,24 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
       removeSelectedImage(false);
     }, 'trash-2'));
   } else {
-    // ── 已放入思维导图数据库的文档（2026-10-08）：整行是 [[名字]]、且这个名字指向 docs/ 里的文档时，菜单顶上先给这一组 ──
-    //   判据与图标**同源**（isStoredDoc / docLinkPathOf）—— 所以「看到文档图标」与「右键有这两项」永远同时成立。
+    // ── 文档节点那几行：**行不在这里造**（2026-10-11 用户定重排菜单）──
+    //   「进入当前节点」下面那一段（打开 / 重命名 / 保存为文档捷径 / 删除 / 编辑链接）先在下面攒进
+    //   `groupRows`、再统一 append；代码在 `ctxMenu.appendChild(drillItem)` 之后。这里只取一个判据。
+    //   判据与图标**同源**（nmManagedOf / docLinkPathOf）—— 所以「看到文档图标」与「右键有这一组」永远同时成立。
     //   开关关着时整组（含分隔线）不出现，界面上看不出有这个功能。
-    // 这个节点管理的**文件**（文档 / 图片 / 视频 / 音频）：2026-10-08 用户定，按类型给不同的一组菜单 ——
-    //   文档：打开该文档 / 重命名该文档 / 转出到 vault / 删除该文档（四项）
-    //   附件：打开该图片·视频·音频 / 转出到 vault / 删除该图片·视频·音频（三项，**没有重命名**）
+    //   按类型给不同的行（2026-10-08 用户定）：
+    //     文档：打开该文档 / 重命名该文档 / 保存为文档捷径 / 删除该文档（四项）
+    //     附件：打开该图片·视频·音频 / 删除该图片·视频·音频（两项，**没有重命名**、也没有文档捷径）
     const managed = nmManagedOf(node);
-    // 「管理该文档」（2026-10-09 用户定）：**只给「文档警告节点」**（被多处管理的），
-    //   放在菜单**最前面**、用警告三角图标 → 点它 = 打开文档面板并切到第 4 页
-    //   （与原来那条常驻 toast 的「管理」按钮**同一个动作**，那条 toast 现在已隐藏）。
+    // ── 菜单最上面那一行：「管理文档」（2026-10-11 用户定稿顺序的第一位）──
+    //   **只给「文档警告节点」**（被多处管理的），用警告三角图标 → 点它 = 打开文档面板并切到第 4 页
+    //   （与原来那条常驻 toast 的「管理」按钮**同一个动作**，那条 toast 现已隐藏）。
+    //   ⚠️ 位置（2026-10-11 用户按真菜单指出来改的）：**在「进入当前节点」上面** —— 原来排在它下面。
     if (nmMultiRefOf(node)) {
-      ctxMenu.appendChild(ctxItem(T('ctx.manageDoc'), () => vscode.postMessage({ type: 'openDoclibManage' }), 'triangle-alert'));
-      ctxMenu.appendChild(ctxSep());
-    }
-    // ⚠️ 2026-10-09 用户定：**不再看总开关** —— 核心思路是「**已经导入的**，管理体验不受影响；
-    //   **没导入的**，把导入入口掐掉」。开关只管宿主侧文件列表那个「转入」入口，
-    //   画布上文档节点这一组（打开 / 重命名 / 转出 / 删除）永远都在。
-    if (managed) {
-      const docPath = docLinkPathOf(managed.note);
-      const kind = managed.kind;
-      // 「打开该…」走**新标签页**：从画布点过去不能把正在看的导图顶掉
-      ctxMenu.appendChild(ctxItem(T(nmCtxKeyOf('ctx.open', kind)),
-        () => vscode.postMessage({ type: 'openDoc', path: docPath }), nmIconNameOfKind(kind)));
-      // 「重命名该文档」= 改**文件**名（走 Obsidian 官方改名，引用由它自己更新，方案 §4.7）
-      if (kind === 'doc') {
-        // 图标 pencil-line（用户 2026-10-08 指定；lucide 官方源码已核对过，Obsidian 内置图标库里也有）
-        ctxMenu.appendChild(ctxItem(T('ctx.renameDoc'), () => vscode.postMessage({ type: 'renameDoc', path: docPath }), 'pencil-line'));
-      }
-      // 🔴 2026-10-10 用户定：原来这里那项「转出到 vault」（`ctx.moveOutDoc`）**已合并**到下面
-      //   「保存为捷径」下面那项「转出思维导图」里 —— 用户说"在用户的认知里它们是一个意思"。
-      //   文档节点点「转出思维导图」= 那份文档搬出来（等同旧行为）；普通节点 = 整棵子树导成文件夹结构。
-      //   （消息通道 `moveDocOut` 留着：文档库面板「⋯ → 转出」还在用它。）
-      // 「删除该…」：宿主那边弹二次确认（有引用时还会把要改哪几张图说清楚）后再删
-      // fromNode:true → 宿主把确认框标题换成「删除该节点管理的文档？」（用户 2026-10-08 定）
-      ctxMenu.appendChild(ctxItem(T(nmCtxKeyOf('ctx.delete', kind)),
-        () => vscode.postMessage({ type: 'deleteDoc', path: docPath, fromNode: true }), 'trash-2'));
+      const manageItem = ctxItem(T('ctx.manageDoc'), () => vscode.postMessage({ type: 'openDoclibManage' }), 'triangle-alert');
+      nmApplyTip(manageItem, T('ctx.manageDocTip'), ''); // 黑色小字提示；这一项没绑键 → 不给键位段
+      manageItem.dataset.side = 'right';
+      ctxMenu.appendChild(manageItem);
       ctxMenu.appendChild(ctxSep());
     }
     // 一级菜单**不挂快捷键备注**（2026-09-21 用户定）：一级里四五行、每行右侧都吊一串键位，面板会拉得又长又花；
@@ -6885,6 +7203,75 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
     drillItem.dataset.side = 'right';
     ctxMenu.appendChild(drillItem);
     ctxMenu.appendChild(ctxSep());
+    // 「管理文档」那一行**排在整份菜单的最上面**（2026-10-11 用户定稿顺序第一位）
+    //   → 代码在本函数**前半段**（`ctxMenu.appendChild(manageItem)` 那处，在「进入当前节点」**前面**）。
+    // ⚠️ 2026-10-09 用户定：**不再看总开关** —— 核心思路是「**已经导入的**，管理体验不受影响；
+    //   **没导入的**，把导入入口掐掉」。开关只管宿主侧文件列表那个「转入」入口，
+    //   画布上文档节点这一组永远都在。
+    // 🔴 2026-10-11 用户定（**定稿顺序**，与调教器「右键菜单」页那张清单一一对应）：
+    //   管理文档 ｜ 进入当前节点 ｜ 打开文档 · 重命名文档 · **保存为文档捷径** · 删除文档 · **编辑链接**
+    //   ｜ 基础操作 ｜ 复制节点链接 · **保存为视图捷径** · **转出思维导图**
+    //   ⚠️ 这些行**不是每个菜单都有**（按节点类型 / 开关出现）：管理文档只给「被多处管理」的节点；
+    //     文档那几行只在文档节点上；编辑链接只在「整行就是链接」的节点上；转出思维导图要「文档库」开着。
+    //     **行不在时，它那一段的分隔线也不出现** —— 所以先攒进 groupRows，看空不空再决定收不收尾那道线。
+    const groupRows = [];
+    if (managed) {
+      const docPath = docLinkPathOf(managed.note);
+      const kind = managed.kind;
+      // 每行都挂黑色小字提示（2026-10-11 用户定）：与「转出思维导图」那些**同一条路**（nmApplyTip），
+      //   文案**按 kind 分**（文档 / 图片 / 视频 / 音频），与行文字 nmCtxKeyOf 用同一套后缀。
+      //   ⚠️ nmApplyTip 不碰 data-side，走它的行**必须自己补** `dataset.side = 'right'`（见上面那段实踩）。
+      // 「打开该…」走**新标签页**：从画布点过去不能把正在看的导图顶掉
+      const openItem = ctxItem(T(nmCtxKeyOf('ctx.open', kind)),
+        () => vscode.postMessage({ type: 'openDoc', path: docPath }), nmIconNameOfKind(kind));
+      nmApplyTip(openItem, T(nmCtxKeyOf('ctx.openTip', kind)), '');
+      openItem.dataset.side = 'right';
+      groupRows.push(openItem);
+      // 「重命名该文档」= 改**文件**名（走 Obsidian 官方改名，引用由它自己更新，方案 §4.7）
+      if (kind === 'doc') {
+        // 图标 pencil-line（用户 2026-10-08 指定；lucide 官方源码已核对过，Obsidian 内置图标库里也有）
+        const renameItem = ctxItem(T('ctx.renameDoc'), () => vscode.postMessage({ type: 'renameDoc', path: docPath }), 'pencil-line');
+        nmApplyTip(renameItem, T('ctx.renameDocTip'), '');
+        renameItem.dataset.side = 'right';
+        groupRows.push(renameItem);
+      }
+      // 「保存为文档捷径」（2026-10-11 用户定）：**只给文档**（附件打不开 markdown 视图）——
+      //   建出的壳 frontmatter 是 28notes: doclink、target 直接指文档文件；点那个壳 =
+      //   patchSetViewState 的 doclink 分支把 leaf 一步引到文档本身（不经过导图视图，省掉"再点一次节点"）。
+      //   命名框与「保存为视图捷径」共用同一个（showPrompt）；Pro 拦截同款。
+      // ⚠️ 位置（2026-10-11 用户定，第二版）：排在**「删除文档」上面**（紧跟重命名）。
+      if (kind === 'doc') {
+        const docBmItem = ctxItem(T('ctx.saveDocShortcut'), () => showPrompt(T('ctx.saveDocShortcut'), T('ctx.bookmarkHint'), (val) => {
+          vscode.postMessage({ type: 'createDocBookmark', path: docPath, name: (val || '').trim() });
+        }), 'split');
+        nmApplyTip(docBmItem, T('ctx.saveDocShortcutTip'), '');
+        docBmItem.dataset.side = 'right'; // 菜单行提示往右弹（与上面几行同款）
+        applyProGate(docBmItem);          // 未激活同样走 Pro 拦截（照「保存为捷径」）
+        groupRows.push(docBmItem);
+      }
+      // 「删除该…」：宿主那边弹二次确认（有引用时还会把要改哪几张图说清楚）后再删
+      // fromNode:true → 宿主把确认框标题换成「删除该节点管理的文档？」（用户 2026-10-08 定）
+      // 🔴 2026-10-10 用户定：原来那项「转出到 vault」（`ctx.moveOutDoc`）**已合并**到「转出思维导图」里 ——
+      //   "在用户的认知里它们是一个意思"：文档节点点它 = 那份文档搬出来；普通节点 = 整棵子树导成文件夹结构。
+      //   （消息通道 `moveDocOut` 留着：文档库面板「⋯ → 转出」还在用它。）
+      const delItem = ctxItem(T(nmCtxKeyOf('ctx.delete', kind)),
+        () => vscode.postMessage({ type: 'deleteDoc', path: docPath, fromNode: true }), 'trash-2');
+      nmApplyTip(delItem, T(nmCtxKeyOf('ctx.deleteTip', kind)), '');
+      delItem.dataset.side = 'right';
+      groupRows.push(delItem);
+    }
+    // 「编辑链接」（2026-10-11 位置定稿：跟在文档组后面、**在「基础操作」上面**）：
+    //   仅「整行就是文件 / URL 链接」的节点显示；节点链接指向本图节点、由节点系统管理，不在此编辑。
+    //   2026-09-29：链接没有单独的编辑框了 —— 这一项就是「编辑正文那一行」（与双击同一件事）。
+    if (parseFileLink(nmPureLinkOf(node.title)) || parseUrlLink(nmPureLinkOf(node.title))) {
+      groupRows.push(ctxItem(T('ctx.editLink'), () => {
+        const row = document.querySelector('.node-row[data-id="' + node.id + '"]');
+        const el = row && row.querySelector(':scope > .card .title');
+        if (el) startEdit(node, el, null, true);
+      }, 'file-pen'));
+    }
+    groupRows.forEach(it => ctxMenu.appendChild(it));
+    if (groupRows.length) ctxMenu.appendChild(ctxSep());   // 整组末尾封一道（组内不再分道）
     // 基础操作（2026-09-21 用户定）：剪切 / 复制 / 粘贴 / 删除收进二级菜单，父项右侧挂箭头
     ctxMenu.appendChild(ctxSubItem(T('ctx.basicOps'), [
       { label: T('ctx.cut'), fn: () => cutSelectedNode(), icon: 'scissors', kbd: nmKeyPlain('cut', '{Mod} + X') },
@@ -6915,7 +7302,7 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
     bookmarkItem.dataset.side = 'right'; // 同上
     applyProGate(bookmarkItem); // 保存为捷径：未激活同样走 Pro 拦截（2026-09-04）
     ctxMenu.appendChild(bookmarkItem);
-    // ── 「转出思维导图」（2026-10-10 用户定）：紧跟在「保存为捷径」**下面**一项 ──
+    // ── 「转出思维导图」（2026-10-10 用户定；2026-10-11 位置定稿：排在「保存为视图捷径」**下面**）──
     //   🔴 把原来文档节点那项「转出到 vault」（`ctx.moveOutDoc`）**合并进这一项** ——
     //     用户说"在用户的认知里它们是一个意思"：都是把这份东西从画布里挪到 vault 的文件夹里。
     //     行为上：文档节点 → 那份文档搬出来（等同旧行为）；普通节点 → 整棵子树导成文件夹结构。
@@ -6924,22 +7311,17 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
       const exportItem = ctxItem(T('ctx.exportMap'), () => exportNodeTree(node), 'folder-output');
       nmApplyTip(exportItem, T('ctx.exportMapTip'), 'exportMap');
       exportItem.dataset.side = 'right';
+      applyProGate(exportItem); // 转出思维导图：未激活同样走 Pro 拦截（2026-10-11，照「保存为捷径」）
       ctxMenu.appendChild(exportItem);
     }
-    // ── AI 那一组（2026-10-08 用户定：底部「AI」面板那四项**在右键里再放一份**）──
-    //   ⚠️ 条目读的是 NM_AI_ITEMS（与底部面板**同一份定义**）：图标 / 文案 / 动作 / 小眼睛全是同一套，
-    //      这里只把外观从竖排 .mm 行换成 .ctx-item 行 —— **不许在这里另写图标或另抄文案**。
-    //   分隔线也由 ctxAiGroup 自己画：关掉「AI 功能」时它整段（含那根线）都不出现。
-    ctxAiGroup(ctxMenu);
-    // 编辑链接：仅「整行就是文件/URL 链接」的节点显示；节点链接指向本图节点、由节点系统管理，不在此编辑。
-    // 2026-09-29：链接没有单独的编辑框了 —— 这一项就是「编辑正文那一行」（与双击同一件事）。
-    if (parseFileLink(nmPureLinkOf(node.title)) || parseUrlLink(nmPureLinkOf(node.title))) {
-      ctxMenu.appendChild(ctxItem(T('ctx.editLink'), () => {
-        const row = document.querySelector('.node-row[data-id="' + node.id + '"]');
-        const el = row && row.querySelector(':scope > .card .title');
-        if (el) startEdit(node, el, null, true);
-      }, 'file-pen'));
-    }
+    // ── 右键菜单底部那一组 AI 项**已撤**（2026-10-11 用户定）──
+    //   原来这里接一根分隔线 + 「复制 AI 定位路径」「添加 AI 更改规则」两行（条目定义仍共用 NM_AI_ITEMS）。
+    //   用户原话：这两项和底部那颗「AI」按钮给的是**同一个东西**，摆两处"认知上有点混乱" ——
+    //   所以右键这条路径整体下掉，**AI 只留底部那一个入口**。
+    //   要恢复：把 `ctxAiGroup` 那一行调用接回这里（渲染器本体与 NM_AI_CTX_SKIP 名单都还在，
+    //   函数内会自己画那根分隔线，开关关掉时整段含线一起消失）。
+    // ⚠️ 「编辑链接」原来在**这里**（菜单最底下），2026-10-11 按用户给的顺序挪到「基础操作」**上面**了
+    //   —— 代码在本函数前半段（与文档组同一段 groupRows），别在这儿再加一份。
   }
   syncAiMenuState();  // AI 那几行（含「添加/清除 AI 生成标记」三态）按当前节点定稿
   syncAiRulesEye();   // 小眼睛按「画面里有没有规则 / 是否已隐藏」定稿 —— 与底部那只同一套判据
@@ -6950,7 +7332,10 @@ function buildCtxMenu(x, y, node, mode, imgPath) {
   const mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
   let left = x, top = y;
   if (left + mw > window.innerWidth - CTX_EDGE_GAP) left = Math.max(CTX_EDGE_GAP, window.innerWidth - CTX_EDGE_GAP - mw);
-  if (top + mh > window.innerHeight - CTX_EDGE_GAP) top = Math.max(CTX_EDGE_GAP, window.innerHeight - CTX_EDGE_GAP - mh);
+  // 竖直：先按「排到底部工具条**上沿**之上」算（2026-10-12 用户定）；塞不进去（菜单太高）→ 退回老口径贴画面底边收。
+  const keepOut = ctxBottomLimit();
+  top = Math.min(y, keepOut - mh);
+  if (top < CTX_EDGE_GAP) top = Math.max(CTX_EDGE_GAP, Math.min(y, window.innerHeight - CTX_EDGE_GAP - mh));
   ctxMenu.style.left = left + 'px';
   ctxMenu.style.top = top + 'px';
   // 菜单贴着右边 → 菜单行的黑色小提示一律改往**左**弹（2026-10-07 用户定：往右弹会跑到画面外看不见）。
@@ -7350,18 +7735,18 @@ function canvasSelectPrevNode() { // ↑ 同层级的上一个：同级用完 �
   if (at > 0) selectNode(list[at - 1]);
 }
 // —— 居中（2026-09-18 用户定：**一律复用既有的定位系统**，别自造第二套）——
-// 落点 = app.css :root「定位调参」区的 --locate-* 旋钮（用户早就调好的自定义居中）：
-//   选中/编辑中 → --locate-selected-x + --locate-y；主节点 → --locate-first-x + --locate-y。
+// 落点 = app.css :root「定位调参 · 中央」区的 --locate-x / --locate-y：
+//   选中/编辑中 → --locate-x + --locate-y；主节点 → 同一个中央（--locate-x + --locate-y）。
 // 首版在这里自造了 NM_CENTER_X/Y，用户指出重复造轮子 → 删掉，全部走 locateCenter / placeCardAtViewport。
 function canvasCenterSelected() { // **只认选中/编辑中的节点**（2026-09-18 用户定：没选中 → 不动；定位主节点是另一条命令的事，别兜底）
   const activeId = state.selectedId || state.editingTitleId || state.editingNoteId || state.editingAiRulesId || null;
   if (!activeId) return;
   const el = document.querySelector('.node-row[data-id="' + activeId + '"] .card');
-  if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+  if (el) placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
 }
-function canvasCenterRoot() { // 主节点（整张导图的根）回**同一个自定义居中位**（2026-09-18 用户定：与选中节点同一个 --locate-selected-x + --locate-y，不用 --locate-first-x）
+function canvasCenterRoot() { // 主节点（整张导图的根）回**中央**（--locate-x + --locate-y，与选中节点同一位）
   const el = state.tree && document.querySelector('.node-row[data-id="' + state.tree.id + '"] .card');
-  if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+  if (el) placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
 }
 // —— 编辑类命令（2026-09-18 用户定：从头 / 从末尾进入编辑，光标落在对应端；不设默认键）——
 function canvasEditSelected(atEnd) {
@@ -7748,12 +8133,6 @@ window.addEventListener('message', e => {
     return;
   }
   if (msg.type === 'fsMode') { applyFsMode(msg.mode); return; } // 全屏档变化（2026-09-22）：路径条让位见 applyFsMode
-  if (msg.type === 'setCenterMode') { // 设置页切换「画布中央」档 → 宿主推送到所有打开的视图（2026-09-16）
-    applyCenterMode(msg.value);
-    // 切档后立刻按新落点重新定位一次：让用户马上看到位置变化（否则画面不动，会误以为"没生效"）
-    try { if (state.tree) locateCenter(); } catch (e) {}
-    return;
-  }
   if (msg.type === 'setHideHint') { // 设置页切换「隐藏新增页面提示」→ 即时生效（2026-09-01）
     state.hideHint = !!msg.value;
     render();
@@ -7904,8 +8283,27 @@ window.addEventListener('message', e => {
     try { addChildDocRes(msg); } catch (e) { /* 插节点失败不影响画布 */ }
     return;
   }
+  if (msg.type === 'importToNodeRes') { // 「转入 → 挂到当前导图的选中节点」的回包（2026-10-12）：插到此刻选中的节点下
+    try { importToNodeRes(msg); } catch (e) { /* 插节点失败不影响画布 */ }
+    return;
+  }
+  if (msg.type === 'importFolderRes') { // 「转入仓库文件夹（挂到选中节点）」的回包（2026-10-12）：整棵结构插到选中节点下
+    try { importFolderRes(msg); } catch (e) { /* 插节点失败不影响画布（函数内部已回 fail 给宿主） */ }
+    return;
+  }
   if (msg.type === 'locateDocRef') { // 文档面板点「1｜2｜3」：那张图**已经开着** → 就地定位，不重新开文件
     try { locateDocRefOnce(msg.ref); } catch (_) {}
+    return;
+  }
+  if (msg.type === 'docSplitOpened') { // 点击文档节点后右侧分屏**新建**好了（宿主回推，2026-10-11）：
+    // 画布刚被压窄 → 把被点的节点**只沿 X 轴**滑到左侧半屏正中（Y 轴与缩放都不动，见 slideCardToX）。
+    try { locateAfterDocSplit(msg.nodeId, Number(msg.wSplit) || 0); } catch (_) {}
+    return;
+  }
+  if (msg.type === 'docSplitsClosed') { // 点了「关闭分屏」图标、右侧分屏已整组关掉（宿主回推，2026-10-11）：
+    // 画布刚恢复全宽 → 把画面**向右平移**：平移量 =（恢复的宽度 × --close-split-slide，默认 0.5 = 挪回居中）
+    // + extra（左侧边栏被放回时要额外补的那一截）+ wFinal（宿主算好的最终宽度 → 立刻开滑，2026-10-11）。
+    try { slideAfterSplitClose(Number(msg.wBefore) || 0, Number(msg.extra) || 0, Number(msg.wFinal) || 0); } catch (_) {}
     return;
   }
   if (msg.type === 'setAiRulesFull') { // 「AI 更改规则」整块显示 / 收成小横条（2026-10-06）：宿主推来 → 只应用、不回写
@@ -8013,6 +8411,7 @@ window.addEventListener('message', e => {
       if (r) {
         pushUndo();
         r.node.images.push(msg.filename);
+        clearFreshPlaceholderTitle(r.node.id); // 刚新建的空节点 → 顺手把占位「新节点」清掉（2026-10-12）
         emitUpdate(); render();
       } else {
         toast(T('toast.imgSavedNoNode'), true);
@@ -8114,7 +8513,6 @@ window.addEventListener('message', e => {
     if (typeof msg.docSplits === 'boolean') applyDocSplits(msg.docSplits); // 右侧有没有文档分屏（2026-10-11）→ 那颗「关闭分屏」图标显隐
     applyDarkMode(!!msg.dark); // 深色模式随 init 下发（2026-09-18 跟随 Obsidian；2026-09-20 起可在设置页小窗里强制浅/深）
     applyAccent(msg.accent); // Obsidian 主题色随 init 下发（2026-09-20）：链接色默认跟着它，读不到就留空走 CSS 兜底
-    applyCenterMode(msg.centerMode || 'canvas'); // 画布中央档随 init 下发（2026-09-16）
     state.hideHint = !!msg.hideHint; // 空图新手提示是否隐藏随 init 下发（2026-09-01）
     state.todoBtn = msg.todoBtn === 'bottom' ? 'bottom' : 'context'; // 待办按钮位置随 init 下发（2026-09-23）
     if (typeof msg.motion === 'boolean') motionEnabled = msg.motion; // 动效开关随 init 下发（设置页「高级 → 动效」，2026-09-20）
@@ -8194,9 +8592,11 @@ window.addEventListener('message', e => {
         if (useSavedView) {
           drawEdges(); // 位置已还原，布局稳定后只需重画曲线
         } else {
-          // 2026-08-29：开屏智能定位（定位按钮同款），不再整画布居中（大树会飘走）；
-          // 带下钻（捷径/默认路径）时 goTo 已定位过一次，这里同款定位幂等不冲突
-          locateCenter();
+          // 2026-08-29：开屏智能定位，不再整画布居中（大树会飘走）。
+          // 🔴 2026-10-11 用户定（开屏取景换规则）：改用 placeContentAtCenter() —— 按**整张内容**取景
+          //   （内容中央对 40%、母节点距左缘 --locate-left-gap 就停），不再按"主节点"对位；
+          //   定位按钮 / 下钻返回等其它定位入口不受影响（还是原规则）。
+          placeContentAtCenter();
         }
         startInitCenter(reveal);
         updateDefaultPathBtn();
@@ -8514,7 +8914,7 @@ function countDescendantsAll(n) {
 }
 
 // 历史页渲染：复用编辑视图 render()（保留连线/缩放/滚动/卡片样式），不另写一棵树。
-// recenter 只在【首次进入历史界面】时传 true —— 把当前主节点摆到「自定义中央位置」，给一个稳定的初始视角。
+// recenter 只在【首次进入历史界面】时传 true —— 把当前主节点摆到「中央」，给一个稳定的初始视角。
 // 之后换快照 / 折叠触发的重绘一律不传 → 视口原地不动（用户调过的缩放与位置就是"这次进历史的视角"）。
 function renderHistoryTree(recenter, withMotion) {
   if (!state.historyTree) return;
@@ -8524,14 +8924,14 @@ function renderHistoryTree(recenter, withMotion) {
   state.multiSelected = new Set();
   // withMotion：折叠/展开这类交互要平滑让位（2026-09-20 放开历史态动效）；首次进入/切快照仍用普通 render。
   if (withMotion) renderWithMotion(); else render(); // 完全复用：连线、缩放、平移、卡片样式；差异标记由 render 末尾统一补
-  // 首次进入归位：定位复用现成机制 placeCardAtViewport + 调参区的 --locate-first-x / --locate-y
+  // 首次进入归位：定位复用现成机制 placeCardAtViewport + 调参区的中央（--locate-x / --locate-y）
   // （就是"把根放在画面这个位置"）。顺带根治"进去一片空白"：不归位时主节点可能正好在屏幕外。
   // ⚠️ 归位内部读 --locate-reset-zoom（默认开）会把 zoom 打回 1 —— 所以只能首次做，否则切快照会清掉用户的缩放。
   // （原 firstDiffNode / centerHistoryOnFirstDiff「居中到第一个差异节点」已按用户意见删除。）
   if (recenter) {
     const root = state.historyTree;
     const el = root && document.querySelector('.node-row[data-id="' + root.id + '"] .card');
-    if (el) placeCardAtViewport(el, cfgNum('--locate-first-x', 0.4));
+    if (el) placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
   }
 }
 
@@ -8593,7 +8993,7 @@ function sandboxRestore() {
 function enterHistorySnapshot(timestamp, text, name) {
   if (!state.tree) return; // 数据还没到位（未就绪窗口）→ 不渲染，别拿空树去 buildRow
   // 是不是【首次进入历史界面】（面板里换快照也会走到这里，那时 liveTree 已在 → 不算首次）。
-  // 用途：① 沙盒只在首次存白板 / 装初值；② 只在首次把主节点归位到「自定义中央位置」。
+  // 用途：① 沙盒只在首次存白板 / 装初值；② 只在首次把主节点归位到「中央」。
   // ② 的由来（2026-09-14 用户定）：进历史后用户会缩放 / 平移，再点别的历史记录时应当【保持他调好的视角】，
   //   而不是每条都重新归位。原实现无条件归位，而 placeCardAtViewport 在 --locate-reset-zoom 打开时
   //   会把 zoom 打回 1 → 表现就是"切一条，我调的缩放和位置全没了"。
@@ -8667,7 +9067,7 @@ function enterHistorySnapshot(timestamp, text, name) {
   //   换快照记住位置/缩放的锚定行为"几乎完美"，绝不能全动）。特殊场景 = 这一版被差异规则折得只剩
   //   主节点（state.historyTree.fold，如版本与最新一致 / 只动了主节点），此时主节点可能已被划到边角外：
   //   完整可见 → 什么都不做；被边缘截断（一半出画）→ 参考折叠逻辑最小平移往画面里收；
-  //   完全出画 → 回自定义中央位（--locate-selected-x/--locate-y，缩放不变）。其余场景一律保持锚定。
+  //   完全出画 → 回中央（--locate-x/--locate-y，缩放不变）。其余场景一律保持锚定。
   if (!firstEnter && state.historyTree && state.historyTree.fold) {
     try { historyRootRecenterIfCollapsed(); } catch (e) { /* 渲染时序异常不阻塞换快照 */ }
   }
@@ -9426,12 +9826,18 @@ function locateDocRefOnce(ref) {
     const tokens = []; // 树里所有的链接 token —— 只为"找不到时"能一眼看出是哪边名字对不上
     (function walk(n, parents) {
       if (!n) return;
-      const re = /\[\[([^\]#\n]+)\]\]/g;
+      const re = /\[\[([^\]\n]+)\]\]/g;
       let m;
       while ((m = re.exec(String(n.title || ''))) !== null) {
+        // 🔴 带 `#锚点` 的**不算引用**（2026-10-11 用户定）：[[X#pid]] 是"跳到某个节点"的节点链接，
+        //   不是"这份文档被谁管着"——宿主 doclibRefIndex 与 ✕「取消这一处」(docRefCountIn) 都不数它，
+        //   这里必须同口径：否则面板的「第 N 处」和画布的命中序号错位（同图里锚点/普通混排时差一位）。
+        //   （上一版曾反过来"让画布也认锚点"，口径改后作废。）
+        const raw = String(m[1] || '');
+        if (raw.indexOf('#') >= 0) { tokens.push(docLinkTokenOf(raw)); continue; }
         // ⚠️ 剥掉 `|别名` 再比（2026-10-10）：`[[名字|显示名]]` 里那截别名不参与匹配，
-        //   带着它比会永远对不上（`n === nameStem` 挂掉）。与 `requestDocLinks` 的口径一致。
-        const tk = docLinkTokenOf(m[1]);
+        //   带着它比会永远对不上（`n === nameStem` 挂掉）。
+        const tk = docLinkTokenOf(raw);
         tokens.push(tk);
         if (match(tk)) hits.push({ node: n, parents: parents });
       }
@@ -9450,6 +9856,32 @@ function locateDocRefOnce(ref) {
     }
     const hit = hits[Math.max(0, Math.min(ref.index | 0, hits.length - 1))];
     const node = hit.node;
+    // 🔴 目标被视图筛选藏起来 → 自动把那个筛选关掉，让节点现身（2026-10-11 用户定）：
+    //   「隐藏次要节点」开着且目标（或其祖先）是次要/已完成 → 关掉它；
+    //   「只显示当前关注」开着且目标不在可见集 → 关掉它。
+    //   不关的话：树里命中了、画面上却没有这个节点 → selectNode 落空 → 表现为"点了没有任何反应"
+    //   （用户实报：次要节点 + 开着隐藏筛选，点面板第 N 处全无反应）。
+    //   按用户点按钮同款走 setHideDone/setShowNow（persist=true：按钮图标 / 落盘 / 渲染全跟着走）。
+    //   可见性判定与 render 完全同口径：hideDone 连坐祖先（doneChain），showNow 看 nowVisibleSet 成员。
+    let filterTurnedOff = '';
+    if (state.hideDone) {
+      const doneChain = (hit.parents || []).some(p => nodeIsMinor(p) || nodeTodoDone(p));
+      if (nodeIsMinor(node) || nodeTodoDone(node) || doneChain) {
+        setHideDone(false, true, false);
+        filterTurnedOff = 'hideMinor';
+      }
+    }
+    if (state.showNow) {
+      const nvSet = nowVisibleSnapshot || computeNowVisible(currentRoot());
+      if (nvSet && !nvSet.has(node.id)) {
+        setShowNow(false, true, false);
+        filterTurnedOff += (filterTurnedOff ? '+' : '') + 'showNow';
+      }
+    }
+    if (filterTurnedOff) {
+      try { vscode.postMessage({ type: 'log', text: '定位目标被筛选隐藏 → 自动关闭筛选：' + filterTurnedOff }); } catch (_) {}
+      toast(T('toast.locateReveal'), false);
+    }
     // 诊断（2026-10-10）：命中了几个、取了第几个、走哪条路 —— 点定位"没反应 / 不对"时
     //   看一眼控制台就能分清是「匹配错了」还是「匹配对了但没摆过去」。
     //   ⚠️ `hits.length` 明显大于宿主报的处数 = 名字被**误匹配**（2026-10-10 修过一版
@@ -9482,7 +9914,7 @@ function locateDocRefOnce(ref) {
     }
     selectNode(node.id);
     const el = document.querySelector('.node-row[data-id="' + node.id + '"] .card');
-    if (el) placeCardAtViewport(el, cfgNum('--locate-selected-x', 0.5));
+    if (el) placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
   } catch (_) {}
 }
 function requestDocLinks() {
@@ -9578,7 +10010,7 @@ function openNote(raw) {
 // 打开 wikilink 指向的笔记（可带 #pid 下钻）：交给宿主按 Obsidian 链接解析找文件
 //   文档节点额外支持 **⌘（mac）/ Ctrl（win-linux）+ 点击 = 分屏打开**（2026-10-09 用户定）：
 //   导图留在左边、文件开在右边；普通点击照旧新标签页。
-function openWikiLink(raw, ev) {
+function openWikiLink(raw, ev, el) {
   const w = parseWikiLink(raw);
   if (!w) return;
   if (!w.pid && isStoredDoc(w.note)) {
@@ -9589,7 +10021,17 @@ function openWikiLink(raw, ev) {
       //   ⚠️ `split` 这个字段名没变（true = 分屏），只是取值反了：宿主 openDocFile / 全屏那条
       //   「分屏打开保住全屏」都不用动，语义自动跟着走。
       const split = !(ev && (ev.metaKey || ev.ctrlKey));
-      vscode.postMessage({ type: 'openDoc', path: p, split: split });
+      // 2026-10-11：把**被点的节点**一起报给宿主 —— 分屏"真新建出来"之后，宿主会回推
+      //   `docSplitOpened`，画布据此把该节点**只沿 X 轴**滑到左侧半屏正中（locateAfterDocSplit）。
+      //   拿不到节点 id（结构异常）就发空串：宿主会跳过回推，分屏照常打开，只是没有滑动。
+      const row = el && el.closest ? el.closest('.node-row') : null;
+      const nodeId = (row && row.dataset && row.dataset.id) || '';
+      // 🔴 2026-10-12 用户定：点文档节点 = 右边开分屏，左边这张图要**把被点的节点选上**
+      //   （不然看不出刚才点的是哪一个）。链接自己那次 click 是 stopPropagation 的 → 走不到卡片
+      //   那条"点一下选中"的分支，所以这里补一次。选中副作用与点卡片一致（选中框 / 底部工具条 / 快捷键全生效）。
+      if (nodeId) { try { selectNode(nodeId); } catch (_) {} }
+      dbgSplit('① 画布点击文档节点 → 发给宿主 split=' + split + ' nodeId=' + (nodeId || '无') + ' path=' + p);
+      vscode.postMessage({ type: 'openDoc', path: p, split: split, nodeId: nodeId });
       return;
     }
   }
@@ -9920,8 +10362,9 @@ function bindInline(container) {
     s.onclick = e => { e.stopPropagation(); jumpByPid(s.dataset.pid); };
   });
   container.querySelectorAll('.inline-wiki').forEach(s => {
-    // 把事件一起传下去：文档节点要看 ⌘/Ctrl 决定"新标签页"还是"分屏"（2026-10-09）
-    s.onclick = e => { e.stopPropagation(); openWikiLink(s.dataset.raw, e); };
+    // 把事件一起传下去：文档节点要看 ⌘/Ctrl 决定"新标签页"还是"分屏"（2026-10-09）；
+    // 元素本身也传（2026-10-11）—— 分屏新建后要反查它所在的节点，把节点滑到左屏正中。
+    s.onclick = e => { e.stopPropagation(); openWikiLink(s.dataset.raw, e, s); };
   });
   container.querySelectorAll('.inline-url').forEach(s => {
     s.onclick = e => { e.stopPropagation(); openUrl(s.dataset.url); };
@@ -10152,7 +10595,7 @@ function setShowNow(on, persist, skipRender) {
     });
     emitUpdate(); // 落盘 fold 变化
   }
-  // 2026-09-01 修「切走再回 pan 被清零、永远回自定义中央」的头号根因（历史，勿回退）：
+  // 2026-09-01 修「切走再回 pan 被清零、永远回中央」的头号根因（历史，勿回退）：
   // 原 `if (on) resetView()` 不看 persist——init 恢复（persist=false）也走 resetView → rAF 里 locateCenter
   // → placeCardAtViewport 强制 pan=0 + scroll=定位规范值，把 init hasSavedView 分支刚恢复的 pan 抹掉；
   // 随后的 scroll 事件 persist 又把被污染的状态写回记忆 → 永远回中央。修：init 恢复只重渲染应用 Now 过滤，
@@ -10186,6 +10629,7 @@ function updateNowSideBtn() {
 // 无可用 Now 节点 → 置灰；否则按 showNow 切正常/激活图标。
 // 置灰一律用 .disabled 类（不用 disabled 属性）：属性会把 hover tooltip 一起搞没，各浏览器表现还不一。
 function updateNowFilterItem() {
+  updateLocateNowBadge(); // 定位按钮右下角的「当前关注」数量角标跟着刷（标记/取消 Now 都会走到这里）
   // 展开档：这一路改刷一级的「聚焦当前关注」按钮（#btn-now-side），菜单项那套不参与
   if (filterSplit()) { updateNowSideBtn(); return; }
   const b = document.getElementById('fm-now');
@@ -10368,7 +10812,7 @@ function foldRun(mode, lvl) {
   else {
     // view 模式落位（2026-09-15 重做，用户定）：缩放全程不变，按主节点可见性三分——
     // 完整可见 → 原地站住（锚定补偿后画面不动）；被视口截断 → 最小平移露出全卡；
-    // 完全不在画面里 → 标准机位（--locate-first-x / --locate-y，缩放仍不变）。
+    // 完全不在画面里 → 标准机位（中央：--locate-x / --locate-y，缩放仍不变）。
     keepView(currentRoot()); // 锚点 = 主节点；render 末尾 applyPendingKeepView 把它摆回原屏幕位置
     render(); // render 内会调 updateFoldBar 重发状态
     viewFoldLocate();
@@ -10395,10 +10839,10 @@ function historyRootRecenterIfCollapsed() {
     if (r.top < vr.top) dy = vr.top + 12 - r.top; else if (r.bottom > vr.bottom) dy = vr.bottom - 12 - r.bottom;
     panX += dx / zoom; panY += dy / zoom;
   } else {
-    // 完全出画：回自定义中央位（缩放不变）
+    // 完全出画：回中央（缩放不变）
     const c = worldCenter(el);
-    panX = vr.width * cfgNum('--locate-selected-x', 0.5) / zoom - c.x;
-    panY = vr.height * cfgNum('--locate-y', 0.5) / zoom - c.y;
+    panX = vr.width * cfgNum('--locate-x', 0.5) / zoom - c.x;
+    panY = vr.height * winAlignY(cfgNum('--locate-y', 0.5)) / zoom - c.y;
   }
   applyTreeTransform(); drawEdges();
 }
@@ -10418,11 +10862,11 @@ function viewFoldLocate() {  const root = currentRoot();
     if (r.top < vr.top) dy = vr.top + 12 - r.top; else if (r.bottom > vr.bottom) dy = vr.bottom - 12 - r.bottom;
     panX += dx / zoom; panY += dy / zoom;
   } else {
-    // 完全不在画面里：回**自定义中央位**（--locate-selected-x / --locate-y，2026-09-18 用户定：
-    // 与定位按钮同一落点；原先用 --locate-first-x，用户描述折叠按钮行为就是"跑到自定义中央"→ 统一）
+    // 完全不在画面里：回**中央**（--locate-x / --locate-y，2026-09-18 用户定：
+    // 与定位按钮同一落点（2026-10-11 大统一后本来就是一个落点）
     const c = worldCenter(el);
-    panX = vr.width * cfgNum('--locate-selected-x', 0.5) / zoom - c.x;
-    panY = vr.height * cfgNum('--locate-y', 0.5) / zoom - c.y;
+    panX = vr.width * cfgNum('--locate-x', 0.5) / zoom - c.x;
+    panY = vr.height * winAlignY(cfgNum('--locate-y', 0.5)) / zoom - c.y;
   }
   applyTreeTransform(); drawEdges(); persistNow();
 }
@@ -10620,6 +11064,24 @@ function buildLocateItems() {
 // 定位子菜单每缩进一级的像素（2026-09-28）：paddingLeft 增量与「图标区能借用多少空隙」共用同一个值，
 // 改这里两处一起变（原来写死 18 出现在两个地方，容易改一处忘另一处）。
 const NOW_INDENT_PX = 18;
+// 定位按钮右下角的「当前关注」数量角标（2026-10-11 用户定）：数字 = 定位序列第二段「当前关注」的
+//   个数（buildLocateItems 同口径：被 Minor 埋掉 / 当前看不见的 Now 本来就不进序列）。0 个不显示。
+//   外观全是旋钮：mindmap-app.css「视觉调参区 · 定位按钮」的 --locate-now-badge-*（字号/距右/距底/颜色）。
+function updateLocateNowBadge() {
+  try {
+    const btn = document.getElementById('btn-locate');
+    if (!btn) return;
+    let badge = btn.querySelector('.shin-locate-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'shin-locate-badge';
+      btn.appendChild(badge);
+    }
+    const n = buildLocateItems().filter(it => it.type === 'now').length;
+    badge.textContent = String(n);
+    badge.style.display = n > 0 ? '' : 'none';
+  } catch (_) {}
+}
 // 菜单条目的图标区宽度（2026-09-28，纯函数便于自检）：每条算「它需要的宽度 − 能借用的缩进空隙」，
 // 取最大值、下限一格（15px）。含义 ——
 //   ① 全菜单都只有 1 个图标 → 15px（不占多余空白）；
@@ -10696,12 +11158,15 @@ function scrollToItem(item, onDone) {
   const path = pathTo(currentRoot(), item.id);
   if (path) {
     let changed = false;
-    path.forEach(n => { if (n.fold) { n.fold = false; changed = true; } });
+    // ⚠️ 只展开**祖先**（挡路的折叠）、**不动目标节点自己**（2026-10-11 用户实报：选中一个折叠的节点、
+    //   点定位按钮，它自己的折叠被顺带展开了）。判据用 id 排除 —— 不依赖 pathTo 的尾部顺序，
+    //   与历史界面那边同口径（applyNowThenDiffFold 里的 `path.length - 1`）。
+    path.forEach(n => { if (n.id !== item.id && n.fold) { n.fold = false; changed = true; } });
     if (changed) { emitUpdate(); render(); }
   }
   const el = document.querySelector('.node-row[data-id="' + item.id + '"] .card');
   if (!el) return false; // 节点超框（无 el）→ 无法定位
-  const x = item.type === 'selected' ? cfgNum('--locate-selected-x', 0.5) : cfgNum('--locate-first-x', 0.25);
+  const x = cfgNum('--locate-x', 0.5);
   placeCardAtViewport(el, x, onDone);
   return true;
 }
@@ -11352,6 +11817,7 @@ const btnGuide = document.getElementById('btn-guide');
 if (btnGuide) btnGuide.onclick = (e) => { e.stopPropagation(); openUrl(GUIDE_URL); };
 const btnDoclib = document.getElementById('btn-doclib');
 if (btnDoclib) btnDoclib.onclick = (e) => { e.stopPropagation(); vscode.postMessage({ type: 'openDocLibrary' }); };
+if (btnDoclib) applyProGate(btnDoclib); // Pro 拦截（2026-10-11）：文档库入口（未激活悬浮变票、点击进激活引导）
 // 「按钮简化」那两行 → 左下两颗按钮的显隐（init / setMorePanel 两处都调；用 class 与骨架同一口径）
 function applyMorePanelButtons() {
   const raw = (state.morePanel && typeof state.morePanel === 'object') ? state.morePanel : {};

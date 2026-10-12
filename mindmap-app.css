@@ -86,6 +86,26 @@
   --locate-hover-delay-ms: 320; /* 定位按钮【悬停多久才弹子菜单】（毫秒）：鼠标必须停在按钮上这么久，才弹出子菜单并预览定位；没停够就移开（扫过）= 完全不弹、画布也不动。调大→更不容易误触；调小→更灵敏；0=立刻弹（旧行为）。改完需【禁用再启用插件】生效（CSS 与 JS 都只在插件启用时读盘一次） */
   --locate-item-delay-ms: 320;  /* 子菜单条目【悬停多久才定位预览】（毫秒）：鼠标在条目上停够这么久，画布才滚过去预览；扫过不动。调大→更稳不易误触；调小→更灵敏；0=立刻定位（旧行为）。改完需【禁用再启用插件】生效 */
 
+  /* ---- 定位按钮右下角的「当前关注」数量角标（2026-10-11 用户定）----
+     数字 = 定位序列第二段「当前关注」的个数（与悬浮菜单同口径：被埋掉/看不见的 Now 不算）；0 个不显示。 */
+  --locate-now-badge-size: 10px;                 /* 角标字号 */
+  --locate-now-badge-x: -0.5px;                    /* 距按钮右缘的偏移（负 = 探出按钮外面一点） */
+  --locate-now-badge-y: 6px;                    /* 距按钮底缘的偏移（负 = 探出按钮下面一点） */
+  --locate-now-badge-color: var(--text-faint);   /* 角标颜色（默认浅灰 = 浅色小数字；想要更醒目就换 var(--text-muted) 或主题色） */
+  --locate-now-badge-opacity: 0.3;               /* 角标整体透明度（2026-10-11 用户定默认 0.5；1 = 不透明） */
+#btn-locate { position: relative; }              /* 角标的定位基准 */
+#btn-locate .shin-locate-badge {
+  position: absolute;
+  right: var(--locate-now-badge-x, -3px);
+  bottom: var(--locate-now-badge-y, -3px);
+  font-size: var(--locate-now-badge-size, 10px);
+  line-height: 1;
+  color: var(--locate-now-badge-color, var(--text-faint));
+  opacity: var(--locate-now-badge-opacity, 0.5);
+  font-variant-numeric: tabular-nums;            /* 数字跳变时宽度不抖 */
+  pointer-events: none;                          /* 纯展示：别挡按钮自己的点击 / 悬停 */
+}
+
   /* ---- 过滤按钮（眼睛：只显示 Now / 隐藏 Minor+Done 两功能合一，2026-09-27；2026-09-28 起点击弹出）---- */
   --filter-menu-y: 0px;         /* 二级菜单上下微调（菜单上沿默认与按钮上沿齐平）：正值=下移，负值=上移 */
 
@@ -196,9 +216,10 @@
   /* ---- 右侧「关闭分屏」图标（2026-10-11 用户定；图标本体现画在 mindmap-app.js 的 ICONS['close-splits']）----
      有右侧文档分屏时出现在画布右边缘，点一下把那组文档分屏全关掉 */
   --close-splits-right: 4px;       /* 离画布**右边缘**的距离 ✅ */
-  --close-splits-top: 50%;          /* 上下位置：50% = 垂直居中（想更靠上/下就改这个）✅ */
-  --close-splits-size: 36px;        /* 图标大小 ✅ */
-  --close-splits-color: #343434;    /* 浅色模式下的图标颜色（用户给的设计稿就是 #343434）✅ */
+  --close-splits-top-gap: 6px;     /* 离画布**顶边**多远（默认贴顶、不再居中，2026-10-11 用户定）✅
+                                       想挪回来一点就调大；想回到"垂直居中"：calc(50% - 18px)（按钮半高≈18px） */
+  --close-splits-size: 34px;        /* 图标大小 ✅ */
+  --close-splits-color: #676565;    /* 浅色模式下的图标颜色（用户给的设计稿就是 #343434）✅ */
   --close-splits-color-dark: #dcdcdc; /* 深色模式下的图标颜色（换成浅色）✅ */
   --close-splits-hover-bg: rgba(128,128,128,.16); /* 悬停底色 ✅ */
   --close-splits-radius: 6px;       /* 悬停底色的圆角 ✅ */
@@ -391,23 +412,22 @@
   --accent-l1: var(--accent);
   --l1-bg: #e8f0ff;
 
-  /* ---- 定位调参（2026-08-25，改完重载插件生效）----
-     水平/垂直位置：0 = 最左/最上, 0.5 = 居中, 1 = 最右/最下 */
-  --locate-y: 0.4;            /* ⚠️ 别直接改：由下面的定位档位统一写值（要改落点改 --center-*） */
-  --locate-selected-x: 0.4;   /* ⚠️ 同上 */
-  --locate-first-x: 0.4;      /* ⚠️ 同上 */
-
-  /* —— 定位落点（2026-09-16）——
-     · 设置页的档位切换已【暂时隐藏】（用户定：等有用户需求再放出来），当前固定走「画布中央」这一档。
-     · 所以现在真正生效的落点 = 下面 --center-canvas-* 这两个数（改完重载插件生效）；
-       「视觉中央」那两个先留着备用，隐藏期间不生效。
-     x = 水平比例（0=最左 / 1=最右）；y = 垂直比例（0=最上 / 1=最下）。 */
-  --center-canvas-x: 0.4;   --center-canvas-y: 0.4;   /* 当前生效的落点（原「画布中央」档）。想更靠上 → y 调小；更靠左 → x 调小 */
-  --center-visual-x: 0.3;   --center-visual-y: 0.3;   /* 「视觉中央」档落点：暂时用不到，留着备用 */
+  /* ---- 定位调参 · 「中央」（2026-10-11 大统一：全世界只有一个中央，落点只看下面两个数）----
+     水平/垂直位置：0 = 最左/最上, 0.5 = 居中, 1 = 最右/最下
+     🔴 纵向按「整个窗口」换算（2026-10-11 用户实报"点定位后视觉偏下"）：画布头顶垫着标签栏+路径条
+        （约 60px），"画布 50%" 天然比 "窗口 50%" 低半个头高 —— 旧默认 40% 正好补掉这段（当年定 40%
+        的真实原因）；现在代码里 winAlignY() 自动换算，纵向 0.5 = 视觉正中（相对整个窗口）。横向不换算。
+     唯一特例：点文档节点 → 只沿 X 轴滑到左屏正中（--locate-split-x），Y 与缩放不动。
+     历史遗留（档位机制 --center-canvas-*/--center-visual-*、开屏专用 --locate-open-*、
+     --locate-selected-x/--locate-first-x 之分）已于 2026-10-11 全部拆除，别再回流。 */
+  --locate-x: 0.5;            /* 中央横向（0=最左 / 1=最右）。想更靠左 → 调小 */
+  --locate-y: 0.5;            /* 中央纵向（0=最上 / 1=最下；按整个窗口换算）。想更靠上 → 调小 */
+  --locate-split-x: 0.5;      /* 点文档节点→分屏把画布压窄后，被点节点**只沿 X 轴**滑到的横向位置（0~1，0.5=左屏正中）。Y 轴与缩放不动。改完重载插件生效 */
+  --locate-left-gap: 28px;    /* 开屏取景的左推极限：内容再宽，母节点（内容左端）距视口左缘也至少留这么宽（2026-10-11 用户定，改完重载插件生效） */
+  --close-split-slide: 0.5;   /* 点「关闭分屏」图标、画布恢复全宽后，画面**向右平移**的量 =（恢复的宽度 × 这个系数）。0.5=挪回居中；1=挪"文档区那么宽"一整段；0=不移动。改完重载插件生效 */
   --locate-reset-zoom: 1;     /* 定位/下钻返回是否重置缩放：1=重置100%, 0=保留当前缩放。⚠️ 保留「定位后回到 100%」这个效果，不是 bug；想改就改这个值 */
   --nm-edge-inset-x: 26px;    /* 右缘落点边距（2026-09-18 用户定可调）：新建/编辑的卡片超出右缘被拉回来时，停在离右缘多远。默认 16px=贴边（旧行为）；调大（如 120px）→ 新建子节点的落点往左收、不那么靠边。改完重载插件生效 */
   --nm-newchild-y: 0.6;       /* ★ 新建节点防遮挡的目标 Y（2026-09-18 用户定可调，改这里）：新卡被底部工具条盖住时，视图垂直上提，把卡片中心放到「视口高度 × 这个比例」处。0.5=正中；调大→更靠下；调小→更靠上。改完重载插件生效 */
-  --locate-reset-pan: 1;      /* 定位/下钻返回是否重置平移：1=重置, 0=保留 */
 
   /* ---- 定位缓动调参（2026-08-30；像视频软件的缓动曲线，调控制点改"先缓后快再缓"的手感）---- */
   --locate-anim-dur: 350;     /* 持续时间 ms，越大越慢 */
@@ -611,13 +631,13 @@ body {
 .empty-root-ico { display: inline-flex; align-items: center; }
 .empty-root-ico svg { width: var(--empty-btn-ico); height: var(--empty-btn-ico); }
 
-/* 右侧「关闭分屏」图标（2026-10-11）：贴在画布右边缘、上下居中（位置/大小/颜色全是旋钮 --close-splits-*）。
+/* 右侧「关闭分屏」图标（2026-10-11）：贴在画布右边缘、**贴顶**（距顶边由旋钮 --close-splits-top-gap 控制，
+   2026-10-11 用户定：原来上下居中，改成靠上）。位置/大小/颜色全是旋钮 --close-splits-*。
    只在"右侧有文档分屏"时显示（宿主推 setDocSplits(true) 时摘掉 .hidden）。 */
 .close-splits-btn {
   position: absolute;
   right: var(--close-splits-right, 10px);
-  top: var(--close-splits-top, 50%);
-  transform: translateY(-50%);
+  top: var(--close-splits-top-gap, 12px);
   display: inline-flex; align-items: center; justify-content: center;
   padding: var(--close-splits-pad, 5px);
   border: none; background: transparent;
@@ -831,7 +851,7 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 
 /* ===== 节点快捷菜单（点击节点时在视图底部居中显示：加粗/红/黄/备注/完成） ===== */
 .node-menu {
-  position: fixed; z-index: 70; display: flex; gap: 2px;
+  position: fixed; z-index: 86; display: flex; gap: 2px;
   left: 50%; bottom: 20px; transform: translateX(-50%);
   background: #fff; border: 1px solid var(--line); border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
@@ -874,7 +894,7 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 #ai-input-bar {
   position: fixed; left: 50%; bottom: var(--ai-bar-bottom);
   transform: translateX(-50%);
-  z-index: 71;                       /* 高于底部工具条 70 */
+  z-index: 71;                       /* 与底部工具条**互斥**（不会同时在），层级不必跟它对齐；仍在左下工具栏(85)之下 */
   display: flex; flex-direction: column; align-items: flex-start;   /* 提示词在上、框在下 */
 }
 #ai-input-bar.hidden { display: none; }
@@ -1035,7 +1055,7 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
    · 条目 / 分隔线 → 直接复用 .mm / .mm-sep（JS 里就是这么建的），与 #more-menu 同一个设计。
    这里只写它独有的「定位 + 排版」。 */
 .node-more-menu {
-  position: fixed; z-index: 80;  /* 高于 .node-menu(70)/.ctx-menu(60)，低于 tooltip(85) */
+  position: fixed; z-index: 87;  /* 高于 .node-menu(86)/#left-toolbar(85)/.toast-below(80)/.ctx-menu(60)；tooltip(90) 仍在最上层 */
   padding: var(--panel-pad, 6px); /* 与 #more-menu 一致；面板内条目的提示要用它算让位（见 --tip-inset 那组）*/
   display: flex; flex-direction: column; gap: 2px;
   /* ⚠️ 宽度**不设 min-width**（2026-10-05 用户定）：让它跟随内容 ——
@@ -1047,8 +1067,9 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 .node-more-menu.hidden { display: none; }
 /* 让条目提示以「被悬浮的那一条」为锚点向上弹（不加这句会以整个面板为锚点、弹到面板上方去） */
 .node-more-menu .mm { position: relative; }
-/* 二级「添加其他内容」面板 / 底部「样式」面板：同一个外观，只是压在其它浮层之上（2026-09-17） */
-.node-more-sub, .node-style-menu { z-index: 81; }
+/* 二级「添加其他内容」面板 / 底部「样式」面板：同一个外观，只是压在其它浮层之上（2026-09-17）
+   z 跟随 #node-more-menu 一起上浮（2026-10-11：80/81 → 87/88，理由见 .node-menu 那条） */
+.node-more-sub, .node-style-menu { z-index: 88; }
 /* 底部「样式」子菜单：**横排**图标（B / 红圈 / 黄圈），与竖排的条目菜单不同（用户 2026-09-17） */
 .node-style-menu { flex-direction: row; gap: 4px; min-width: 0; }
 .node-style-menu .mm { padding: 6px; }
@@ -1342,11 +1363,14 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 }
 
 /* 右键菜单（复制链接） */
+/* z-index 沿革：2026-10-07 用户定「优先级提到最高」—— 要盖住底部那条节点快捷菜单 .node-menu 与节点「更多」面板，
+   但**必须低于 tooltip**（菜单行的黑色小提示要浮在菜单上面，否则提示自己看不见）。
+   2026-10-11 底部工具条(.node-menu)为压住左下工具栏提到 86，这里当时还停在 83 →
+   右键位置靠下时**整个被底部那排压住**（2026-10-12 用户实报「右键菜单要浮在底部那排上面」）→ 提到 **89**：
+   高于 86/87/88（底部那排 + 它自己的悬浮面板），仍低于 tooltip(90)。
+   配合 JS 的 ctxBottomLimit()「排在工具条上沿之上」一起用，两条各管一半（看得见 / 让得开）。 */
 .ctx-menu {
-  /* 2026-10-07 用户定：**优先级提到最高** —— 要盖住底部那条节点快捷菜单 .node-menu(70)
-     和节点「更多」面板(80/81)：点节点后呼出右键菜单，不再被底部那条挡住。
-     但**必须低于 tooltip(85)**：菜单行的黑色小提示得浮在菜单上面，否则提示自己看不见。 */
-  position: fixed; z-index: 83;
+  position: fixed; z-index: 89;
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: var(--ctx-pad, 4px); min-width: 110px; /* padding 走变量：提示的让位量要跟它联动 */
@@ -1435,7 +1459,8 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
 /* ===== 左侧工具栏（飞书文档一致：左下垂直） ===== */
 #left-toolbar {
   position: fixed; left: 16px; bottom: 16px;
-  z-index: 85; /* 2026-08-30：高于 .toast-below(80)/.node-menu(70)/.ctx-menu(60)，tooltip 不再被白底 toast 盖 */
+  z-index: 85; /* 2026-08-30：高于 .toast-below(80)/.ctx-menu(60)。
+                  ⚠️ 2026-10-11 起**底部节点工具栏(.node-menu 86) 在它之上**（用户定：画布压窄时底部那排要压住左下工具栏） */
   display: flex; flex-direction: column; gap: 4px;
   background: #fff; border: 1px solid var(--line); border-radius: 10px;
   padding: var(--ui-bar-pad, 6px); /* 粗细旋钮：调小 = 更瘦 */
@@ -1866,6 +1891,10 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    与键位段同为**次要信息** → 默认同一档浅色（用户 2026-10-06：「快捷操作的提示也变灰」）。
    🎚 想让它跟键位段分色就设 --tip-hint；不设就跟键位段同色。 */
 .nm-tip-h { color: var(--tip-hint, var(--tip-kbd, rgba(255,255,255,.55))); }
+/* 段间距（2026-10-12 用户定）：正文 / 键位段 / 快捷操作段是三个相邻 span，原来零空隙——
+   「点击，可折叠附近的节点（⌘F）」各段贴成一坨。用 `* +` 相邻选择器只给**非段首**的灰段加左间距
+   （段首没有前驱兄弟 → 天然不加，键位段被 `{0}` 嵌在句中时也各空各的）。🎚 --tip-seg-gap 调间距。 */
+.nm-tip > * + .nm-tip-k, .nm-tip > * + .nm-tip-h { margin-left: var(--tip-seg-gap, .3em); }
 /* 三角：现在是提示框的子元素 → 相对**框**定位。框自己已经让开了「gap + 三角半径」，
    所以三角只要贴着框的那条边即可（不用再各方向算一遍间距）。 */
 .nm-tip::before { content: ""; position: absolute; border: var(--tip-arrow, 5px) solid transparent; }
@@ -1905,8 +1934,11 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 .ctx-menu { --tip-inset: calc(var(--ctx-pad, 4px) + 1px); }              /* 节点右键菜单（padding 4）*/
 
 /* ===== 下方节点工具栏（飞书式：黑底椭圆+圆角统一和左 toolbar 一致 10px，选中节点时浮动显示） ===== */
+/* 🔴 层级（2026-10-11 用户定）：**压在左下工具栏(#left-toolbar 85)之上**。
+   起因：点文档节点分屏后画布被压窄，这排居中的工具栏会和左下工具栏叠上；用户要"选中的时候底部这排在上面"。
+   它自己的弹出面板（#node-more-menu / .node-more-sub / .node-style-menu）再各高一层，见那两处。 */
 .node-menu {
-  position: fixed; z-index: 70;
+  position: fixed; z-index: 86;
   left: 50%; bottom: 32px; transform: translateX(-50%);
   background: #1f2329; color: #fff;
   border-radius: 10px; padding: var(--ui-bar-pad, 6px); /* 粗细旋钮（此行背景/文字色被浮层外观块覆盖，只看 padding） */

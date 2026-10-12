@@ -26,10 +26,10 @@ function splitFrontmatter(text) {
   return { fm: m[0], body: t.slice(m[0].length), attrs: parseFmAttrs(m[1]) };
 }
 
-// 文件类型识别：'mindmap' | 'mmlink' | null
+// 文件类型识别：'mindmap' | 'mmlink' | 'doclink' | null
 function kindOfAttrs(attrs) {
   const v = attrs && attrs['28notes'];
-  return v === 'mindmap' ? 'mindmap' : v === 'mmlink' ? 'mmlink' : null;
+  return v === 'mindmap' ? 'mindmap' : v === 'mmlink' ? 'mmlink' : v === 'doclink' ? 'doclink' : null;
 }
 function kindOfText(text) {
   return kindOfAttrs(splitFrontmatter(text).attrs);
@@ -56,6 +56,12 @@ const MINDMAP_TEMPLATE = MINDMAP_FM + '- 未命名\n';
 // 捷径文件内容（target = vault 相对路径；node = 节点 persistId，不是文字路径——同名节点靠文字定位会串）
 function buildMmlinkText(target, node) {
   return '---\n28notes: mmlink\ntarget: ' + target + '\nnode: ' + (node || '') + '\n---\n';
+}
+// 文档捷径文件内容（2026-10-11 用户定）：target 直接指向 docs/ 里的文档文件——
+//   打开它 = patchSetViewState 的 doclink 分支把 leaf 直接引到那份文档（type 保持 markdown），
+//   一步到位看到文档本身，不经过导图视图、不用再点一次节点。
+function buildDoclinkText(target) {
+  return '---\n28notes: doclink\ntarget: ' + target + '\n---\n';
 }
 
 // 附件文件名净化（v2 §3.6）：空格→下划线；Obsidian 链接禁字符 # | ^ : %% [[ ]] → 下划线
@@ -256,7 +262,7 @@ function findOrphanAttachmentNames(candidates, bigText) {
 module.exports = {
   splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText,
   SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE, mindmapFm,
-  buildMmlinkText, sanitizeAttachmentName, sanitizeFileName, uniqueAttachmentName,
+  buildMmlinkText, buildDoclinkText, sanitizeAttachmentName, sanitizeFileName, uniqueAttachmentName,
   replaceDocLinks, removeDocRefs, docRefLineOnlyLink, docRefNodeIsShell, DOC_REF_NODE_FLAGS,
   ATTACH_DIR, attachmentLookupVariants, findOrphanAttachmentNames,
 };
