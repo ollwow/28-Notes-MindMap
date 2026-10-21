@@ -259,8 +259,20 @@ function findOrphanAttachmentNames(candidates, bigText) {
   return orphans;
 }
 
+// Obsidian 嵌入尺寸后缀：![[img.png|700]] / ![[img.png|700x300]] —— 尾段是显示尺寸，不是文件名。
+// 宿主解析资源（main.js resolveResource）先剥它再找文件；前端 mindmap-app.js 的 nmEmbedSize 是
+// 同一件事的另一份实现（前后端语言不通各写一份），改一处记得改两处。
+function splitEmbedSize(p) {
+  const s = String(p == null ? '' : p);
+  const bar = s.lastIndexOf('|');
+  if (bar < 0) return { name: s, w: 0, h: 0 };
+  const m = s.slice(bar + 1).trim().match(/^(\d+)(?:x(\d+))?$/i);
+  if (!m) return { name: s, w: 0, h: 0 };
+  return { name: s.slice(0, bar).trim(), w: parseInt(m[1], 10) || 0, h: parseInt(m[2], 10) || 0 };
+}
+
 module.exports = {
-  splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText,
+  splitFrontmatter, parseFmAttrs, kindOfAttrs, kindOfText, splitEmbedSize,
   SPEC_PATH, MINDMAP_FM, MINDMAP_TEMPLATE, mindmapFm,
   buildMmlinkText, buildDoclinkText, sanitizeAttachmentName, sanitizeFileName, uniqueAttachmentName,
   replaceDocLinks, removeDocRefs, docRefLineOnlyLink, docRefNodeIsShell, DOC_REF_NODE_FLAGS,
