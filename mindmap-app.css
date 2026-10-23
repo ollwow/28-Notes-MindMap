@@ -363,6 +363,15 @@
 
   /* ---- 折叠按钮 ---- */
   --fold-size: 17px;          /* 折叠钮直径 ✅（数字多时自动变长成胶囊，不会超出） */
+  /* 🎚 折叠钮里那只**箭头**的三个旋钮（2026-10-22 用户要"大小 / 粗细 / 线长分开调"）：
+     · `--fold-arrow-scale`  = 箭头视觉大小（**比例**，1 = 默认；1.2 = 放大 20%）。
+         ⚠️ 走 `transform: scale()`、**不占布局** —— 箭头变大不会把胶囊撑宽，圆圈永远是正圆
+         （原来靠 width/height 撑，一放大容器就跟着变宽、高度不变 → 扁了，用户实报）。
+     · `--fold-arrow-len`    = 那**两条线的长度**（比例，1 = 默认；1.2 = 上下拉长、V 形更修长）。
+     · `--fold-arrow-stroke` = 笔画粗细，**单位是屏幕像素**（靠 non-scaling-stroke 不随缩放变粗）。 */
+  --fold-arrow-scale: 1.2;
+  --fold-arrow-len: 1;
+  --fold-arrow-stroke: 1.35;
   --fold-border: var(--hover-border);     /* 折叠圆钮边框色 */
   --fold-color: var(--accent);      /* 折叠图标/数字色 */
 
@@ -1624,14 +1633,16 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   display: none; align-items: center; justify-content: center;
   min-width: var(--fold-size); height: var(--fold-size); border-radius: 999px;
   padding: 0 4px; /* 数字多时宽度自动撑开 */
-  background: #fff;
+  /* 底色 = **画布色**（`--bg`，就是设置页「画布背景色」那两档，宿主会写成内联变量）。
+     不写死白/黑：用户把画布调成米色 / 深灰时，按钮也得跟着同色，否则那块色差很明显。
+     🔴 两态（展开态箭头 / 折叠态数字）共用这一个值 —— 底色一致，点击切换时不会闪。 */
+  background: var(--bg, #fff);
   border: 1.5px solid var(--fold-border);
   color: var(--fold-color);
   font-size: 10px; line-height: 1;
   cursor: pointer; z-index: 2;
 }
 .card:hover .fold-tag, .fold-tag:hover, .fold-tag.always { display: flex; }
-/* 折叠态（always，显示数字徽章）常驻显示；展开态（‹ 箭头）仅 hover 触发（2026-08-21 定双形态） */
 /* 卡片右侧热区：鼠标在节点右边 26px 内也算 hover（覆盖按钮位置，按钮不消失）。
    🔴 2026-10-11 用户定：**只给有子节点的卡片**（.has-kids，由 buildCard 按 children 是否为空打类）——
    没有子节点的卡片那儿根本没有折叠按钮，却照样吃这块热区，鼠标停在节点右边一片空白上
@@ -1641,6 +1652,10 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   width: 26px; height: calc(100% + 20px);
 }
 .fold-tag:hover { border-color: var(--fold-color); }
+/* 展开态**不要那圈 4px 内边距**：它是给折叠态的数字留的（数字需要左右留白才不粘边框），
+   箭头自己是几何居中的、不需要 —— 否则 15px 的箭头会把胶囊撑到 26px 宽（原来 `‹` 字符窄，才 17px）。
+   去掉后两态宽度 18 / 17，几乎一致，切换时看不出变化。 */
+.fold-tag:not(.always) { padding: 0; }
 /* 🔴 2026-10-19 用户定：节点是**已完成 / 次要**（整行已经灰了）时，右边那颗「折叠 / 展开」按钮也要跟着灰 ——
    原来它还是正常色，在一行灰字旁边特别扎眼。颜色/边框都走 minor 那套旋钮，跟正文同一个灰。 */
 .node-row.done .fold-tag {
@@ -1655,7 +1670,24 @@ strong { font-weight: 700; -webkit-text-stroke: var(--bold-stroke) currentColor;
   /* ⚠️ 别动 background：普通折叠键的底是白的，hover 只换边框色（用户实报"悬浮时底色没了很奇怪"）。 */
   opacity: 1;
 }
-.fold-arrow { font-size: 12px; line-height: 1; }
+/* 箭头（2026-10-22）：**矢量几何**，不是字体字符 ——
+   字符按行盒居中、字形上下有字体留白，换字体 / 缩放比例就会偏一点点（用户收到"箭头没居中"反馈的成因）；
+   几何箭头的居中由 viewBox 保证。圆角来自 renderIcon 的 stroke-linecap:round，
+   描边颜色跟 currentColor → 主题色 / 已完成节点的灰 / 深色主题都自动跟随，不用另写一套。
+   🎚 三个旋钮都在调参区：大小 `--fold-arrow-scale`、线长 `--fold-arrow-len`、粗细 `--fold-arrow-stroke`。
+      大小走 transform（不占布局），所以箭头放大**不会**把胶囊撑宽、圆圈不会变扁。 */
+.fold-arrow { display: flex; align-items: center; justify-content: center; }
+.fold-arrow svg {
+  /* 布局尺寸**固定** 14px（+ 1.5px 边框 = 17px = 胶囊直径）→ 圆圈永远是正圆；
+     视觉大小交给 transform（不占布局），线长交给 scaleY —— 三者互不牵连。 */
+  width: 14px;
+  height: 14px;
+  transform: scale(var(--fold-arrow-scale, 1)) scaleY(var(--fold-arrow-len, 1));
+  stroke-width: var(--fold-arrow-stroke, 1.6);   /* 屏幕像素，不随上面两个 scale 变粗 */
+  display: block;
+}
+/* 描边不跟着 viewBox / transform 缩放 → 粗细与大小、线长各自独立 */
+.fold-arrow svg path { vector-effect: non-scaling-stroke; }
 .fold-badge { font-size: 10px; line-height: 1; font-weight: 600; }
 
 /* 贝塞尔连线层（2026-08-21 定：替换竖线+横线） */
@@ -2894,7 +2926,15 @@ body.nm-ui-faded .node-menu {
 .theme-dark .wb-btn:not(.wb-btn-ok):not(.wb-btn-danger):hover { background: #31343a; }
 .theme-dark .node-style-menu button.color-yellow .icon { stroke: #ffc53d; }
 .theme-dark .card .embed-del { background: #26282c; border-color: #3d424a; }
-.theme-dark .fold-tag { background: #26282c; border-color: #3d424a; }
+/* 深色：底色跟着 `--bg`（它本身已经是深色了），这里只钉边框。
+   🔴 箭头做**二阶**（2026-10-22 用户定）：卡片 hover 把按钮带出来时箭头是**浅的**，
+      鼠标压到按钮上才**亮成主题色**。
+      亮色模式下这个"浅 → 正常"是圆圈的边框在做的；深色下圆圈本来就是灰的、不该变，
+      所以二阶交给箭头 —— 两种模式手感一致，只是载体不同。
+      用 opacity 做"浅"（同一只色压暗），不另调一个浅色，免得偏色。 */
+.theme-dark .fold-tag { border-color: #3d424a; }
+.theme-dark .fold-tag .fold-arrow svg { opacity: .5; transition: opacity .12s ease; }
+.theme-dark .fold-tag:hover .fold-arrow svg { opacity: 1; }
 
 /* ══════════════════════════════════════════════════════════════════
    主题切换：类驱动（2026-09-18 收编，替代 applyTheme 的 JS 内联）。

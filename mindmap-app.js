@@ -673,6 +673,15 @@ const ICONS = {
   // 「格式」按钮的图标（lucide type）：字形本身会随加粗/红/黄变（见 .nm-fmt-* 那几条 CSS）
   'type': '<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>',
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+  // 折叠钮里那只**箭头**（2026-10-22）。⚠️ 只有箭头、**不含圆圈** ——
+  //   圆由 `.fold-tag` 那个白胶囊的边框自己画（外层结构一律不动）。
+  //   换掉原来那个字符 `‹`：字符按行盒居中、字形上下有字体留白，换字体/缩放就会偏一点点
+  //   （用户收到"箭头没居中"反馈、自己复现不出来 —— 就是字体差异）；几何图形的居中由 viewBox 保证。
+  //   🔴 形状是**瘦长版**（宽 3.6 : 高 8.8），不用 lucide 标准的 chevron-left（4:8 = 45°，看着偏扁）——
+  //     折叠钮里那只箭头一直是 `‹` 那种瘦尖的形状，换图标不能把形状也换掉（用户实报"有点变扁了"）。
+  //   圆角来自 renderIcon 的 stroke-linecap:round，描边色跟 currentColor（主题色 / minor 灰自动跟随）。
+  //   ⚠️ 名字叫 fold-arrow 不叫 chevron-left：它是定制形状，别让别处引用到"标准箭头"时拿到这只瘦的。
+  'fold-arrow': '<path d="m13.8 16.4-3.6-4.4 3.6-4.4"/>',
   // （顶部条那对「上一/下一路径」的平箭头图标 2026-10-06 删：标题栏上那两颗是**克隆系统按钮**的，
   //   图标原样沿用系统那对后退/前进箭头，不需要我们自己的图标了。）
   // 「使用指南」菜单项图标（lucide sprout，2026-09-17 由 B 站图标改过来）
@@ -680,6 +689,8 @@ const ICONS = {
   // 「思维导图文档库」按钮图标（2026-10-10）：与宿主侧文档库面板那只**同一只**（lucide gallery-vertical-end，
   // = main.js 的 DOCLIB_ICON_SVG；拆成三段 path 交给 renderIcon 走描边渲染，颜色跟 currentColor）。
   'doclib': '<path d="M7 2h10"/><path d="M5 6h14"/><rect width="18" height="12" x="3" y="10" rx="2"/>',
+  // 「搜索」菜单项图标（lucide search，2026-10-22）：放大镜
+  'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   'file': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
   'folder-closed': '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/>',
   'file-input': '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/>',
@@ -1811,15 +1822,19 @@ function drillInto(id) { goTo(id, { keep: 'target' }); }
 // 面包屑（2026-10-06 起住在**宿主的系统标题栏**上，画布里不再有 #crumb 这个元素）：
 // 这里只把「从根到当前这一层」的层级数据发给宿主，由宿主渲染；宿主点其中一段 → 发 crumbGo 回来 →
 // 走原来那个动作（goTo + keep:'root'，锚点 = 旧主节点，2026-09-15 定稿的手感不变）。
-function renderCrumb() {
+// 「从根到当前这一层」的层级数据（宿主标题栏的面包屑 + 搜索页的路径条共用这一份）
+function crumbPathItems() {
+  if (!state.tree) return [];
   const rootId = state.currentRootId || state.tree.id;
   const path = findPath(state.tree, rootId);
-  if (!path || path.length <= 1) { vscode.postMessage({ type: 'crumb', items: [] }); return; }
+  if (!path || path.length <= 1) return [];
   // id 优先用 persistId（跨 iframe 重建也认得出），没有就退回内存 id —— goTo 两种都吃。
-  vscode.postMessage({
-    type: 'crumb',
-    items: path.map(n => ({ pid: (n.persistId || '').trim() || n.id, title: n.title || '' })),
-  });
+  return path.map(n => ({ pid: (n.persistId || '').trim() || n.id, title: n.title || '' }));
+}
+// 筛选状态上报（2026-10-21 → 2026-10-22 删除）：原来负责把 hideDone / showNow 同步给右侧搜索面板那两颗图标。
+//   面板那两颗已撤（改成结果自己分段），这条消息与调用点一起删掉，别再加回来。
+function renderCrumb() {
+  vscode.postMessage({ type: 'crumb', items: crumbPathItems() });
 }
 
 // ============ 撤销 / 重做（快照栈：每步操作前存旧文本，Ctrl+Z 取回重渲染） ============
@@ -3169,7 +3184,12 @@ function buildCard(node, depth, done) {
     foldTag.className = 'fold-tag' + (folded ? ' always' : '');
     const arrow = document.createElement('span');
     arrow.className = 'fold-arrow';
-    arrow.textContent = folded ? '' : '‹';
+    // 🔴 2026-10-22：箭头换成**矢量几何**（lucide chevron-left），不再用字符 `‹`。
+    //   字符是字体画的：尖角、且按行盒居中（字形上下有字体留白）→ 换字体/缩放会偏一点点，
+    //   这正是"有人看着没居中、自己测不出来"的根因。几何箭头圆角 + 居中由 viewBox 保证。
+    //   ⚠️ 只换箭头本身 —— 外面的圆圈、白底、边框、悬停变色、折叠后的数字徽章**全部不动**。
+    //   🎚 大小走旋钮 `--fold-arrow-size`（默认 14px = 正好填满 17px 的胶囊；想更大就调，别超过 15）。
+    if (!folded) arrow.innerHTML = renderIcon('fold-arrow', 14);
     foldTag.appendChild(arrow);
     if (folded) {
       const badge = document.createElement('span');
@@ -4015,6 +4035,148 @@ function slideAfterSplitClose(wBefore, extra, wFinal) {
   };
   if (wFinal > 0) run(); else waitViewWidthStable(run);
 }
+// ═══ 搜索（2026-10-21；2026-10-22 改成四段式）══════════════════════════
+// 「这张导图」= **整张图都搜**，再把命中按"用户看不看得见"分四段（用户 2026-10-22 定）：
+//   ① visible = 当前视图里看得见（当前视图根之内、没被筛选藏、祖先没折着）
+//   ② folded  = 当前视图里、但被某个折着的祖先挡住（点结果会自动展开祖先链）
+//   ③ hidden  = 当前视图里、但被「隐藏次要 / 只看 Now」挡掉
+//   ④ outside = 当前视图根之外（下钻进去以后，树里其余那些内容；没下钻就空着）
+// 四段互斥，按 ③ → ② → ① 的优先级判一条；顺序 = 深度优先（与画布从上到下一致）。
+// ⚠️ 口径与 render 完全一致（hideDone 连坐祖先 / showNow 看 nowVisibleSet）——
+//   以前是"藏起来就搜不到"，现在改成"搜得到、单独归一段"，所以不再需要影子搜索去数"被藏了几条"。
+const SEARCH_MAX_HITS = 500;   // **每段**回给面板的条数上限（面板每段另有 200 的显示上限）
+// 备注命中时，取**第一条含关键词的备注行**回给面板（面板那行显示备注，不是标题；2026-10-22 用户定）。
+//   needle 已小写；备注是多行的，逐行比，返回原文（只 trim 两头，保留原来的写法）。
+function noteLineOf(note, needle) {
+  const lines = String(note || '').split('\n');
+  for (const ln of lines) if (ln.toLowerCase().indexOf(needle) >= 0) return ln.trim();
+  return String(note || '').trim().split('\n')[0] || '';
+}
+function searchTreeTiers(needle, viewRoot) {
+  const tiers = { visible: [], folded: [], hidden: [], outside: [] };
+  const counts = { visible: 0, folded: 0, hidden: 0, outside: 0 };
+  const root = viewRoot || state.tree;
+  if (!root) return { tiers: tiers, counts: counts };
+  const nv = state.showNow ? (nowVisibleSnapshot || computeNowVisible(root)) : null;
+  (function walk(n, doneChain, foldChain, scope) {
+    if (!n) return;
+    // scope = 这个节点是不是在"当前视图根"的子树里（根自己算在内）
+    const inView = scope || n === root;
+    const done = doneChain || nodeIsMinor(n) || nodeTodoDone(n);
+    let hidden = false;
+    if (inView) {
+      if (state.hideDone && done && n !== root) hidden = true;
+      if (nv && n !== root && !nv.has(n.id) && !state.justCreated.has(n.id)) hidden = true;
+    }
+    const title = String(n.title || '');
+    const note = String(n.note || '');
+    const tHit = title.toLowerCase().indexOf(needle) >= 0;
+    const nHit = !tHit && note.toLowerCase().indexOf(needle) >= 0;
+    if (tHit || nHit) {
+      const key = !inView ? 'outside' : (hidden ? 'hidden' : (foldChain ? 'folded' : 'visible'));
+      counts[key]++;
+      if (tiers[key].length < SEARCH_MAX_HITS) {
+        // 命中备注时把**命中的那一行备注**一起带回去 —— 面板那行要显示备注，不是节点标题（2026-10-22 用户定）
+        tiers[key].push({
+          id: n.id, pid: n.persistId || '', title: title || '(无标题)', isNote: nHit,
+          note: nHit ? noteLineOf(note, needle) : '',
+        });
+      }
+    }
+    // 进入子节点时：只要**当前这个节点**是折着的，它的整棵子树就都是"被折叠挡住"
+    const nextFold = foldChain || !!n.fold;
+    (n.children || []).forEach(c => walk(c, done, nextFold, inView));
+  })(state.tree, false, false, false);
+  return { tiers: tiers, counts: counts };
+}
+// root 的子树里有没有 node 这个节点（含 root 自己）
+function subtreeHas(root, node) {
+  if (!root || !node) return false;
+  if (root === node) return true;
+  return (root.children || []).some(c => subtreeHas(c, node));
+}
+// 点搜索结果 → 定位到那个节点（2026-10-21）。
+//   在下钻视图之外 → 先退到两边的最近公共祖先那一层；被筛选藏起来 → 自动关筛选；
+//   被折叠的祖先挡住 → 全展开（只动内存，不写盘）；
+//   然后居中 + 选中 + 闪一下高亮，让用户一眼看到落点。
+function locateByPidOrId(pid, id, title) {
+  // 跨文件刚打开时，画布可能还没建树 → 等一下再来（直接判"节点不在了"会误报，2026-10-21 用户实报）
+  if (!state.tree) {
+    let n = 0;
+    const retry = () => {
+      if (state.tree) { locateByPidOrId(pid, id, title); return; }
+      if (++n < 60) setTimeout(retry, 50);     // 最多等 3s
+    };
+    setTimeout(retry, 60);
+    return;
+  }
+  let target = null;
+  let chain = [];
+  (function find(n, path) {
+    if (!n || target) return;
+    const p2 = path.concat([n]);
+    if ((pid && n.persistId === pid) || (!pid && id && n.id === id)) { target = n; chain = p2; return; }
+    for (const c of (n.children || [])) { find(c, p2); if (target) return; }
+  })(state.tree, []);
+  // 兜底：多数节点**没有**持久 id（只有被复制链接的才写 `<!--id:-->`），全局搜出来的只有标题 → 按标题找第一个
+  if (!target && title) {
+    // 两边都按同一套清洗再比（宿主那条是从文件文本里抠出来的，画布这条是解析后的字段，
+    //   可能还留着勾选框 / 行尾标记之类的东西）—— 不清洗就会"明明在却说找不到"
+    const clean = (x) => String(x || '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\b(?:minor|now|ainode|airemark):[^\s]+/g, '')
+      .replace(/^[\s\[\]]*[xX]?\]\s*/, '')
+      .replace(/\s+/g, ' ').trim();
+    const want = clean(title);
+    (function findTitle(n, path) {
+      if (!n || target) return;
+      const p2 = path.concat([n]);
+      if (clean(n.title) === want) { target = n; chain = p2; return; }
+      for (const c of (n.children || [])) { findTitle(c, p2); if (target) return; }
+    })(state.tree, []);
+  }
+  if (!target) { toast(T('search.gone'), true); return; }
+  let dirty = false;
+  // ① 目标在**当前下钻视图之外**（正下钻着别的分支）→ 先退到"同时包住当前视图与目标"的那一层。
+  //   🔴 这一步必须在取卡片之前：不在当前视图里的节点压根没渲染进 DOM，直接查卡片会误报
+  //   「那个节点已经不在了（可能被删除或改名）」（2026-10-22 用户实报：下钻在 A 分支，
+  //   搜到的是 B 分支的节点，点了就弹这句 —— 节点其实好端端在文件里）。
+  //   退到两边的**最近公共祖先**：既让目标露出来，又不把用户的下钻位置一把退回全图。
+  const curRoot = currentRoot();
+  if (curRoot && !subtreeHas(curRoot, target)) {
+    let lca = null;                  // 从根到目标的链上，最后一个"包住当前视图根"的节点
+    for (const p of chain) {
+      if (p === target) break;
+      if (subtreeHas(p, curRoot)) lca = p;
+    }
+    goTo(lca ? (lca.persistId || lca.id) : null, { keep: 'root' });
+  }
+  // ② 筛选挡住 → 关掉（与文档引用定位同一套判据）
+  if (state.hideDone) {
+    const doneChain = chain.some(p => p !== target && (nodeIsMinor(p) || nodeTodoDone(p)));
+    if (nodeIsMinor(target) || nodeTodoDone(target) || doneChain) { setHideDone(false, true, false); dirty = true; }
+  }
+  if (state.showNow) {
+    const nv = nowVisibleSnapshot || computeNowVisible(currentRoot());
+    if (nv && !nv.has(target.id)) { setShowNow(false, true, false); dirty = true; }
+  }
+  // ③ 祖先链上的折叠全打开（只改内存；fold:1 注释不动 → 下次开图恢复原状）
+  for (const p of chain) {
+    if (p !== target && p.fold) { p.fold = false; dirty = true; }
+  }
+  if (dirty) render();
+  // ④ 定位 + 高亮
+  const el = document.querySelector('.node-row[data-id="' + target.id + '"] .card');
+  if (!el) { toast(T('search.gone'), true); return; }
+  selectNode(target.id);
+  placeCardAtViewport(el, cfgNum('--locate-x', 0.5));
+  try {
+    document.querySelectorAll('.card.locate-predict').forEach(c => c.classList.remove('locate-predict'));
+    el.classList.add('locate-predict');
+    setTimeout(() => el.classList.remove('locate-predict'), 1400);
+  } catch (_) {}
+}
+
 function locateCenter() { // 定位按钮（2026-09-18 用户定改写）：**编辑中/已选中 → 该节点定位到中央；未选中 → 主节点定位到中央**（替代原「选中节点定位」「主节点定位」两条命令；zoom 回 100% 是 placeCardAtViewport 的默认行为，旋钮 --locate-reset-zoom）
   // 原「没选中 → 循环定位 Now」不再走这里（定位子菜单里的 Now 列表定位 locateToItem 不受影响）
   const selX = cfgNum('--locate-x', 0.5);
@@ -8968,6 +9130,16 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault(); e.stopPropagation(); // 其余编辑键（Delete/Backspace/Tab/方向/Cmd+B/I/H/K 等）一律拦截
     return;
   }
+  // ⌘F / Ctrl+F：打开右侧「搜索」面板并聚焦输入框（2026-10-22 用户定）。
+  //   画布是 iframe —— 宿主的全局键收不到这里的按键，所以必须由我们截下来再通知宿主。
+  //   编辑态（改标题 / 备注）不接管：那里没有"查找"可言，别抢用户的输入。
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 'f') {
+    if (!(t && t.contentEditable === 'true')) {
+      e.preventDefault(); e.stopPropagation();
+      vscode.postMessage({ type: 'openSearchPanel' });
+      return;
+    }
+  }
   // 保险（2026-09-20）：还有活跃编辑会话、但按键目标不是编辑框（编辑框被重绘抽走 / 焦点压根没进编辑框）
   // → 本次按键前先把它收尾保存。否则 Enter/Tab 会走画布全局键位（新建节点），而编辑内容永远落不了盘。
   // 正常编辑时 activeElement 就是编辑框，这里不触发；只有焦点真不在编辑框上才兜底。
@@ -9519,6 +9691,22 @@ window.addEventListener('message', e => {
     state.canvasHotkeys = (msg.value && typeof msg.value === 'object') ? msg.value : { match: {}, disp: {} };
     refreshCanvasHotkeyTips(); // 已建好的提示按登记重算键位段（styleMenu / 底部工具条只在装载时建一次，会冻结旧键位）
     updateMoreMenu(); // 撤销 / 重做那两行的快捷键小字当场刷新
+    return;
+  }
+  // ═══ 搜索（2026-10-21；2026-10-22 去掉路径条与筛选同步）══════════
+  if (msg.type === 'searchInMap') {   // 「这张导图」搜索：整张图都搜，结果分四段（看得见 / 折叠 / 被隐藏 / 视图之外）
+    const q = String(msg.q || '').trim().toLowerCase();
+    // currentRoot() 在下钻时是那一层、没下钻时就是整棵树 —— 用它的子树边界切「当前视图 / 视图之外」
+    const res = q ? searchTreeTiers(q, currentRoot()) : null;
+    vscode.postMessage({
+      type: 'searchInMapResult', reqId: msg.reqId, q: msg.q,
+      tiers: res ? res.tiers : { visible: [], folded: [], hidden: [], outside: [] },
+      counts: res ? res.counts : { visible: 0, folded: 0, hidden: 0, outside: 0 },
+    });
+    return;
+  }
+  if (msg.type === 'searchLocate') {  // 点搜索结果 → 定位到那个节点（title 是没有 pid 时的兜底）
+    locateByPidOrId(String(msg.pid || ''), String(msg.id || ''), String(msg.title || ''));
     return;
   }
   if (msg.type === 'setFsHotkey') { // 宿主推来的「全屏专注模式」键位串（2026-10-06）：改了键要当场换掉提示里的 {fsHk}
@@ -13483,7 +13671,7 @@ function toggleLeftMoreMenu() {
 //   ③ 「join-group / guide」2026-10-10 曾搬到**左下角按钮**，2026-10-20 搬回菜单（sep3 也跟着回来）；
 //      设置页那两行开关仍走 settings.morePanel.hidden（token 名没变，自动生效）。
 // ⚠️ 数组字面量里**只放字符串**：test.mjs 会把它抠出来 `JSON.parse`，夹注释会当场炸（2026-10-20 实踩）。
-const NM_MORE_ORDER = ['undo', 'redo', 'sep1', 'props', 'doclib', 'sep2',
+const NM_MORE_ORDER = ['undo', 'redo', 'sep1', 'props', 'doclib', 'search', 'sep2',
   'history', 'save-snapshot', 'sep3', 'join-group', 'guide'];
 // 锁定项：必须在菜单里、且关不掉（设置页里那几行是「开 + 置灰」）。脏数据里带着它们也一律纠正回来。
 const NM_MORE_LOCKED = ['history', 'save-snapshot']; // 「设置与 Bug 提报」2026-09-18 用户定允许关闭
@@ -13554,6 +13742,8 @@ document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
     // 2026-10-20 新增：两个「查看」入口（原来这块是路径那 4 项）
     else if (act === 'props') vscode.postMessage({ type: 'openDocProps' });   // 「文档属性」→ 右侧面板的「本文档属性」页
     else if (act === 'doclib') vscode.postMessage({ type: 'openDocLibrary' }); // 「思维导图文档库」→ 右侧面板的文档库页
+    // 2026-10-22 新增：打开右侧面板的搜索页并聚焦输入框（与 ⌘F 同一个出口）
+    else if (act === 'search') vscode.postMessage({ type: 'openSearchPanel' });
     // 2026-10-20：从菜单按钮搬回菜单（2026-10-10 曾搬去左下角）
     else if (act === 'join-group') openUrl(JOIN_GROUP_URL);
     else if (act === 'guide') openUrl(GUIDE_URL);

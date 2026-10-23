@@ -57,10 +57,14 @@ var I18N = {
     //   xxxTipH = 浅色后缀段（2026-10-20 起显式给，骨架 data-tip-h；以前括号那截是渲染时正则猜的，已废）。
     'mm.undoTip': '点击后，撤回上一操作==space==（{Mod} + Z）',
     'mm.redoTip': '点击后，重回下一操作==space==（{Mod} + Shift + Z）',
-    'mm.docProps': '文档属性', // 2026-10-20 新增：打开右侧面板的「本文档属性」页
-    'mm.docPropsTip': '点击后，查看文档属性',
+    'mm.docProps': '本文档属性', // 2026-10-20 新增：打开右侧面板的「本文档属性」页（2026-10-22 改名：与分页标题一致）
+    'mm.docPropsTip': '点击后，查看本文档属性',
     'mm.docLib': '思维导图文档库', // 2026-10-20 新增：打开右侧「思维导图」面板的文档库页
     'mm.docLibTip': '点击后，查看思维导图文档库',
+    'mm.search': '搜索', // 2026-10-22 新增：打开右侧面板的搜索页（⌘F）
+    // ⚠️ `==space==` 是提示小字的分段符（前段正文白、后段浅色）—— 括号里的快捷键走浅色段，
+    //    与其它提示同一套，别自己另写样式（2026-10-22 用户定）。
+    'mm.searchTip': '点击后，搜索节点==space==（{Mod} + F）',
     'mm.historyTip': '点击后，查看历史记录',
     'mm.saveVersionTip': '点击后，保存此版本',
     'mm.joinGroupTip': '点击后，加入 28 Notes 微信群==space==（可在设置页面隐藏此按钮）', // 2026-10-20 用户补：与左下角那颗同开关的按钮同一句后缀
@@ -157,6 +161,7 @@ var I18N = {
     'cmd.toggleHideMinor': '视图整体｜显示/隐藏 Minor 次要节点', // 命令：画布动作（默认 Mod+Alt+M）
     'cmd.drillInto': '视图整体｜进入当前节点', // 命令：画布动作（不设默认键：Mod+E 与核心编辑/预览切换撞车）
     'cmd.locateCycle': '视图定位｜定位循环', // 命令：画布动作（不设默认键：Mod+P 与命令面板撞车）
+    'cmd.searchPanel': '视图定位｜搜索节点', // 2026-10-22：打开右侧面板的搜索页（默认 ⌘F，只在导图视图认领）
     'cmd.toggleSourceView': '视图切换｜源文件/思维导图视图', // 命令：合并原「查看源文件 / 返回思维导图视图」（2026-09-18）
     'cmd.addSiblingAbove': '新建｜在上方新建同级节点', // 命令：原 ↑ 占用的新建动作（不设默认键，2026-09-18 放给用户）
     'cmd.addParentSibling': '新建｜在上一层新建同级节点', // 命令：原 ← 占用的新建动作（不设默认键）
@@ -877,7 +882,20 @@ var I18N = {
     'panel.copy': '复制',
     'toast.pathCopied': '已复制路径',
     'toast.docDuped': '已生成副本',
-    'panel.tabLib': '思维导图文档库', // 分页②：被多处管理的问题文档 + 按思维导图查看
+    'panel.tabLib': '思维导图文档库',
+    // ---- 搜索分页（2026-10-21）----
+    'panel.tabSearch': '搜索', // 分页③：搜「当前思维导图」或「所有思维导图」的节点标题与备注
+    'search.ph': '搜索节点标题或备注 …',
+    'search.scopeView': '当前思维导图',
+    'search.scopeAll': '所有思维导图',
+    'search.searching': '搜索中 …',
+    'search.empty': '未找到。',
+    'search.more': '还有 {0} 条。',
+    'search.notMap': '仅支持在思维导图内搜索。（如未正确识别，请点击右上方刷新按钮刷新此面板）',
+    'search.hint': '',
+    'search.clear': '清空搜索',
+    'search.gone': '此节点已不存在（可能已被删除或改名）',
+    'search.gotoFail': '打不开那张导图（文件可能被移动或删掉了）',
     'panel.grpDocs': '管理的子文档', // 属性页第 1 组（2026-10-19 用户定：永远显示，不再"非导图就消失"）
     'panel.grpParents': '管理本文档的父文档', // 属性页第 2 组：谁在管着当前这份文件
     'panel.noParents': '暂无思维导图在管理本文档。', // 第 2 组空态
@@ -1141,10 +1159,12 @@ var I18N = {
     //   "guess it from parentheses" rendering is gone).
     'mm.undoTip': 'Click to Undo==space==({Mod} + Z)',
     'mm.redoTip': 'Click to Redo==space==({Mod} + Shift + Z)',
-    'mm.docProps': 'Document Properties',
-    'mm.docPropsTip': 'Click to View Document Properties',
+    'mm.docProps': "This File's Properties",
+    'mm.docPropsTip': "Click to View This File's Properties",
     'mm.docLib': 'Mind Map Document Library',
     'mm.docLibTip': 'Click to Open the Mind Map Document Library',
+    'mm.search': 'Search',
+    'mm.searchTip': 'Click to Search Nodes==space==({Mod} + F)',
     'mm.historyTip': 'Click to View Version History',
     'mm.saveVersionTip': 'Click to Save This Version',
     'mm.joinGroupTip': 'Click to Join the 28 Notes WeChat Group==space==(Hide This Button in Settings)',
@@ -1219,6 +1239,7 @@ var I18N = {
     'cmd.toggleHideMinor': 'View | Show/Hide Minor Nodes',
     'cmd.drillInto': 'View | Enter Current Node',
     'cmd.locateCycle': 'Locate | Locate Cycle',
+    'cmd.searchPanel': 'Locate | Search Nodes',
     'cmd.toggleSourceView': 'Toggle | Source / Mind-Map View',
     'cmd.addSiblingAbove': 'New | Add Sibling Above',
     'cmd.addParentSibling': 'New | Add Sibling One Level up',
@@ -1879,6 +1900,18 @@ var I18N = {
     'toast.pathCopied': 'Path Copied',
     'toast.docDuped': 'Copy Created',
     'panel.tabLib': 'Mind Map Document Library',
+    'panel.tabSearch': 'Search',
+    'search.ph': 'Search titles or notes …',
+    'search.scopeView': 'Current mind map',
+    'search.scopeAll': 'All mind maps',
+    'search.searching': 'Searching …',
+    'search.empty': 'Not found.',
+    'search.more': '{0} more.',
+    'search.notMap': 'Search works only inside a mind map. (If it is not detected, click the refresh button at the top right.)',
+    'search.hint': '',
+    'search.clear': 'Clear search',
+    'search.gone': 'This node no longer exists (it may have been deleted or renamed).',
+    'search.gotoFail': 'Could not open that mind map (file moved or deleted)',
     'panel.grpDocs': 'Managed Documents', // 2026-10-19: always shown (was "map files only")
     'panel.grpParents': 'Mind Maps Managing This File',
     'panel.noParents': 'No mind map is managing this file yet.',

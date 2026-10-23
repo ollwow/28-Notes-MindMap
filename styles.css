@@ -651,6 +651,15 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   --shin-tab-icon-bookmark-size: 14px;           /* 捷径 ↗ 大小（字号） */
   --shin-tab-icon-bookmark-color: var(--text-muted); /* 捷径 ↗ 颜色 */
   --shin-tab-icon-bookmark-opacity: 0.5;           /* 捷径 ↗ 透明度：1=不透明，0.5=半透明 */
+
+  /* 🎚 右侧栏里**「思维导图」这一页的标签图标大小**（2026-10-23 用户定）。
+     只管这一个：功能区那颗「新建思维导图」、主编辑区的文件标签页（走上面 --shin-tab-icon-mindmap-size）
+     都不受影响 —— 命中条件是面板自己打在标签头上的 `.shin-mm-tab`（外加两个 viewType 兜底）。
+     18px = Obsidian 原生大小。
+     ⚠️ **上限 ≈ 26px，不是旋钮失灵**：侧栏标签条高度 = --header-height（40px），扣掉条子自己的
+        margin-top 6 + padding 1/7 只剩 ~26px，而 `.workspace-tab-header-inner` 是 `overflow: hidden`
+        → 图标再大就被裁掉，看起来就是「到某个极大值就不往上/往外大了」。 */
+  --shin-panel-tab-ico-size: 20px;
 }
 .workspace-tab-header .shin-tab-icon {
   display: inline-flex; align-items: center; justify-content: center;
@@ -674,6 +683,16 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   font-size: var(--shin-tab-icon-bookmark-size);
   font-weight: 600;
   opacity: var(--shin-tab-icon-bookmark-opacity);
+}
+/* 侧栏里本插件那一页的**标签图标**大小（2026-10-23 用户定：只调这一颗）。
+   命中面只有两处：① 面板自己给标签头打的 `.shin-mm-tab`；② 两个 viewType 兜底（老版本拿不到 tabHeaderEl 时）。
+   ⚠️ 直接给 svg 定尺寸、**不改 --icon-size** —— 标签头里可能还有「关闭 / 更多」这类别的图标，
+      改 --icon-size 会把它们一起带大（和面板里那排分页图标的旋钮是两回事，互不影响）。 */
+.workspace-tab-header.shin-mm-tab .workspace-tab-header-inner-icon svg,
+.workspace-tab-header[data-type="28notes-doclib"] .workspace-tab-header-inner-icon svg,
+.workspace-tab-header[data-type="28notes-history"] .workspace-tab-header-inner-icon svg {
+  width: var(--shin-panel-tab-ico-size, 18px);
+  height: var(--shin-panel-tab-ico-size, 18px);
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -1100,6 +1119,15 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   /* 顶部那排分页图标：**未选中**的压一层透明度（默认 .5；0 = 全透明、1 = 不压）*/
   --shin-doc-tab-idle-a: .5;
 
+  /* 🎚 顶部那排分页图标（属性 / 文档库 / 搜索）的**图标大小**（2026-10-23 用户定）。
+     ⚠️ 这是**面板里面**那三个图标；截图里顶部那颗「思维导图」标签图标是**另一个**旋钮
+        （`--shin-panel-tab-ico-size`，见 styles.css 上面「标签页图标」那一段）。
+     ⚠️ 只管**右侧面板这一处**：功能区那颗「新建思维导图」、标签页顶部的品牌图标各有自己的旋钮
+        （`--shin-tab-icon-mindmap-size` 等），改这里不会连带它们 —— 因为本变量定义在面板容器上，
+        只有本面板的后代读得到。
+     原值 18px（= 主题 `--icon-m`）；想大一点填 20 / 22，想小一点填 16。 */
+  --shin-doc-tab-ico-size: 18px;
+
   /* 🔴 2026-10-09 实验：**被多处管理**的文档图标 / 「跳到第 4 页」那颗按钮的**警告色**。
      基础色 + 透明度两个旋钮（默认 #f7ce46 = 画布那套 `--multi-ref-color` 同一档黄）。 */
   --shin-doc-warn-color: #f7ce46;
@@ -1123,6 +1151,33 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   /* ⚠️ 分页的**小标题**已整条删掉（2026-10-09 用户定：「每个面板它下面不是有标题吗……把所有的标题都给去掉」）
      → 原来那组 `--shin-doc-mgr-sec-*`（上/下边距、字号、字重、颜色）连同 `.shin-doc-sec` 规则一并撤了。
         分页名仍然保留在图标按钮的 tooltip 上（`aria-label` / `title`）。 */
+
+  /* 🎚 **搜索页**那个输入框离上面（标题行）多远（2026-10-22 用户要一个自己能调的旋钮）。
+     正数往下推、负数往上收；只影响搜索那一页，别的页不动。 */
+  --shin-search-mt: -5px;
+
+  /* 🎚 搜索页内容的**左右内缩**（输入框 / 两个范围按钮 / 结果行三者共用同一个值）。
+     默认 0 = 与「搜索」那行标题的左缘对齐（2026-10-22 用户实报"往右去了一点点"）。 */
+  --shin-search-px: 0px;
+
+  /* 🎚 搜索**结果行**一行能放多少个「全角字」（2026-10-22）。默认 0 = 自动按面板当前宽度估；
+     想固定字数就写正数（如 30），窗口截断按这个数走。只影响结果行的截断位置。 */
+  --shin-search-win: 0;
+
+  /* 🎚 搜索页：**输入框 → 下面结果列表**（第一行「当前思维导图」）之间的距离（2026-10-22 用户要）。
+     正数往下推、负数往上收；默认 0 = 保持现状。只影响这一处，不碰结果内部的行距。 */
+  --shin-search-list-mt: 8px;
+
+  /* 🎚 「本文档属性」/「思维导图文档库」两页：**标题 → 第一个内容元素**的距离（2026-10-22 用户定：
+     这两页也要能调，初值跟搜索那页一模一样）。默认值直接引用 `--shin-search-mt` —— 三页永远同步；
+     想单独偏移就在这两行写死像素，别改搜索那个。 */
+  --shin-props-mt: var(--shin-search-mt, 6px);
+  --shin-lib-mt: var(--shin-search-mt, 6px);
+
+  /* 🎚 搜索页「当前思维导图」范围下没有「全部折叠 / 展开」那颗 → 刷新按钮整体右移几像素顶上去
+     （2026-10-22 用户实报：右边空出一块）。默认 20px = 那颗按钮 24px 减掉被 -10px 外边距吃掉的 4px；
+     目测没对齐就微调这个数（正数往右）。 */
+  --shin-search-reload-shift: 20px;
 
   /* ── 🔴 2026-10-09 用户定：**第 4 页分三块**，每块一行小字标题（三块**共用下面这一组旋钮**）────
      三块 = ①「文档」②「管理此文档的思维导图」③「为什么不建议一个文档被多处管理 ↗」（链接）。
@@ -1215,6 +1270,12 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   opacity: var(--icon-opacity, .85);
   margin-right: 0;   /* 压掉 Obsidian 给 .svg-icon 的 margin-right（按钮里要居中） */
   transition: opacity var(--anim-duration-fast, 140ms) ease-in-out;
+}
+/* 🎚 分页图标的**大小**改用面板自己的旋钮（2026-10-23 用户定：只想在右侧面板这一处调大）。
+   ⚠️ 必须写成**带面板前缀**的规则（0,3,0）才压得住上面裸 `.shin-doc-tab` 里那条 `--icon-size`（0,2,0）；
+      反过来，正因为带了 `.shin-mm-panel` 前缀，它也不会外溢到功能区 / 标签页顶部那两处品牌图标。 */
+.workspace-leaf-content.shin-mm-panel .shin-doc-tab {
+  --icon-size: var(--shin-doc-tab-ico-size, var(--icon-m, 18px));
 }
 .shin-doc-tab:hover { color: var(--icon-color-hover, var(--icon-color-focused, var(--text-normal))); }
 .shin-doc-tab:hover .svg-icon { opacity: var(--icon-opacity-hover, 1); }
@@ -1346,6 +1407,12 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   width: var(--shin-doc-reloadbtn-fs, 11.6px); height: var(--shin-doc-reloadbtn-fs, 11.6px);
   margin-right: 0; opacity: 1;
 }
+/* 🔴 2026-10-22 用户实报：搜索页「当前思维导图」范围下**没有**「全部折叠 / 展开」那颗（只占位不显示），
+   于是最右边空出一块。标题行打上 `is-nofold`（由 `_syncAllBtn` 维护）→ 刷新按钮整体右移到那颗的位置。
+   🎚 位移量走旋钮 `--shin-search-reload-shift`，写在上面 `.shin-mm-panel` 那一组里。 */
+.shin-doc-title-row.is-nofold .shin-doc-reloadbtn {
+  transform: translateX(var(--shin-search-reload-shift, 20px));
+}
 /* 分组内容块（组头下面那一块） */
 .shin-doc-secbody { padding: 0 0 2px; }
 /* 🔴 2026-10-18 用户定：**缩进关系要统一** —— 挂在某个组内容块里的**子组头**（如「历史记录」里的
@@ -1365,6 +1432,10 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 /* 🔴 2026-10-19 用户定：文档库页的「正常文档」是**组里还有组**（孤儿组 / 每张导图一组）——
    子组头已经右移 22px，它下面的文档行再缩进一级（44px），父子层级才看得出来。 */
 .shin-doc-secbody.is-nest > .shin-doc-sub { padding-left: 44px; }
+/* 🔴 2026-10-22 用户实报：两个组的「未找到。」缩进不一样 —— 「所有思维导图」那层是 `.is-nest`，
+   它把**直系** `.shin-doc-sub`（说明行就是这种）顶到 44px，而「当前思维导图」组里是 22px。
+   说明行不是"某张导图里的条目"，不该跟着嵌套缩进 → 单独抵消回 22px（两处一条线）。 */
+.shin-search-list .shin-doc-secbody.is-nest > .shin-doc-sub.is-note { padding-left: 22px; }
 /* 面板最底下那行「了解如何用思维导图管理文档 ↗」：只在第二个分页出现（JS 打 `.hidden`）。
    2026-10-18 用户定：**不要下划线**（原来那条 underline 已撤）。 */
 .shin-doc-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--background-modifier-border); }
@@ -1421,6 +1492,55 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 }
 .shin-doc-sub { display: flex; align-items: center; gap: 5px; padding: 3px 4px 3px 22px; border-radius: var(--radius-s); }
 .shin-doc-sub:hover { background: var(--background-modifier-hover); }
+/* 搜索页：输入框 → 结果列表的间距（旋钮 `--shin-search-list-mt`，2026-10-22 用户定） */
+.shin-search-list { margin-top: var(--shin-search-list-mt, 0px); }
+/* ═══ 搜索分页（2026-10-21）═══ 材质沿用文档库那一套，只是多几个自己的盒子 ═══ */
+.shin-search-bar {
+  /* 🎚 上边距走旋钮 `--shin-search-mt`（写在 `.shin-mm-panel` 那一组里，默认 6px）；
+     左右内缩走 `--shin-search-px`（默认 0 = 与标题行左缘对齐，2026-10-22 用户定） */
+  margin-top: var(--shin-search-mt, 6px);
+  padding: 0 var(--shin-search-px, 0px) 2px;
+}
+/* 「本文档属性」/「思维导图文档库」两页：第一个内容元素的上边距 = 该页旋钮（2026-10-22）。
+   用 `:first-child` 而不是给列表加 padding —— 这样"第一个元素是什么"都不影响（组头 / 说明行 / 空态都行）。 */
+.shin-doc-list.is-props > :first-child { margin-top: var(--shin-props-mt, 0px); }
+.shin-doc-list.is-lib > :first-child { margin-top: var(--shin-lib-mt, 0px); }
+/* 输入框本体**不再自己写样式**（2026-10-22）：容器 / 放大镜 / ✕ 全交给 Obsidian 自己的
+   `.search-input-container` 那几条规则（复刻，见 renderSearch 注释）。这里只留一个行为钩子。
+   （原来那两个「当前思维导图 / 所有思维导图」范围按钮的样式 2026-10-22 第二版删了 ——
+     它们现在是**两个分组**，样式走文档库那套 `.shin-doc-grp`。） */
+/* 🔴 2026-10-22 用户定：结果按文档库那套层级缩进 ——
+   「当前思维导图」组里的行 = 22px（组头三角之后的文字那一条线）；
+   「所有思维导图」里每张导图组内的行 = 44px（再进一级，看得出属于那张图）。
+   旋钮 `--shin-search-px` 叠在 22px 之上（默认 0）。
+   ⚠️ 结果里**不加小标题**：上层（看得见 + 折叠 + 被隐藏）→ 一条分隔线 → 下层（视图之外）。 */
+.shin-search-flat .shin-doc-sub {
+  padding-left: calc(22px + var(--shin-search-px, 0px));
+  padding-right: var(--shin-search-px, 0px);
+}
+.shin-search-mapbody > .shin-doc-sub {
+  padding-left: calc(44px + var(--shin-search-px, 0px));
+  padding-right: var(--shin-search-px, 0px);
+}
+/* 被隐藏的那些：整行**浅色字**（用户定：不写标题，用颜色区分） */
+.shin-search-hit.is-faint .shin-search-title { color: var(--text-faint, var(--text-muted)); }
+.shin-search-hit { cursor: pointer; align-items: flex-start; }
+/* 命中**备注**（不是标题）的那条 → 前面一条灰竖线，与画布里备注前面那条同一个观感。
+   ⚠️ 画布里单行备注不画这条线（排版对齐用的），这里是语义标记，一行也要画。 */
+.shin-search-notemark {
+  flex: none; width: 3px; border-radius: 1.5px; background: var(--line, var(--background-modifier-border));
+  align-self: stretch; margin-top: 1px;
+}
+/* 结果那一行**只显示一行**，超了省略号（2026-10-22 用户定：从两行改回一行）。
+   🔴 截在哪儿由 JS 算（`_lineWindow`：以关键词为中心取窗口，两侧补 `…`）——
+      纯 CSS 的 ellipsis 只砍尾巴，关键词落在后面就彻底看不见。
+      这里只是**兜底**：面板在渲染后被拉窄时，浏览器会从尾巴再截一次。 */
+.shin-search-hit .shin-search-title {
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.35;
+}
+/* 命中的关键词加粗（2026-10-22 用户定）。只加粗、不改色 —— 被隐藏那行本身是浅色，加粗后仍然浅。 */
+.shin-search-kw { font-weight: 600; }
 /* 树形二级行右侧那几颗按钮（定位 / 复制链接 / ⋯）—— 2026-10-09 用户定：
    跟「按文档查看」的文档行一样挂上「复制链接」（悬浮才出现）+「⋯」（常驻），
    所以这里要一个**推到行尾**的按钮容器。 */
