@@ -690,7 +690,7 @@ var I18N = {
     // （右键「待办」行的五个文案键 ctx.todo* 已随那行死分支一起删除：2026-10-18）
     'ctx.cut': '剪切',
     'ctx.copy': '拷贝', // 2026-10-18 改名：这一项是**进剪贴板**（拷贝），下面新加的「复制」才是建副本
-    'ctx.copyTip': '点击后，可拷贝该节点树==space==（按住 {Mod} 点击：拷贝清除格式版本）', // 拷贝行悬浮说明（2026-10-19 用户给的文案；{Mod} 由 T() 按平台换成 ⌘ / Ctrl）；后缀段显式给 tipH
+    'ctx.copyTip': '点击后，可拷贝该节点树==space==（按住 {Mod} 点击 / {Mod} + {Alt} + C：拷贝清除格式版本）', // 拷贝行悬浮说明（2026-10-19 用户给的文案；2026-10-23 补上清格式快捷键）。{Mod}/{Alt} 由 T() 按平台换成 ⌘⌥ / Ctrl+Alt，Mac 侧加号会被 modStr 收成「⌘⌥C」；后缀段显式给 tipH
     'ctx.duplicate': '复制', // 2026-10-18 新增：在选中节点后面建一棵一模一样的子树（文档节点落成文档捷径）
     'ctx.duplicateTip': '点击后，可生成该节点树副本==space==（可按住 {Alt} 拖拽操作）', // 用户原话（2026-10-18）；后缀段显式给 tipH
     'ctx.duplicateNaTip': '当前为母节点，不支持复制', // 置灰说明
@@ -1727,7 +1727,7 @@ var I18N = {
     // (Context-menu To-Do row and its five ctx.todo* keys removed with the dead branch: 2026-10-18)
     'ctx.cut': 'Cut',
     'ctx.copy': 'Copy', // 2026-10-18: this one goes to the clipboard; the new "Duplicate" below builds a copy
-    'ctx.copyTip': 'Click to Copy This Node Tree==space==(Hold {Mod} and Click: Copy Without Formatting)', // suffix goes to tipH
+    'ctx.copyTip': 'Click to Copy This Node Tree==space==(Hold {Mod} and Click / {Mod} + {Alt} + C: Copy Without Formatting)', // 2026-10-23: added the plain-copy hotkey; modStr collapses the + signs on macOS → ⌘⌥C, keeps Ctrl + Alt + C on Windows. suffix goes to tipH
     'ctx.duplicate': 'Duplicate', // 2026-10-18: insert a full copy of this subtree right after the selected node (doc nodes become doc shortcuts)
     'ctx.duplicateTip': 'Click to Create a Copy of This Node Tree==space==(or Hold {Alt} and Drag)', // user's wording (2026-10-18); suffix goes to tipH
     'ctx.duplicateNaTip': 'The Mother Node Cannot Be Duplicated', // greyed-out reason

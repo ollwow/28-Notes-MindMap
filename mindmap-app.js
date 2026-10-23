@@ -8721,7 +8721,9 @@ function nmHostForwardable(e) {
   if (!k) return false; // 只有修饰键没有键名（单纯按住 Cmd）也不转
   // Mod+V 不转：粘贴在画布里走的是原生 paste 事件（焦点在 iframe 里它照样到，不经过 keydown），
   // 转出去反而可能被宿主的「粘贴」命令拿去粘到别的编辑器里，画布里却什么都没发生。
-  if (k === 'v' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) return false;
+  // 2026-10-24：⌥ 也一起挡 —— ⌥⌘V 由上面的写死分支接管（原生不为它生成 paste 事件），
+  // 万一那条没命中（个别键盘 e.code 为空），这里至少别再把它转出去。
+  if (k === 'v' && (e.metaKey || e.ctrlKey) && !e.shiftKey) return false;
   return true;
 }
 // 键位串 → 带括号（zh 全角 / en 半角）；空串 → 空（**连括号一起不显示**，2026-09-18 定）
@@ -9201,6 +9203,11 @@ document.addEventListener('keydown', (e) => {
   //   其余（待办 `- [ ]` / 加粗 / 代码块 / 备注 / 缩进层级）照旧 —— 粘到聊天窗口不再带一堆注释噪音。
   //   ⚠️ 必须认 `e.code`：按住 ⌥ 时 macOS 上 `e.key` 会变成 `ç`，按 'c' 判永远不中。
   else if ((e.metaKey || e.ctrlKey) && e.altKey && String(e.code || '') === 'KeyC') { e.preventDefault(); copySelectedNode(true); }
+  // ⌥⌘V = 粘贴（2026-10-24 定）：⌥⌘C 清格式复制之后，顺手就想 ⌥⌘V 粘回去。
+  //   ⚠️ macOS 上这个组合**不是原生粘贴键**（浏览器不为它生成 paste 事件），而链尾的 nmHostForwardable
+  //   原来会把它当"要转给宿主的组合"送出去 → 画布里一点反应都没有。这里直接走右键「粘贴」同一个出口
+  //   （读剪贴板 → applyPastedText），效果与 ⌘V 一致。同样必须认 e.code：按住 ⌥ 时 e.key 会变成 '√'。
+  else if ((e.metaKey || e.ctrlKey) && e.altKey && String(e.code || '') === 'KeyV') { e.preventDefault(); pasteFromClipboard(); }
   else if ((e.metaKey || e.ctrlKey) && e.key === 'c') { e.preventDefault(); copySelectedNode(); } // 复制节点：写死键（未迁移，Mod+C 与系统复制撞车不给默认）
   else if ((e.metaKey || e.ctrlKey) && e.key === 'x') { e.preventDefault(); cutSelectedNode(); } // 剪切节点：写死键（未迁移）
   // ⌘E（下钻）/ ⌘P（定位循环）的写死键已删（2026-09-18 用户定：这两个命令已注册进官方快捷键页，
