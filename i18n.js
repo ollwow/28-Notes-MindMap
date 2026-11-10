@@ -31,11 +31,17 @@ var I18N = {
     'mm.pathSave': '设当前为默认路径', // 路径子菜单：把当前下钻位置存为默认（普通导图）/ 更新书签指向（书签文件）
     // 顶部条「路径三键」里那颗主页键的提示（2026-10-06；左/右两颗直接复用上面的 mm.pathBack / mm.pathFwd）
     'tip.pathHome': '路径设置',
+    // 顶部路径条的悬停提示（2026-11-09 用户定：**只给涉及改名的三处**，文件夹段和中间节点一律不提示）
+    'crumb.tipFile': '点击修改文件名',
+    'crumb.tipRoot': '点击修改母节点名',
+    'crumb.tipRootGo': '点击回到母节点',
+    'crumb.tipMerged': '点击修改名称（文件名和母节点名）',
     'pro.needActivate': '此功能激活可用',
     // 设置页尾注那一排（2026-10-07 用户定）：使用教程 · 加入群聊 · 更新历史 · Bug 反馈 · 版本号 · Make Something Wonderful
     'footer.tutorial': '使用教程',
     'footer.joinGroup': '加入群聊',
     'footer.releases': '更新历史',
+    'footer.sponsor': '赞赏', // 尾注里的赞赏入口：点它弹二维码（2026-11-09 从设置项那一行并进来）
     'footer.bug': 'Bug 反馈',
     'footer.version': '版本',
     'toast.featureSoon': '功能开发中，敬请期待',   // AI 输入条「＋」在非作者本机上点了弹这句（2026-10-07 用户定）   // 未激活时点受控功能（含快捷键）弹的提示（2026-10-07 用户定）
@@ -134,10 +140,10 @@ var I18N = {
     // 全屏（2026-09-22 用户定）：按钮提示 + 两条命令名（均不设默认快捷键，用户自己绑）
     // 2026-10-20 用户定：括号一律用**全角**（原来第二个是半角开 + 全角收的混搭，跟别条提示不统一）。
     //   两段灰之间的间距由 CSS 的 --tip-seg-gap-tight 收紧，不靠半角括号省地方。
-    'tb.fullscreen': '全屏专注模式（{fsHk}）（按住 {Mod} 点击：仅在窗口内全屏）', // 非全屏时的按钮提示（2026-10-01 用户定：点击=桌面全屏，⌘+点击=仅在窗口内）。{Mod} 走 modStr（Mac=⌘ / Win=Ctrl）；{fsHk} = 该命令的快捷键（**不含**括号，两侧括号写在文案里），**没绑定就连括号整段消失**、不留空括号（2026-10-21 修正注释：原来写「含括号」是错的）
+    'tb.fullscreen': '全屏专注模式（{fsHk}）（按住 {Mod} 点击：桌面全屏）', // 非全屏时的按钮提示（2026-11-09 起：点击=窗口全屏，{Mod}+点击=桌面全屏）；{fsHk} = 「仅在窗口内」那条命令的键（与按钮默认行为一致），没绑就连括号整段消失；{Mod} 按平台换成 ⌘ / Ctrl
     'tb.fullscreenExit': '退出全屏专注模式（Esc）', // 全屏中（窗口档 / 桌面档**共用这一句**）：点 / ⌘+点击 都是退出，两档行为一致
     'cmd.fullscreenWindow': '视图显示｜全屏专注模式（仅在窗口内）', // 命令：非全屏→仅在窗口内全屏；再点一次→退出
-    'cmd.fullscreenDesktop': '视图显示｜全屏专注模式', // 命令：非全屏→桌面全屏；窗口全屏→升级为桌面全屏；桌面全屏→退出
+    'cmd.fullscreenDesktop': '视图显示｜全屏专注模式（桌面全屏）', // 命令：非全屏→桌面全屏；窗口全屏→升级为桌面全屏；桌面全屏→退出（名字加括号与「仅在窗口内」那条区分）
     // ---- 命令面板（Cmd+P）与文件右键菜单里显示的命令名（改完要重载插件才变）----
     'cmd.newMap': '新建思维导图（28 Notes）', // 命令名 + 左侧 Ribbon 按钮悬停提示：新建导图（2026-09-20 去掉「新建｜」前缀：Ribbon 悬停时前缀多余）
     'cmd.boldNode': '编辑文本｜加粗节点', // 命令：画布动作（键位在原生快捷键页改，2026-09-18）
@@ -291,7 +297,6 @@ var I18N = {
     'settings.footnote': '更多', // 「更多」节标题（2026-09-16 由「尾注」改名）
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
     'settings.sponsor': '赞赏开发者', // 赞助项名称
-    'settings.sponsorBtn': '赞赏', // 赞助按钮文字（2026-09-18 起点它弹二维码弹窗）
     'settings.sponsorThanks': '谢谢！', // 赞助弹窗里二维码下方那句话
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
     'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。或加入群聊 →', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
@@ -591,10 +596,10 @@ var I18N = {
     // 价格 / 邮箱 / 微信号 / 活动链接是**商业参数**，走 main.js 的 PRO_PLAN（不在这里）。
     'pm.scrollHint': '鼠标滚动以向下查看',
     'pay.shareBtn': '分享免费领会员',
-    'pm.shareLink': '（分享免费领会员）', // Pro 弹窗价格那行 ¥38 右边的小字链接（2026-09-24 用户定）：点击跳同一个分享活动页；括号跟语言走（中文全角 / 英文半角）
+    'pm.shareLink': '（分享免费领会员）', // Pro 弹窗价格那行 ¥48 右边的小字链接（2026-09-24 用户定）：点击跳同一个分享活动页；括号跟语言走（中文全角 / 英文半角）
     'pay.emailCopied': '邮箱已复制',
     'pay.emailCopyFail': '复制失败，请手动复制',
-    'pm.priceLead': '早鸟价优惠', // 价格行开头（后面跟 ¥76 → ¥38）
+    'pm.priceLead': '早鸟价优惠', // 价格行开头（后面跟 ¥96 → ¥48）
     'pm.trialLeft': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。', // {0} = 剩余天数（不足 1 天按 1 天）
     'pm.trialEnded': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。',
     'pm.secFreeH': '🌱 了解免费版',
@@ -607,7 +612,7 @@ var I18N = {
     'pm.capAfter': '使用创新功能 Now 和 Minor 后：瞬间清晰，聚焦重点',
     'pm.thanks': '你的支持可以让我持续开发，做出美好的产品，谢谢你！',
     'pm.note': '本产品为买断制，激活码永久有效，可激活三台设备。（不包含在线生成式 AI 功能）',
-    'pay.h1': '微信扫码支付 {0}', // {0} = 现价（PRO_PLAN.priceNowText，如 ¥38）
+    'pay.h1': '微信扫码支付 {0}', // {0} = 现价（PRO_PLAN.priceNowText，如 ¥48）
     'pay.emailLead': '将付款截图发送至邮箱：',
     'pay.step1': '1. 截图需包转账单号（样式如下）',
     'pay.step2': '2. 发送后，24h 内左右会收到激活码',
@@ -1134,10 +1139,16 @@ var I18N = {
     'mm.pathSave': 'Set Current as Default Path',
     // Tip for the home button in the top bar's path trio (2026-10-06; the back/forward pair reuses mm.pathBack / mm.pathFwd)
     'tip.pathHome': 'Path Settings',
+    // Hover hints for the header breadcrumb (2026-11-09): only the three rename-capable spots get one
+    'crumb.tipFile': 'Click to rename this file',
+    'crumb.tipRoot': 'Click to rename the root node',
+    'crumb.tipRootGo': 'Click to go back to the root node',
+    'crumb.tipMerged': 'Click to rename the file and the root node',
     'pro.needActivate': 'Activate to use this feature',
     'footer.tutorial': 'Tutorial',
     'footer.joinGroup': 'Join Group',
     'footer.releases': 'Release Notes',
+    'footer.sponsor': 'Tip',
     'footer.bug': 'Bug Report',
     'footer.version': 'Version',
     'toast.featureSoon': 'Coming soon',
@@ -1312,10 +1323,10 @@ var I18N = {
     'btn.dismiss': 'OK',
     'notice.dataGuardBlocked': 'Blocked an Accidental Deletion of the 28 Notes Mind Map Hidden Files. To Delete Attachments, Clean Them up Manually in "Settings - Advanced".',
     'notice.aiDocsRestored': 'Rebuilt AI Contract File: {0}',
-    'tb.fullscreen': 'Full-Screen Focus ({Mod} and Click for Window-Only)', // 2026-10-01: plain click = desktop full-screen, {Mod}+click = window-only; {fsHk} = the command hotkey (**without** brackets — the brackets live in the string), dropped entirely (brackets included) when unbound; 2026-10-21: fixed this note, it used to say "with brackets"
+    'tb.fullscreen': 'Full-Screen Focus ({fsHk}) (Hold {Mod} and Click for Desktop Full-Screen)', // 2026-11-09: plain click = window-only, {Mod}+click = desktop; {fsHk} = hotkey of the window-only command (matches the button default); {Mod} resolves to Cmd / Ctrl by platform
     'tb.fullscreenExit': 'Exit Full-Screen Focus (Esc)', // 2026-10-01: shared by both full-screen kinds (click and {Mod}+click both exit)
     'cmd.fullscreenWindow': 'View | Full-Screen Focus (Window Only)', // 2026-10-01: renamed (was "Window Fullscreen")
-    'cmd.fullscreenDesktop': 'View | Full-Screen Focus', // 2026-10-01: renamed (was "Desktop Fullscreen")
+    'cmd.fullscreenDesktop': 'View | Full-Screen Focus (Desktop Full-Screen)', // 2026-11-09: suffix added to tell it apart from the window-only command
     'settings.badgeStyle': 'File Type Badge',
     'settings.badgeStyleDesc': 'It refers to the type badge on the right of the file name in the file list. This design avoids confusion between file types.',
     'settings.badgeStyleText': '28 Notes Text',
@@ -1367,7 +1378,6 @@ var I18N = {
     'settings.footnote': 'More',
     'settings.qrMissing': '(QR Code Image Not Found)',
     'settings.sponsor': 'Tip Developer',
-    'settings.sponsorBtn': 'Tip',
     'settings.sponsorThanks': 'Thank You!',
     'settings.bug': 'Bugs & Feature Requests',
     'settings.bugMd': 'Add the creator on WeChat: Hi28Notes. Or join the group chat →',
@@ -1632,7 +1642,7 @@ var I18N = {
     // Price, email, WeChat ID and the share link are business values and live in PRO_PLAN (main.js), not here.
     'pm.scrollHint': 'Scroll Down to See More',
     'pay.shareBtn': 'Share for Free',
-    'pm.shareLink': '(Share to Get Free Membership)', // small link next to ¥38 in the Pro modal (2026-09-24); opens the same share page
+    'pm.shareLink': '(Share to Get Free Membership)', // small link next to ¥48 in the Pro modal (2026-09-24); opens the same share page
     'pay.emailCopied': 'Email Copied',
     'pay.emailCopyFail': 'Copy Failed — Please Copy It Manually',
     'pm.priceLead': 'Early Bird Price',

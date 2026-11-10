@@ -41,10 +41,18 @@
      结果是调不齐，而且面板里的条目提示三角会"印"在面板上（三角距条目 3px，面板内边距却有 6px）。
      现在：**三角尖端到目标的距离只有一个值（--tip-gap）**，框自动贴在三角外侧（= gap + 三角半径），
      四个方向（上 / 左 / 右）共用；面板里的条目另外自动加上面板内边距，所以视觉间距仍然是 --tip-gap。 */
-  --tip-gap: 2px;      /* 🎚 三角**尖端** ↔ 目标（按钮 / 菜单条目）的间距 —— 所有方向共用这一个（用户 2026-10-05 定 2px）*/
-  --tip-arrow: 5px;    /* 🎚 三角的半径（= border-width）；框的位置 = 尖端距离 + 这个值 */
-  --tip-font: 12px;    /* 🎚 提示文字大小（框的大小跟着文字走）*/
-  --tip-pad: 5px 10px; /* 🎚 提示框内边距 */
+  /* TIP-PARAMS-BEGIN —— 黑色小字提示的统一参数：三处提示都读这一组，调外观只改这里。
+     两份样式表各有一份完全相同的定义（样式不互通），改动必须同步，自检会逐字比对。 */
+  --tip-bg: #1f2329;                         /* 🎚 框底色（小三角跟着它）*/
+  --tip-fg: #fff;                            /* 🎚 文字颜色 */
+  --tip-font: 12px;                         /* 🎚 文字大小 */
+  --tip-pad: 5px 10px;                      /* 🎚 内边距 */
+  --tip-lh: 1.3;                            /* 🎚 行高 */
+  --tip-radius: 6px;                        /* 🎚 圆角 */
+  --tip-shadow: 0 2px 8px rgba(0,0,0,.25);  /* 🎚 投影 */
+  --tip-gap: 2px;                           /* 🎚 三角尖端 ↔ 按钮的间距 */
+  --tip-arrow: 5px;                         /* 🎚 三角半径 */
+  /* TIP-PARAMS-END */
   /* 🎚 提示里「灰段」（键位段 / 括号里的快捷操作段）的左右间距（2026-10-12 加，2026-10-20 拆两档）：
      --tip-seg-gap       正文 → 第一个灰段之间的距离（正文和括号要分得开）
      --tip-seg-gap-tight **灰段紧跟灰段**时的距离（两个括号挨着，全角括号本身还带空白，用大的会显得很空）
@@ -2025,10 +2033,10 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
       不然会给任意后代乱套定位。 */
 .nm-tip {
   display: none; position: absolute; z-index: 90; pointer-events: none;
-  background: #1f2329; color: #fff;
-  padding: var(--tip-pad, 5px 10px); border-radius: 6px;
-  font-size: var(--tip-font, 12px); white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  background: var(--tip-bg); color: var(--tip-fg);
+  padding: var(--tip-pad); border-radius: var(--tip-radius);
+  font-size: var(--tip-font); line-height: var(--tip-lh); white-space: nowrap;
+  box-shadow: var(--tip-shadow);
 }
 [data-tip]:hover > .nm-tip { display: inline-flex; align-items: baseline; }
 /* 整张卡片也挂着提示（文档 / 附件节点「点击打开…」，2026-10-09），而卡片里的图标（待办 / Now / AI 标记…）
@@ -2083,9 +2091,9 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    「目标」= **外面那个描线框**（面板 / 工具条），不是里面的按钮 —— 用户定的判据；
    每个有描线框的容器把自己的「内边距 + 描边」写进 --tip-inset（见下面那组），量间距时自动加上。 */
 .nm-tip { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)))); }
-.nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, #1f2329); border-bottom: 0; }
+.nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, var(--tip-bg)); border-bottom: 0; }
 [data-side="top"] > .nm-tip { bottom: 100%; left: 50%; transform: translate(-50%, calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)))); }
-[data-side="top"] > .nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, #1f2329); border-bottom: 0; }
+[data-side="top"] > .nm-tip::before { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--tip-arrow-color, var(--tip-bg)); border-bottom: 0; }
 [data-side="left"] > .nm-tip { right: 100%; left: auto; top: 50%; bottom: auto; transform: translate(calc(-1 * (var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px))), -50%); }
 /* ⚠️ 三角现在挂在**提示框**上（不是按钮上），所以方向语义要跟着翻过来：
    框在按钮左边 → 三角要贴框的**右**边（`left: 100%`），朝右指向按钮；
@@ -2097,14 +2105,14 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    而左右两档**没声明** border-bottom → 那条照样生效 → 三角只剩上半边（一个直角三角），
    看着像一道**斜杠**（用户原话「丢了一半」）。
    → 左右两档一律显式写 `border-top` / `border-bottom`（宽度 + 透明），别只改颜色。 */
-[data-side="left"] > .nm-tip::before { left: 100%; right: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-left-color: var(--tip-arrow-color, #1f2329); border-right: 0; }
+[data-side="left"] > .nm-tip::before { left: 100%; right: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-left-color: var(--tip-arrow-color, var(--tip-bg)); border-right: 0; }
 [data-side="right"] > .nm-tip { left: 100%; right: auto; top: 50%; bottom: auto; transform: translate(calc(var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)), -50%); }
-[data-side="right"] > .nm-tip::before { right: 100%; left: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-right-color: var(--tip-arrow-color, #1f2329); border-left: 0; }
+[data-side="right"] > .nm-tip::before { right: 100%; left: auto; top: 50%; transform: translateY(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid transparent; border-right-color: var(--tip-arrow-color, var(--tip-bg)); border-left: 0; }
 /* 朝下（2026-10-06 加）：提示挂在元素**下方**、三角贴框上边朝上指 —— 顶部条那几颗用（条贴屏幕最上沿，
    往上弹会出屏）。⚠️ 四条边照样写全：基规则那条 `border-bottom: 0`（给"朝上那档"用的）会漏过来，
    只写颜色会让三角只剩半边（左右两档踩过同一个坑）。 */
 [data-side="bottom"] > .nm-tip { top: 100%; bottom: auto; left: 50%; transform: translate(-50%, calc(var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px))); }
-[data-side="bottom"] > .nm-tip::before { bottom: 100%; top: auto; left: 50%; transform: translateX(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid var(--tip-arrow-color, #1f2329); border-left: var(--tip-arrow, 5px) solid transparent; border-right: var(--tip-arrow, 5px) solid transparent; }
+[data-side="bottom"] > .nm-tip::before { bottom: 100%; top: auto; left: 50%; transform: translateX(-50%); border-top: var(--tip-arrow, 5px) solid transparent; border-bottom: var(--tip-arrow, 5px) solid var(--tip-arrow-color, var(--tip-bg)); border-left: var(--tip-arrow, 5px) solid transparent; border-right: var(--tip-arrow, 5px) solid transparent; }
 /* ===== 各容器把自己的「内边距 + 描边」报上来（--tip-inset）=====
    ⚠️ 新增面板 / 工具条时，**必须在这里补一条**，否则它的提示会从按钮边量起、印在容器上。
    值 = 容器 padding + border-width（都是 1px 描边）。 */
@@ -2990,4 +2998,26 @@ body.nm-ui-faded .node-menu {
   --sib-predict: 240, 98, 146;
   --sib-predict-ln: 240, 98, 146;
   --sib-predict-root: 214, 60, 106;
+}
+
+/* ===== 搜索命中高亮（2026-11-10）=====
+   搜索结果里命中当前这张导图时，画布上**命中的那几个字**也标出来（不是整张卡片）。
+   .nm-hl       = 同一批里的其他命中（浅一档）
+   .nm-hl.is-on = 刚从搜索结果点过来的那一条（重一档，只靠浓度区分，**不加描边**）
+   三个都是旋钮，嫌扎眼就调小；深浅主题靠半透明黄都能看。 */
+:root {
+  --nm-hl-bg: rgba(255, 208, 0, .28);      /* 🎚 其他命中 */
+  --nm-hl-on-bg: rgba(255, 208, 0, .68);   /* 🎚 当前命中（更重） */
+  /* 🎚 高亮色块左右各比文字宽出多少（填**正数**，0 = 紧贴文字）。
+     靠 padding + 等量负 margin 实现：色块变宽，但文字位置和整行宽度一点不动。 */
+  --nm-hl-pad-x: 0.5px;
+}
+.nm-hl {
+  background: var(--nm-hl-bg, rgba(255, 208, 0, .28));
+  border-radius: 3px;
+  padding: 0 var(--nm-hl-pad-x, 2px);
+  margin: 0 calc(-1 * var(--nm-hl-pad-x, 2px));
+}
+.nm-hl.is-on {
+  background: var(--nm-hl-on-bg, rgba(255, 190, 0, .72));
 }

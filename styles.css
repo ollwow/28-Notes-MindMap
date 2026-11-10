@@ -12,6 +12,7 @@
      --shin-mm-crumb-gap      面包屑段与段之间（默认 0，官方就是 0 —— 间距靠各段自己的 padding）
      --shin-mm-crumb-sep-gap  斜杠左右各留多少（默认 2px）
      --shin-mm-crumb-fs       面包屑字号（默认 13px）
+     --shin-mm-crumb-tail     右边界往右探多少（默认 -8px = 吃掉系统标题栏自带的 8px 间距）
      --shin-mm-fs-dim         全屏时状态栏的待命透明度（默认 .1）
      --shin-mm-fs-size        全屏按钮外框边长（默认不写 = 跟系统那颗一样大）
      --shin-mm-fs-icon-size   全屏按钮图标边长（默认跟 Obsidian 的 --icon-size，一般 18px）
@@ -70,10 +71,16 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
 
 /* ③ 我们那几颗键（容器沿用系统的 view-header-nav-buttons → 尺寸 / 间距自动一致） */
 #shin-mm-nav { display: flex; align-items: center; }
-/* 常态色**提亮**（2026-10-06 用户报"一直灰灰的、看不清能点"）：系统那排图标本身是 muted 灰，
-   我们这几颗要给足对比度；只有真置灰（.shin-mm-na）才暗下去。
-   ⚠️ 置灰**别用 `cursor: not-allowed`** —— 用户看到的"鼠标变成禁止小图标"就是从这类光标来的，用 default。 */
-#shin-mm-nav .clickable-icon, #shin-mm-fs { color: var(--text-normal); }
+/* 常态色 = **与同栏系统图标同一档**（2026-11-09 用户定）：系统那颗 .clickable-icon 本身就是
+   `color: var(--icon-color)`，桌面版全局默认 --icon-color 就是 --text-muted；视图头部那一栏
+   （.view-header-nav-buttons / .view-actions）没有覆盖它，只有 .is-mobile 才改成 text-normal。
+   所以"跟这一栏一样"= 读系统同一个变量，别自己挑颜色。
+   之前 2026-10-06 为了"看得清能点"提亮成 --text-normal，用户反馈"放大按钮跟这一栏其他图标颜色不一致"，改回。
+   hover 也读系统的同名变量（系统 --icon-color-hover 默认同样是 muted，即悬停不变色，跟着主题走）。
+   ⚠️ 置灰仍靠 .shin-mm-na 的 opacity（与颜色无关）；**别用 `cursor: not-allowed`** ——
+   用户看到的"鼠标变成禁止小图标"就是从这类光标来的，用 default。 */
+#shin-mm-nav .clickable-icon, #shin-mm-fs { color: var(--icon-color, var(--text-muted)); }
+#shin-mm-nav .clickable-icon:hover, #shin-mm-fs:hover { color: var(--icon-color-hover, var(--text-muted)); }
 #shin-mm-nav .shin-mm-na { opacity: .3; cursor: default; }
 #shin-mm-nav .shin-mm-na:hover { background-color: transparent; }
 /* 主页：当前路径 ≠ 默认路径 → 主题色（要压过上面那条常态色 + 系统的 clickable-icon 色）。
@@ -123,6 +130,13 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
    旋钮：--shin-mm-crumb-gap（段与段之间，官方是 0）/ --shin-mm-crumb-sep-gap（斜杠左右）/
         --shin-mm-crumb-fs（字号）。「距三键多远」不在这里 —— 它挂在外面那根弹簧上（见上面那条）。
         改完要「禁用再启用插件」才生效。 */
+
+/* 路径条旋钮（2026-11-09 用户要能自己调）：竖线高度 / 竖线左右间距 / 下钻层级的淡化程度 */
+:root {
+  --shin-mm-crumb-bar-h: 14px;     /* 🎚 竖线高度（原来 12px，用户说可以再长一点） */
+  --shin-mm-crumb-bar-gap: 4px;    /* 🎚 竖线左右各留多少（原来 7px，用户说可以再小一点） */
+  --shin-mm-crumb-drill-dim: .55;  /* 🎚 下钻层级（母节点之后那些）的透明度：1 = 跟前面一样深 */
+}
 #shin-mm-crumb {
   display: flex; align-items: center; gap: var(--shin-mm-crumb-gap, 0px);
   /* 离主页键多远**由外层那根弹簧的 margin-left 控制**（见下面 .view-header-title-container 那条）——
@@ -131,6 +145,11 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
   /* 它住在那根弹簧（.view-header-title-container）里、是里面唯一的内容 →
      自己占满 + 允许收缩，路径长了就在这里被裁（各段再各自省略号），不会把右边那排顶出去 */
   flex: 1 1 auto; min-width: 0;
+  /* 🎚 右边界往右探多少（2026-11-09 用户定）：系统 .view-header 自带 gap 8px，
+     路径条右边缘到右边那颗按钮之间就空出这 8px（实测出来的，不是隐藏按钮占位）。
+     负 margin 正好吃掉它，可点 / hover 区域就顶上去。默认 -8px；嫌挤调小（-4px），
+     想更贴就加大（到 -14px 起会压进按钮自己的 padding）。 */
+  margin-right: var(--shin-mm-crumb-tail, -8px);
   overflow: hidden; white-space: nowrap;
   font-size: var(--shin-mm-crumb-fs, 13px); color: var(--text-muted);
 }
@@ -149,6 +168,57 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
 #shin-mm-crumb a:hover { background-color: var(--background-modifier-hover); color: var(--text-normal); }
 /* 斜杠分隔符（官方 .view-header-breadcrumb-separator，内容就是 "/"） */
 #shin-mm-crumb .sep { padding: 2px 1px; color: var(--text-faint); flex: none; }
+
+/* ===== 2026-11-09：路径条改成「文件夹 / 文件名 ｜ 母节点 / 下钻…」整条 =====
+   系统那两段（.view-header-title / .view-header-title-parent）仍然藏着，这一整条都是我们自己画的；
+   视觉与交互照系统那套：文件夹段 = 可点小块 + 斜杠、文件名段可原地改名、超长逐段省略号。
+   · .c-folders 整层包着文件夹段 —— 改名时靠它做「淡出 + 宽度收到 0」的收起动画（系统 150ms）
+   · .c-bar 竖线：只在「文件名 ≠ 母节点名」时出现，把文件路径和导图路径分开
+   · .c-folder / .c-file / .c-node 都是 .c-seg（压缩算法统一按 .c-seg 逐级截断） */
+#shin-mm-crumb .c-folders {
+  display: inline-flex; align-items: center; flex: 0 0 auto;
+  overflow: hidden;   /* 收起时靠 max-width:0 + 它把内容裁掉，不占位 */
+  transition: max-width 150ms ease, opacity 150ms ease;
+}
+/* 库根（文件就在最外层）：没有文件夹 → 整层不占位（系统 `.view-header-title-parent:empty` 同款处理） */
+#shin-mm-crumb .c-folders.is-empty { display: none; }
+
+/* 竖线分隔：比斜杠重一点、短一点，一眼看出「这是另一个世界」 */
+#shin-mm-crumb .c-bar {
+  flex: 0 0 auto; align-self: center;
+  width: 1px;
+  height: var(--shin-mm-crumb-bar-h, 14px);
+  margin: 0 var(--shin-mm-crumb-bar-gap, 4px);
+  /* 🔴 跟斜杠**同一个颜色**（--text-faint）—— 原来用 --background-modifier-border，用户说太淡（2026-11-09） */
+  background: var(--text-faint);
+  border-radius: 1px;
+}
+
+/* 下钻层级淡一档（母节点之后那些）：跟前面同色、只是透明度低一点，
+   一眼分出「实体」和「走进来的路」（2026-11-09 用户定）。浓度由 --shin-mm-crumb-drill-dim 调。
+   hover 时恢复不透明 —— 不然看着像不能点。 */
+#shin-mm-crumb .c-node.is-drill { opacity: var(--shin-mm-crumb-drill-dim, .55); }
+#shin-mm-crumb .c-node.is-drill:hover { opacity: 1; }
+
+/* 原地改名：正在编辑的那一段（照系统 is-being-renamed 那圈描边） */
+#shin-mm-crumb .c-seg.is-editing {
+  outline: none;
+  cursor: text;
+  min-width: 32px;
+  white-space: pre;   /* 编辑时别折行，宽度跟着字长 */
+  overflow: visible;
+  /* 2026-11-09 用户定：**不要背景、不要外圈描边** —— 就是字本身能改，跟系统原生手感一致。
+     （原来那圈 2px 描边 + 全选高亮叠在一起，看着像凭空多出一个紫框） */
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;         /* 下钻节点正在改名时也别淡，否则看不清自己打的字 */
+}
+/* 改名期间把**其余段**藏起来：只留正在编辑的那一段。
+   ⚠️ 文件夹段除外 —— 它走上面 .c-folders 的收起动画（用户明确要的那个"文件夹消失"效果）。 */
+#shin-mm-crumb.is-renaming .c-bar,
+#shin-mm-crumb.is-renaming > .sep,
+#shin-mm-crumb.is-renaming .c-node:not(.is-editing),
+#shin-mm-crumb.is-renaming .c-file:not(.is-editing) { display: none; }
 
 /* Mac + **窗口全屏**（非原生）时：给左上角那三个红绿灯留出空位（2026-10-06 用户定）。
    窗口全屏（仅窗口内）不隐藏红绿灯，它正好压在返回/主页那几颗上 → 留一段左内边距把它们推开。
@@ -235,24 +305,23 @@ body.shin-mm-fullscreen .workspace-leaf-content[data-type="28notes-mindmap"] { p
 
 /* ⑥ 黑色小字提示（我们自己的设计，2026-10-06）：黑底白字小条，弹在按钮**下方**
    （标题栏贴着屏幕最上沿，往上弹会出屏）。由 main.js 的 showHeaderTip() 挂到 body 上、定位用 fixed。 */
-/* 提示几何 = **与画布完全同一套**（2026-10-06 用户定，两个值同名同义）：
-   · --shin-mm-tip-gap  = 三角**尖端离目标**的缝隙（画布 --tip-gap 也是 2）
-   · --shin-mm-tip-arrow = 小三角大小（画布 --tip-arrow 也是 5）
+/* 提示几何 = **与画布完全同一套**：下面两个只是 JS 定位时读的别名，值直接取统一参数，
+   不要在这里另写数字（改 --tip-gap / --tip-arrow 就会一起变）。
    框离目标 = gap + arrow，所以三角尖端正好离目标 gap。JS 读这两个值，别在 JS 里写死数字。 */
 body {
-  --shin-mm-tip-gap: 2px;
-  --shin-mm-tip-arrow: 5px;
+  --shin-mm-tip-gap: var(--tip-gap);
+  --shin-mm-tip-arrow: var(--tip-arrow);
   /* 只针对**主页菜单那两项**的提示（横向弹那个）：单独一个缝隙值，不影响其他黑字提示。
      不想要单独调就删掉这行（会回落到上面的 --shin-mm-tip-gap）。 */
   --shin-mm-tip-gap-menu: 6px;
 }
 .shin-mm-tip {
   position: fixed; z-index: 9999;
-  background: #1f2329; color: #f5f5f5;   /* 与画布那套小黑字同一个底色（#1f2329） */
-  font-size: 12px; line-height: 1.4;
-  padding: 4px 8px; border-radius: 6px;
+  background: var(--tip-bg); color: var(--tip-fg);
+  font-size: var(--tip-font); line-height: var(--tip-lh);
+  padding: var(--tip-pad); border-radius: var(--tip-radius);
   max-width: 340px; white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  box-shadow: var(--tip-shadow);
   pointer-events: none;
 }
 /* 提示框里的**浅色段**（2026-10-06 用户报"这颗按钮的浅色段不见了"）：
@@ -270,19 +339,19 @@ body {
 /* 朝上（提示在目标**下方**）—— 只有标题栏那几颗按钮用（它们贴着屏幕最顶上，只能往下弹） */
 .shin-mm-tip[data-side="bottom"]::before {
   left: var(--shin-mm-tip-arrow-left, 50%); transform: translateX(-50%); bottom: 100%;
-  border-bottom-color: #1f2329;
+  border-bottom-color: var(--tip-bg);
 }
 /* 🔴 朝左（提示在目标**右侧**）—— **子菜单条目一律用左右，不许上下**（2026-10-06 用户定：
    弹上下会盖住相邻的那一条）。三角贴框左边外侧，纵向位置按目标中心算。
    ⚠️ 四条边写全：border 三角的老坑 —— 少写一条边会继承别的档的点色，三角变成半个（分册有记）。 */
 .shin-mm-tip[data-side="right"]::before {
   right: 100%; top: var(--shin-mm-tip-arrow-top, 50%); transform: translateY(-50%);
-  border-top-color: transparent; border-right-color: #1f2329; border-bottom-color: transparent; border-left-color: transparent;
+  border-top-color: transparent; border-right-color: var(--tip-bg); border-bottom-color: transparent; border-left-color: transparent;
 }
 /* 朝右（提示在目标**左侧**）：右边放不下时自动翻过来 */
 .shin-mm-tip[data-side="left"]::before {
   left: 100%; top: var(--shin-mm-tip-arrow-top, 50%); transform: translateY(-50%);
-  border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: #1f2329;
+  border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: var(--tip-bg);
 }
 
 /* ⑦ 主页键的二级菜单（我们自己的设计，2026-10-06）：白底卡片 + 图标 + 文字，
@@ -508,10 +577,10 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
    观感与画布里那行一致（黑底 / 白字 / 12px / 圆角 6）。 */
 .shin-drop-out-hint {
   position: fixed; z-index: 9999; display: none; pointer-events: none;
-  padding: var(--tip-pad, 5px 10px); border-radius: 6px;
-  font-size: var(--tip-font, 12px); line-height: 1.3; white-space: nowrap;
-  background: #1f2329; color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .28);
+  padding: var(--tip-pad); border-radius: var(--tip-radius);
+  font-size: var(--tip-font); line-height: var(--tip-lh); white-space: nowrap;
+  background: var(--tip-bg); color: var(--tip-fg);
+  box-shadow: var(--tip-shadow);
 }
 .shin-drop-out-hint.show { display: block; }
 
@@ -548,13 +617,18 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
      --shin-ribbon-size       Ribbon 按钮外框大小（悬浮背景层 / 点击区，与侧栏一致）
      --shin-ribbon-icon-size  Ribbon 图标本身大小（调小=图标缩小、留白更多；默认比外框小） */
 :root {
-  /* 黑色小字提示（框 + 三角）的统一几何 —— 与 mindmap-app.css 的同名值保持一致
-     （画布是 iframe，CSS 变量不能跨文档，所以两边各定义一份、值必须一样；改一处记得改另一处）。
-     三角尖端 ↔ 目标的距离 = --tip-gap；框自动贴在三角外侧（gap + 三角半径）。 */
-  --tip-gap: 2px;
-  --tip-arrow: 5px;
-  --tip-font: 12px;
-  --tip-pad: 5px 10px;
+  /* TIP-PARAMS-BEGIN —— 黑色小字提示的统一参数：三处提示都读这一组，调外观只改这里。
+     两份样式表各有一份完全相同的定义（样式不互通），改动必须同步，自检会逐字比对。 */
+  --tip-bg: #1f2329;                         /* 🎚 框底色（小三角跟着它）*/
+  --tip-fg: #fff;                            /* 🎚 文字颜色 */
+  --tip-font: 12px;                         /* 🎚 文字大小 */
+  --tip-pad: 5px 10px;                      /* 🎚 内边距 */
+  --tip-lh: 1.3;                            /* 🎚 行高 */
+  --tip-radius: 6px;                        /* 🎚 圆角 */
+  --tip-shadow: 0 2px 8px rgba(0,0,0,.25);  /* 🎚 投影 */
+  --tip-gap: 2px;                           /* 🎚 三角尖端 ↔ 按钮的间距 */
+  --tip-arrow: 5px;                         /* 🎚 三角半径 */
+  /* TIP-PARAMS-END */
   /* --tip-inset：容器自己的「内边距 + 描边」——提示量间距时自动加上，所以量的是**容器外边缘**
      （目标 = 外面那个描线框，不是里面的按钮）。这一项不是手调旋钮，是各容器自己报的值。 */
   --shin-foldbar-num-y: 0px;
@@ -587,16 +661,16 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .status-bar .shin-foldbar-btn[data-tip]::after {
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + var(--tip-gap, 2px) + var(--tip-arrow, 5px) + var(--tip-inset, 0px)); right: -6px; z-index: 200;
-  background: #1f2329; color: #fff; font-size: var(--tip-font, 12px); line-height: 1.5; font-weight: 400;
-  padding: var(--tip-pad, 5px 10px); border-radius: 6px; white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  background: var(--tip-bg); color: var(--tip-fg); font-size: var(--tip-font); line-height: var(--tip-lh); font-weight: 400;
+  padding: var(--tip-pad); border-radius: var(--tip-radius); white-space: nowrap;
+  box-shadow: var(--tip-shadow);
   opacity: 0; pointer-events: none; transform: translateY(3px);
   transition: opacity .12s ease, transform .12s ease;
 }
 /* 小箭头（5px 三角，指向下方按钮）：与左下角按钮 tooltip 同款（mindmap-app.css [data-tip]::before） */
 .status-bar .shin-foldbar-btn[data-tip]::before {
   content: ""; position: absolute; bottom: calc(100% + var(--tip-gap, 2px) + var(--tip-inset, 0px)); right: 0; z-index: 200;
-  border: var(--tip-arrow, 5px) solid transparent; border-top-color: #1f2329; border-bottom: 0;
+  border: var(--tip-arrow, 5px) solid transparent; border-top-color: var(--tip-bg); border-bottom: 0;
   opacity: 0; pointer-events: none; transform: translateY(3px);
   transition: opacity .12s ease, transform .12s ease;
 }
@@ -610,7 +684,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 }
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]::before {
   bottom: auto; right: calc(100% + var(--tip-gap, 2px) + var(--tip-inset, 0px)); left: auto; top: 50%;
-  border: var(--tip-arrow, 5px) solid transparent; border-left-color: #1f2329; border-right: 0;
+  border: var(--tip-arrow, 5px) solid transparent; border-left-color: var(--tip-bg); border-right: 0;
   transform: translateY(-50%) translateX(3px);
 }
 .status-bar .shin-foldbar-pop .shin-foldbar-btn[data-tip]:hover::after {
@@ -981,7 +1055,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-hist-rules {
   padding: 6px 8px 6px var(--shin-hist-rules-pl, 8px);
   margin: 0 2px 8px var(--shin-hist-rules-ml, 2px);
-  font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6;
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); line-height: 1.6;
   background: var(--background-secondary);
   border-radius: var(--radius-s);
 }
@@ -999,10 +1073,10 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
    2026-10-18：颜色跟文档行名字对齐（--text-muted） */
 .shin-hist-line {
   min-width: 0; flex: 1 1 auto;
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.shin-hist-empty { padding: 14px 2px; font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6; }
+.shin-hist-empty { padding: 14px 2px; font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); line-height: 1.6; }
 
 /* 面板里的小弹窗（重命名 / 删除确认） */
 .shin-hist-input { width: 100%; }
@@ -1197,7 +1271,12 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
       用户定：**默认 0（不要分隔线）**，想看的时候自己拨回 1。
    ⚠️ 下面这些**值是用户自己调好的**（透明度 0.4 / 边距 4·10·4·2 / 分隔线关），别改回去。 */
 .workspace-leaf-content.shin-mm-panel {
-  --shin-doc-ptitle-fs: 11px;             /* 字号 */
+  /* 🎚 面板里**所有正文级文字**的统一字号（2026-11-10 用户定：12 → 13）：
+     组头 / 结果条目 / 说明行 / 属性行 / 历史条目 / 各种小字按钮都读它。
+     ⚠️ 两个例外，各有各的：① 面板标题 = `--shin-doc-ptitle-fs`（下面那条）；
+        ② **搜索框** —— 它照抄 Obsidian 原生那套样式，字号 15px 属于它，一律不覆盖。 */
+  --shin-panel-fs: 13px;
+  --shin-doc-ptitle-fs: 12px;             /* 字号（2026-11-10 用户定：11 → 12） */
   --shin-doc-ptitle-color: #000000;       /* 文字颜色（默认黑；想跟随主题就写 var(--text-normal)）*/
   --shin-doc-ptitle-color-a: 0.4;           /* 文字透明度（0 = 全透明，1 = 实色）*/
   --shin-doc-ptitle-mt: 4px;              /* 上边距 */
@@ -1306,7 +1385,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
    ⚠️ `height: auto` 也是压主题的：主题给 button 设了 `height: var(--input-height)`。 */
 .workspace-leaf-content.shin-mm-panel .shin-doc-learn {
   display: block; width: 100%; height: auto; margin: 0 0 8px; padding: 2px 2px;
-  font-size: var(--font-ui-smaller); color: var(--text-faint); text-align: left;
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-faint); text-align: left;
   background: transparent; border: none; box-shadow: none; cursor: pointer;
   white-space: normal; overflow-wrap: anywhere; line-height: 1.5;
 }
@@ -1333,7 +1412,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
    ⚠️ **两个面板共用**（文档库 + 历史面板都长这样）。 */
 .workspace-leaf-content.shin-mm-panel .shin-doc-panel-title {
   margin: var(--shin-doc-ptitle-mt, 0px) var(--shin-doc-ptitle-mr, 2px) var(--shin-doc-ptitle-mb, 6px) var(--shin-doc-ptitle-ml, 2px);
-  font-size: var(--shin-doc-ptitle-fs, 11px);
+  font-size: var(--shin-doc-ptitle-fs, 12px);
   color: color-mix(in srgb, var(--shin-doc-ptitle-color, #000000) calc(var(--shin-doc-ptitle-color-a, 1) * 100%), transparent);
   line-height: 1.5;
 }
@@ -1350,7 +1429,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
    ⚠️ 底色 / 悬停底色走上面那两条带 `data-type` 前缀的规则（裸类名会被主题 button 压掉）。 */
 .shin-doc-viewbtn {
   flex: 0 0 auto; padding: 2px 8px;
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted);
   border-radius: var(--radius-s); cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -1472,7 +1551,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-tri.is-collapsed { color: var(--collapse-icon-color-collapsed, var(--text-accent)); }
 .shin-doc-grp-name {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: var(--font-ui-smaller); color: var(--text-normal);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-normal);
 }
 .shin-doc-grp-name.is-link { cursor: pointer; }
 .shin-doc-grp-name.is-link:hover { color: var(--text-accent); }
@@ -1488,7 +1567,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
      ⚠️ 理论算下来两者应该是对齐的（两个盒子都是 22px、右缘同一条线、内容都居中），
         但用户看实物说偏 → 给旋钮让他自己定，别硬算。 */
   margin-inline-end: var(--shin-doc-grp-count-shift, 0px);
-  text-align: center; font-size: var(--font-ui-smaller); color: var(--text-faint);
+  text-align: center; font-size: var(--shin-panel-fs, 13px); color: var(--text-faint);
 }
 .shin-doc-sub { display: flex; align-items: center; gap: 5px; padding: 3px 4px 3px 22px; border-radius: var(--radius-s); }
 .shin-doc-sub:hover { background: var(--background-modifier-hover); }
@@ -1547,7 +1626,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-sub-acts { flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .shin-doc-sub-name {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: var(--font-ui-smaller); color: var(--text-muted); cursor: pointer;
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); cursor: pointer;
 }
 .shin-doc-sub-name:hover { color: var(--text-accent); }
 /* ===== 属性页「文档属性」那两行（2026-10-19 用户定，两行同一套设计）=====
@@ -1556,7 +1635,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-prop-row {
   display: flex; align-items: center; gap: 3px;
   padding: 3px 4px 3px 22px; border-radius: var(--radius-s);
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted);
   min-width: 0;
 }
 .shin-prop-dot { color: var(--text-faint); flex: 0 0 auto; }
@@ -1590,7 +1669,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-sub.is-note { cursor: default; }
 .shin-doc-sub.is-note:hover { background: transparent; }
 .shin-doc-note {
-  min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-muted);
+  min-width: 0; font-size: var(--shin-panel-fs, 13px); color: var(--text-muted);
   line-height: 1.5; overflow-wrap: anywhere;
 }
 /* 树形二级行右边那颗「定位」按钮（2026-10-09 用户定）：**鼠标悬浮这一行才出现**，
@@ -1607,23 +1686,23 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-opts { padding: 0 2px 8px; }
 .shin-doc-opts.hidden { display: none; }
 .shin-doc-optrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.shin-doc-optlabel { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-ui-smaller); color: var(--text-muted); cursor: pointer; }
+.shin-doc-optlabel { display: inline-flex; align-items: center; gap: 5px; font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); cursor: pointer; }
 .shin-doc-check { margin: 0; }
 /* 「了解孤儿文档」：浅色文字链接（**不要边框 / 底色**，用户 2026-10-08 定），按下去才给一点反馈 */
 .shin-doc-help-btn {
   flex: 0 0 auto; padding: 1px 4px;
-  font-size: var(--font-ui-smaller); color: var(--text-faint);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-faint);
   background: transparent; border: none; box-shadow: none; cursor: pointer;
 }
 .shin-doc-help-btn:hover { color: var(--text-muted); }
 .shin-doc-help-btn:active { background: var(--background-modifier-hover); }
 .shin-doc-help {
   margin-top: 6px; padding: 6px 8px;
-  font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6;
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); line-height: 1.6;
   background: var(--background-secondary); border-radius: var(--radius-s);
 }
 .shin-doc-help.hidden { display: none; }
-.shin-doc-empty { padding: 14px 2px; font-size: var(--font-ui-smaller); color: var(--text-muted); line-height: 1.6; }
+.shin-doc-empty { padding: 14px 2px; font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); line-height: 1.6; }
 /* 一条 = 一行（左文件名 + 右两颗操作），第二行浅色小字在下面 —— 与历史面板那条一样窄、不胖 */
 .shin-doc-item {
   display: grid; grid-template-columns: 1fr auto; align-items: center;
@@ -1636,7 +1715,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-name {
   grid-column: 1; grid-row: 1; min-width: 0; cursor: pointer;
   display: flex; align-items: center; gap: 5px;
-  font-size: var(--font-ui-smaller); color: var(--text-normal);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-normal);
 }
 .shin-doc-name:hover { color: var(--text-accent); }
 /* 分页①那行的「图标 + 名字」也是**一个热区**（图标就装在 `.shin-doc-name` 里）→ 悬停两者一起变主题色 */
@@ -1707,7 +1786,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-locatebtn { width: auto; height: 20px; padding: 0 4px 0 2px; gap: 2px; display: inline-flex; align-items: center; justify-content: center; opacity: 0; }
 .shin-doc-item:hover .shin-doc-locatebtn { opacity: 1; }
 .shin-doc-locatebtn .svg-icon { width: 15px; height: 15px; flex: 0 0 auto; margin-right: 0; }
-.shin-doc-locate-n { flex: 0 0 auto; font-size: var(--font-ui-smaller); line-height: 1; color: inherit; }
+.shin-doc-locate-n { flex: 0 0 auto; font-size: var(--shin-panel-fs, 13px); line-height: 1; color: inherit; }
 /* 第 4 个分页「管理此文档的思维导图」（2026-10-09 用户定）：
    一行一处引用，左边导图名（点 = 打开那张图并定位到这一处），右边**常驻**一颗 ✕ = 取消这一处管理。
    · **不放图标**（用户原话：「把前面那些图标都不要了，左边那些图标都不要了」）；
@@ -1725,7 +1804,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-doc-mgr-name {
   flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   /* 2026-10-18 用户定：与文档行的名字同一档颜色（原来这里更黑，属性页两组挨着时一眼看出不一致） */
-  font-size: var(--font-ui-smaller); color: var(--text-muted); cursor: var(--cursor, pointer);
+  font-size: var(--shin-panel-fs, 13px); color: var(--text-muted); cursor: var(--cursor, pointer);
 }
 .shin-doc-mgr-name:hover { color: var(--text-accent); }
 /* ✕ 推到行尾：行里的热区（`.shin-doc-hit`）不撑满整行，靠这颗的 `margin-left: auto` 顶到最右 */
@@ -1772,7 +1851,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   color: var(--text-normal); background: var(--background-modifier-border);
 }
 .workspace-leaf-content.shin-mm-panel .shin-doc-btn.shin-doc-clearfilter .svg-icon { width: 13px; height: 13px; }
-.shin-doc-clearfilter-txt { font-size: var(--font-ui-smaller); white-space: nowrap; }
+.shin-doc-clearfilter-txt { font-size: var(--shin-panel-fs, 13px); white-space: nowrap; }
 
 /* 「⋯」按钮背景（2026-09-14 用户定：默认**全透明** —— 主题会给 button 加椭圆底色，压掉它）。
    想要淡淡一层：把 transparent 改成如 rgba(0,0,0,.06)。⚠️ 这里必须用高优先级选择器
