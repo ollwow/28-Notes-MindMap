@@ -135,7 +135,9 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
 :root {
   --shin-mm-crumb-bar-h: 14px;     /* 🎚 竖线高度（原来 12px，用户说可以再长一点） */
   --shin-mm-crumb-bar-gap: 4px;    /* 🎚 竖线左右各留多少（原来 7px，用户说可以再小一点） */
-  --shin-mm-crumb-drill-dim: .55;  /* 🎚 下钻层级（母节点之后那些）的透明度：1 = 跟前面一样深 */
+  --shin-mm-crumb-drill-dim: .55;  /* 🎚 节点段（母节点 + 下钻层级）的透明度：1 = 跟文件名一样深 */
+  --shin-mm-crumb-file-gap: 5px;   /* 🎚 文件名段与母节点段之间的小间距（不合并时才有；替代原来的括号） */
+  --shin-mm-crumb-node-dy: 0.1px;    /* 🎚 节点段（母节点 + 下钻）整体上下微调：正值往下、负值往上。默认 1px（2026-11-13） */
 }
 #shin-mm-crumb {
   display: flex; align-items: center; gap: var(--shin-mm-crumb-gap, 0px);
@@ -168,6 +170,15 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
 #shin-mm-crumb a:hover { background-color: var(--background-modifier-hover); color: var(--text-normal); }
 /* 斜杠分隔符（官方 .view-header-breadcrumb-separator，内容就是 "/"） */
 #shin-mm-crumb .sep { padding: 2px 1px; color: var(--text-faint); flex: none; }
+/* 节点之间的分隔符 `›`（2026-11-11 试做）：比 `/` 字面更宽更重，收一点横向留白、略下移对齐基线 */
+/* 节点之间的分隔符 `›`（2026-11-11 试做）：比 `/` 字面更宽更重，收一点横向留白、略下移对齐基线。
+   左右间距 = 一个旋钮 --shin-mm-crumb-sep-gap（左右共用，改它一个就够；默认 3px）。 */
+#shin-mm-crumb .sep.is-node {
+  padding: 0 var(--shin-mm-crumb-sep-gap, 3px);
+  font-size: 1.05em;
+  line-height: 1;
+  transform: translateY(.5px);
+}
 
 /* ===== 2026-11-09：路径条改成「文件夹 / 文件名 ｜ 母节点 / 下钻…」整条 =====
    系统那两段（.view-header-title / .view-header-title-parent）仍然藏着，这一整条都是我们自己画的；
@@ -193,12 +204,27 @@ body.shin-mm-fullscreen #shin-mm-side { display: flex; }
   background: var(--text-faint);
   border-radius: 1px;
 }
+/* 已下钻时：竖线跟母节点段一起淡到「下钻层级」那档（2026-11-11 用户定，与 .c-node.is-drill 同一个旋钮） */
+#shin-mm-crumb .c-bar.is-drill { opacity: var(--shin-mm-crumb-drill-dim, .55); }
+
+/* 文件名段和母节点段之间的小间距（2026-11-13 用户定，替代原来的半角括号）：
+   只有「不合并」时这两段才直接相邻（合并时中间隔着 `›`），所以这条不会误伤合并态。
+   旋钮 --shin-mm-crumb-file-gap，可正可负。 */
+#shin-mm-crumb .c-file + .c-node { margin-left: var(--shin-mm-crumb-file-gap, 4px); }
+
+/* （2026-11-11 第二次改：原来那版「整块交互」的容器样式已撤 —— 用户要求文件名段与母节点段拆回两个独立单元；
+   容器不存在了，两段各自命中 #shin-mm-crumb a:hover 的悬停底色，不再有叠层问题。） */
 
 /* 下钻层级淡一档（母节点之后那些）：跟前面同色、只是透明度低一点，
    一眼分出「实体」和「走进来的路」（2026-11-09 用户定）。浓度由 --shin-mm-crumb-drill-dim 调。
    hover 时恢复不透明 —— 不然看着像不能点。 */
 #shin-mm-crumb .c-node.is-drill { opacity: var(--shin-mm-crumb-drill-dim, .55); }
 #shin-mm-crumb .c-node.is-drill:hover { opacity: 1; }
+/* 节点段（母节点 + 下钻）整体上下微调（2026-11-13 用户定）：
+   两段字号与对齐本来就一致（都吃 #shin-mm-crumb 的 font-size + align-items:center），
+   但浅色那段视觉上容易看着往上飘，这里给个像素级旋钮，默认往下 1px。
+   ⚠️ 用 position + top，不用 transform —— transform 会创建层叠上下文，把宿主那套黑色小字提示关在段里。 */
+#shin-mm-crumb .c-node { position: relative; top: var(--shin-mm-crumb-node-dy, 0px); }
 
 /* 原地改名：正在编辑的那一段（照系统 is-being-renamed 那圈描边） */
 #shin-mm-crumb .c-seg.is-editing {
@@ -361,8 +387,11 @@ body {
    这里用 Obsidian 自己的同名变量近似（--background-primary / --background-modifier-hover），视觉上是一路的。 */
 .shin-mm-menu {
   position: fixed; z-index: 9998;
-  background: var(--background-primary); color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
+  /* 2026-11-11 用户定：**跟随画布配色** —— 底色用画布背景（--shin-mm-canvas-bg，画布 pathState 上报），
+     不再用 Obsidian 的 --background-primary（粉线档下会是一张白卡片，跟画布完全不搭）。 */
+  background: var(--shin-mm-canvas-bg, var(--background-primary));
+  color: var(--text-normal);
+  border: 1px solid var(--shin-mm-menu-border, var(--background-modifier-border));   /* 2026-11-11 用户定：跟画布里那些二级菜单**同一根描边**（画布 --ui-bar-border 上报），别再自造主题色描边 */
   border-radius: 8px; padding: 6px;
   display: flex; flex-direction: column; gap: 2px;
   /* 宽度**跟着文字走**（2026-10-06 用户定：别用「更多」菜单那个固定 180 最小宽，显得空）。
@@ -381,7 +410,7 @@ body {
 }
 /* 悬停底色 = **主题色的浅底**（复刻画布「更多」菜单那条：`--sel: color-mix(in srgb, var(--accent) 16%, …)`）——
    ⚠️ 别用 Obsidian 那个灰底 --background-modifier-hover：用户 2026-10-06 明确说"悬浮上去该是我的主题色"。 */
-.shin-mm-menu-item:hover:not(.is-disabled) { background: color-mix(in srgb, var(--shin-mm-accent, var(--interactive-accent)) 16%, var(--background-primary)); }
+.shin-mm-menu-item:hover:not(.is-disabled) { background: color-mix(in srgb, var(--shin-mm-accent, var(--interactive-accent)) 16%, var(--shin-mm-canvas-bg, var(--background-primary))); }
 .shin-mm-menu-item.is-disabled { opacity: .4; cursor: default; }   /* 与画布 .mm:disabled 同款 */
 .shin-mm-menu-item.is-disabled:hover { background: transparent; }
 /* **可点的那两项**：跟画布「更多」菜单一模一样 —— 整条（图标 + 文字）上主题色 + 透明度 .78 + 加粗。
@@ -449,7 +478,9 @@ body {
 :root {
   --shin-settings-row-pad-y: 20px;   /* 每行的上下留白（官方 20px） */
   --shin-settings-row-pad-x: 20px;   /* 每行的左右留白（官方 20px） */
-  --shin-settings-group-gap: 24px;   /* 栏与栏（许可证 / 界面 / 更多）之间（官方 24px） */
+  --shin-settings-group-gap: 32px;   /* 🎚 栏与栏之间的大间距（许可证 / 设置 / 关于）。
+                                        官方 24px；2026-11-11 用户反馈"有点挤"→ 放宽到 32px。
+                                        嫌紧/松都改这一个数（`.shin-settings .setting-group + .setting-group` 用它）。 */
   --shin-settings-heading-gap: 16px; /* 栏标题与下面第一行之间（官方 16px） */
   --shin-morepanel-row-pad-y: 20px;  /* 🎚「按钮简化」那两个开关的行距（2026-09-21 用户反馈「有点挤」→ 12px 提到 16px；
                                         嫌紧/松都改这一个数，界面上不放控件） */
@@ -461,6 +492,8 @@ body {
                                                    调小 → 变淡（透出背景）。0.6 ≈ 原来的灰字观感。
                                                    ⚠️ 双向可调：基色特意选的是深色，所以往 1 调是「变实 / 变暗」，
                                                       往 0 调是「变淡」，不会一上来就顶死。 */
+  --shin-appreciation-gap-top: 24px;             /* 🎚 底部那排小字（更新历史 / 版本号 / MSW）与上方卡片的间距
+                                                   （2026-11-11 用户定：比栏与栏之间的 32px 窄，单独一个旋钮） */
   --shin-appreciation-color: var(--text-normal);/* 小字基色：一般不用动，浓淡交给上面的 opacity。
                                                    （浅色主题 ≈ 近黑、深色主题 ≈ 近白，靠 opacity 落到灰） */
   --shin-appreciation-title-gap: 34px;          /* 🎚 引文弹窗「标题」上方的留白（官方默认 0，想更松就加大） */
@@ -1494,6 +1527,22 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 }
 /* 分组内容块（组头下面那一块） */
 .shin-doc-secbody { padding: 0 0 2px; }
+/* frontmatter 段（2026-11-11，实验开关「frontmatter」打开才出现）：逐行「键：值」，
+   长值折行、可选中复制；没有 frontmatter 时那一行灰字。 */
+.shin-fm-row {
+  padding: 2px 22px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-normal);
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+.shin-fm-empty {
+  padding: 2px 22px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
 /* 🔴 2026-10-18 用户定：**缩进关系要统一** —— 挂在某个组内容块里的**子组头**（如「历史记录」里的
    「历史记录保存规则」、文档库页「被多处管理的问题文档」里每份文档那一行）整体右移 22px，
    跟下面那些文档行的行盒子对齐，一眼看出"它属于上面那个组"。 */
@@ -2014,7 +2063,8 @@ body.shin-mm-fs-noanim *::after {
    `main.js` 的 takeoverLeafHeader() 与上面「接管标签页标题栏」那一段 —— 别再在别处零散加规则。 */
 
 /* ============================================================
-   设置页底部「Make Something Wonderful」灰色小字（2026-09-27 用户定）：
+   设置页底部那排灰色小字（2026-09-27 用户定；2026-11-11 起内容 = 更新历史 · 版本号 · Make Something Wonderful，
+   位置在「关于」栏**卡片之外**、独占一行 —— 用户明确要它别和上面的卡片连成一大块）。
    main.js 里它是「一个空 heading 的独立 group + 私有类名 shin-appreciation-isolated」
    （group 定义官方支持 `cls` 字段），本段 CSS 靠这个类把**整块卡片视觉**关掉。
    ⚠️ 关键事实（已核对 Obsidian 渲染器源码）：卡片背景**不在** `.setting-group` 上，
@@ -2051,6 +2101,11 @@ body.shin-mm-fs-noanim *::after {
   --setting-items-padding-x: 0;
   --setting-items-padding-y: 0;
 }
+/* 2026-11-11 用户定：底部那排小字与上方卡片之间**只留一档窄间距**（默认 8px，可调）——
+   isolated group 本身也会吃「栏与栏」的 32px，这里单独覆盖；同时把 .nm-footer-links
+   自带的 margin-top 归零，避免两段间距叠加。 */
+.shin-settings .setting-group.shin-appreciation-isolated { margin-top: var(--shin-appreciation-gap-top, 24px); }
+.setting-group.shin-appreciation-isolated .nm-footer-links { margin-top: 0; }
 /* ===== 设置页尾注那一排（2026-10-07 用户定）=====
    一排**小字链接**（不是按钮）：使用教程 · 加入群聊 · 更新历史 · Bug 反馈 · 版本号 · Make Something Wonderful。
    点文字即打开对应操作。可调旋钮：
@@ -2067,6 +2122,22 @@ body.shin-mm-fs-noanim *::after {
   font-weight: var(--nm-footer-fw, 400);
 }
 .nm-footer-links > *:not(:last-child)::after { content: '·'; margin-left: var(--nm-footer-gap, 6px); color: var(--text-faint); }
+
+/* ===== 激活详情弹窗（2026-11-11 用户定）=====
+   标题「激活详情」+ 正文（已激活备注）+ 一行浅色「激活码」小字（点开才显示，右侧小复制）+ 右下「关闭」。 */
+.shin-license-detail-desc {
+  white-space: pre-wrap;      /* activeDescMd 里就是换行文字，不解析 markdown 也不会挤成一行 */
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+.shin-license-key { margin-top: 16px; }
+.shin-license-key-toggle { color: var(--text-faint); font-size: 12px; cursor: pointer; }
+.shin-license-key-toggle:hover { color: var(--text-normal); }   /* 悬停只提亮，别加下划线（面板里有一条全局禁令，防止回流） */
+.shin-license-key-line { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.shin-license-key-line.is-hidden { display: none; }
+.shin-license-key-code { font-family: var(--font-monospace); font-size: 12px; user-select: all; word-break: break-all; }
+.shin-license-key-copy { font-size: 11px; padding: 2px 8px; height: auto; }
+.shin-license-detail-foot { display: flex; justify-content: flex-end; margin-top: 20px; }
 /* 2026-10-07 用户定：可点的这几项**跟后面的版本号一个颜色**（都置灰）、**不要下划线** ——
    整排看起来是同一档小字，不分"按钮"和"说明"（只在 hover 时才提亮一点，给个可点的反馈）。 */
 .nm-footer-link { color: var(--text-faint); cursor: pointer; text-decoration: none !important; }

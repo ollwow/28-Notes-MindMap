@@ -7,7 +7,7 @@
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
 - 简洁，优雅，易用。
 
-![28 Notes MindMap](assets/banner.png)
+![28 Notes MindMap](https://raw.githubusercontent.com/ollwow/28-Notes-MindMap/main/assets/banner.png)
 
 ---
 <br>
@@ -143,7 +143,7 @@
 | （只）显示 Now 当前节点        | \                                  |
 | 显示/隐藏 Minor 次要节点      | \                                  |
 | 进入当前节点                | \                                  |
-| 保存为捷径                 | \                                  |
+| 建立捷径                  | \                                  |
 | 复制 AI 定位路径            | \                                  |
 | 添加 AI 生成标记            | \                                  |
 | 添加 AI 更改规则            | \                                  |
@@ -256,7 +256,7 @@
 - Design inspired by the "[28 Notes Method](https://space.bilibili.com/481595180)", with one-click focus on key points / hiding of non-essentials.
 - Simple, elegant, and easy to use.
 
-![28 Notes MindMap](assets/banner.png)
+![28 Notes MindMap](https://raw.githubusercontent.com/ollwow/28-Notes-MindMap/main/assets/banner.png)
 
 ---
 
@@ -378,7 +378,7 @@ Mind maps are usually used for learning and expanding thoughts. On top of that, 
 | Show only Now nodes | \ |
 | Show / hide Minor nodes | \ |
 | Enter current node | \ |
-| Save as shortcut | \ |
+| Create Shortcut | \ |
 | Copy AI locate path | \ |
 | Add AI-generated mark | \ |
 | Add AI rules | \ |

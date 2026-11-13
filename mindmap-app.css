@@ -121,6 +121,16 @@
   --card-pad-x: 12px;         /* 卡片内边距·左右 ✅ */
   --card-pad-ln-top: 2px;     /* 普通(白底)节点内边距·上：无边框/无背景，可以近一点 ✅ */
   --card-pad-ln-bottom: 1px;  /* 普通(白底)节点内边距·下 ✅ */
+  /* ---- 卡片上的时间小字（2026-11-12）----
+     放在前缀图标之后、正文之前。颜色一律跟随正常文字色（currentColor），
+     自定义时间戳与系统时间各给一个**独立**的透明度旋钮，不统一调（2026-11-12）。 */
+  --time-custom-color: var(--accent); /* 自定义时间戳默认跟主题色；想固定成别的颜色在这里填色值（卡片 + 菜单共用） */
+  --time-custom-alpha: 0.85;    /* 自定义时间戳：实一点 */
+  --time-system-alpha: 0.58;    /* 创建 / 最后编辑时间：淡一些 */
+  --time-stamp-font-size: 11px;
+  --time-stamp-bold-weight: 700;
+  --time-tip-label-w: 6.5em;    /* 悬浮提示里「标签」列宽，用来对齐每行的时间值 */
+  --time-tip-row-gap: 2px;      /* 悬浮提示里每行之间的间距 */
   /* ---- 节点内「每个元素」的上/下边距（2026-10-10 用户定；同日二轮：**gap 已折进边距**）----
      一个节点里可能渲染：正文(.title) / 备注(.note) / 图片(.imgs) / AI 更改规则(.ai-rules) / 音视频(.embeds)，
      每个元素的上边距 -mt / 下边距 -mb 独立可调。
@@ -237,76 +247,69 @@
   --multi-ref-width: 1.5px;        /* 两层框的粗细（与 .card 常驻透明边框同宽，防跳动）✅ */
   --multi-ref-soft: rgba(247, 206, 70, .45);  /* 悬浮时那层**实线**框的颜色（浅黄）✅ */
 
-  /* ---- Minor 前缀图标（2026-08-26）：图标名写在这里即可，改完重载插件生效 ----
-     可选值 = ICONS 里任意存在的图标名（写错回退双竖线），或 'bars' = 内置的「两条圆头竖线」。
-     2026-09-20 用户从候选里定下 arrow-down；2026-09-22 在调教器里逐个调完，改成两条圆头竖线
-     （形状与位置参数在 mindmap-app.js 的 MINOR_BARS —— 那个不走 ICONS 字典，是现画的）。 */
+  /* ---- Minor 前缀图标：图形与内部比例在 mindmap-app.js 的 MINOR_BARS；槽位和大小在统一前缀调参区 ---- */
   --minor-ico: bars;
-  --minor-ico-raise: 0px;        /* Minor 前缀图标上移像素：正值=上提（如 3px），0=不挪；改完重载插件生效 */
-  --minor-ico-stroke: 2.9;      /* Minor 前缀图标描边粗细（只对 ICONS 里那些描边型图标有效）。双竖线的粗细不走这个旋钮，在 mindmap-app.js 的 MINOR_BARS.w 里 */
+  --minor-ico-stroke: 2.9;
 
   /* ---- Now 前缀图标 + Now 节点视觉（2026-08-27）---- 改完重载插件生效 ----
      --now-color：前缀图标颜色；--now-text-color：Now 节点整卡字体色；
      --now-color-dim / --now-locate-border：定位态下「非当前淡紫」/「当前淡紫外框」；
-     --now-ico-size / --now-ico-stroke / --now-ico-raise：图标尺寸 / 描边粗细 / 上移像素 */
+     --now-ico-size / --now-ico-stroke：图标尺寸 / 描边粗细 */
   --now-color: #8B5CF6;        /* Now 主色（前缀图标 / 整卡字体 / 选中外框）*/
   --now-text-color: #8B5CF6;    /* Now 节点整卡字体色 */
   --now-color-dim: #C4B5FD;     /* 定位态「非当前」淡紫色（字 / 图标）*/
   --now-locate-border: #C4B5FD; /* 定位态当前淡紫框 / Now 节点 hover 淡紫框 */
-  --now-ico-size: 14px;
+  --now-ico-size: 16px;
   --now-ico-stroke: 3;
-  --now-ico-raise: 0px;
 
-  /* ---- 节点前缀图标（2026-09-20）：**大小 / 悬浮底色框**都在这里调，改完重载插件生效 ----
-     🎚 三个「图标大小」旋钮（各管一种前缀图标，互不影响）：
-        --todo-ico-size   待办图标
-        --minor-ico-size  Minor 图标
-        --now-ico-size    Now 图标（在上面 Now 那一组里）
-     🎚 --todo-ico-pad：待办图标**悬浮底色框**的大小（默认 1px；想点着更舒服就调大，如 3px → 底色框更宽）
-        --todo-ico-radius：底色框圆角；--todo-ico-hover：底色本身
-     --todo-ico-raise / --minor-ico-raise：上移像素（正值上提，用来跟文字视觉中线对齐）。
-     待办图标两条描边分开着色：方框跟 currentColor、对勾跟 --todo-check。
-       卡片上的待办 = **空框**、已完成 = 框 + 勾且整体跟节点一起变灰（那两个写在规则里，不在这里配）。 */
-  --todo-check: #C5CDD9;         /* 待办图标里「对勾」的颜色（兜底；卡片已完成档、工具条已完成档各自会覆盖一次）*/
-  --todo-ico-size: 15px;         /* 🎚 待办前缀图标大小 */
-  --todo-ico-stroke: 2.4;          /* 🎚 待办前缀图标描边粗细（2026-10-14 加：原来写死在 SVG 属性里、调不了）*/
-  --todo-ico-raise: -0.2px;         /* 待办前缀图标上移像素 */
-  --todo-ico-pad: 2px;           /* 🎚 待办图标**悬浮底色框**的大小（调大 = 底色框更宽、更好点）*/
-  --todo-ico-radius: 4px;        /* 悬浮底色框圆角 */
-  --todo-ico-hover: rgba(0, 0, 0, 0.056); /* 四个前缀图标共用的悬浮底色（让人看出可点）—— 名字沿用待办那个，2026-10-05 起 Now / Minor / AI 也用 */
-  --ico-hit-pad: 1px;            /* 🎚 Now / Minor / AI 三个前缀图标的**可点范围**内边距（待办那个另有 --todo-ico-pad，值更大）*/
-  /* ---- 四个前缀图标（待办 / Now / Minor / AI）的**垂直对齐**（2026-10-14 用户定）----
-     这四个图标的 vertical-align 原来各自写死 -2px，现在**共用这一个旋钮**，一处调、四个一起动。
-       值越大 = 图标越往上抬（正值上移）；越小（越负）= 越往下沉。想按"文字中线"对齐可以填 middle。
-     个别图标还要单独微调 → 各用自己那条 -raise 旋钮（正值上提），两者叠加。 */
-  --prefix-ico-va: -2px;         /* 🎚 四个前缀图标的垂直对齐（px 或关键字）*/
-  --prefix-ico-x: -7px;          /* 🎚 四个前缀图标的**整体水平位置**（负值往左）—— 只挪图标组整体，彼此间距不变 */
-  /* 🎚 四个前缀图标**各自的水平微调**（2026-10-14 用户定：有的调对了、那个又偏，要能分别调）。
-     叠加在 --prefix-ico-x 之上；负值往左、正值往右。
-     ⚠️ 改的是 margin-left → 它后面的一切（含标题文字）跟着走，不会在图标与文字之间留空隙。 */
-  --todo-ico-x: -1.7px;             /* 待办图标，正值往右 */
-  --now-ico-x: 0px;              /* Now 图标 */
-  --minor-ico-x: 0.6px;            /* Minor 图标 */
-  --ainode-ico-x: 0.3px;           /* AI 生成标记图标 */
-  --todo-ico-done-line: var(--minor-text-color, var(--muted)); /* 🎚 合并模式下「已完成那段」的颜色（沿边框从顶部起顺时针走的那条）；默认 = 已完成置灰色（跟"勾成已完成"那档同色）*/
-  --minor-ico-size: 14px;        /* 🎚 Minor 前缀图标大小（原来是写死的 12px，2026-09-20 提成旋钮）*/
-  /* ---- AI 生成标记前缀图标（2026-10-05；下面几个旋钮值已由用户实机调过，别动）----
-     颜色定死 = 「灰」= 次要节点（Minor）的置灰色，跟「设为次要节点」同一个灰；
-     深色档另有一份（见下面 .theme-dark），所以换明暗自动跟着换、不用宿主推。
-     只有图标上色、文字保持节点正常色（「图标和文字」那一档 2026-10-05 已随设置项一起删掉）。 */
-  --ainode-icolor: #b9b9b9;      /* 🎚 标记颜色（= 浅色档的 --minor-text-color）*/
-  --ainode-ico-size: 14px;       /* 🎚 图标大小 */
-  --ainode-ico-stroke: 2.4;      /* 🎚 描边粗细（跟随 VI 设计稿的 2.6；这套图标描边比菜单上那三只粗）*/
-  --ainode-ico-raise: 0.2px;       /* 🎚 上移微调（正值上提）*/
-  --prefix-ico-gap: 0px;         /* 🎚 四个前缀图标 ↔ **后面文字** 的间距（统一值 / 默认值）*/
-  /* 🎚 四个图标各自的「图标 ↔ 后面文字」间距（2026-10-14 用户定：四个图标的图形宽度不一样，
-     同一个值看起来松紧不同 —— 要能分别调）。默认都跟 --prefix-ico-gap 走，填了就以填的为准。
-     ⚠️ 命名带 tgap（text gap）是**刻意的**：已有的 `--now-ico-gap` 是「定位子菜单里多个身份图标的间距」，
-        同名会被它盖掉（2026-10-14 实踩：Now 图标的间距被 8px 顶掉了）。 */
-  --todo-ico-tgap: var(--prefix-ico-gap, 3px);   /* 待办图标 */
-  --now-ico-tgap: var(--prefix-ico-gap, 3px);    /* Now 图标 */
-  --minor-ico-tgap: var(--prefix-ico-gap, 3px);  /* Minor 图标 */
-  --ainode-ico-tgap: 2px;                        /* AI 生成标记图标（用户已单独调过，保留）*/
+  /* ---- 节点前缀：固定图标槽位 + 自适应时间标签 ----
+     槽位负责布局、点击热区和 hover；SVG 尺寸只负责图形视觉。胖瘦不同的图形不再撑乱左右间距。
+     不再沿用逐图标 margin / top / raise 补偿；要调视觉体量就只改下面的 *-ico-size。 */
+  --prefix-ico-slot: 20px;
+  /* 🎚 图标区左右移动：**所有卡片都用这一套**（有备注、没备注的图标位置完全一样）。
+     按「排在最前面的图标是谁」给整个 .title-prefix 一个负的左边距，整排图标一起左右移动；
+     没有图标 = 0，仍与正文同一条线。
+     只补第一个：后面的图标间距仍由 --prefix-items-gap 统一管，逐个补会把间距一起压掉。
+     正值 = 图标往左，填负数 = 往右。下面这组是实机调好的值（2026-11-13）*/
+  --prefix-inset-todo: 2.1px;
+  --prefix-inset-now: 5.7px;
+  --prefix-inset-minor: 6.1px;
+  --prefix-inset-ainode: 5.7px;
+  --prefix-inset-time: 3.9px;
+  /* 🎚 备注左缘缩进：**只有有备注的卡片**才用 —— 在图标已经统一移动的基础上，再单独调备注位置。
+     按「排在最前面的前缀是谁」给备注加左边距，让备注（含左侧竖线）跟着图标走；没有图标 = 0。
+     起点与上面图标移动量相同 → 备注和图标的相对位置保持原样；要备注更靠右就加大，更靠左就减小（可负数）*/
+  --note-inset-todo: 6.4px;
+  --note-inset-now: 2.9px;
+  --note-inset-minor: 2px;
+  --note-inset-ainode: 3.0px;
+  --note-inset-time: 0px;
+  --prefix-shift-y: -1.2px;
+  --prefix-items-gap: 2px;
+  /* 🎚 待办 + Now + Minor 三个前缀同时出现时，给中间的 Now 补一点左边距（2026-11-13 用户定）：
+     左右都是图标、默认等距看着「左小右大」，往左推开一点才匀。
+     只在这个三按钮组合下生效；其它任何组合（只有其中一个 / 两个，或夹着 AI、时间）一律不动 */
+  --now-ico-gap-fix: 3px;
+  --prefix-text-gap: 6px;
+  /* 🎚 标题里的「⤷」(U+2937)：用内联 SVG 画，macOS / Windows 字形一致。只影响这一个符号 */
+  --glyph-arrow-size: .8em;    /* 大小（容器宽高都用它，图形按原比例缩放）*/
+  --glyph-arrow-y: -.1em;       /* 上下：相对基线，正值上移、负值下沉 */
+  --glyph-arrow-mx: .2em;        /* 左右边距 */
+  --glyph-arrow-color: inherit;  /* 颜色（默认跟正文）*/
+  --glyph-arrow-opacity: 1;    /* 浓淡（原 SVG 的 fill-opacity）*/
+  --glyph-arrow-stroke: 0;       /* 粗细：0 = 只填充（原样）；想更粗填 0.2~1（同色描边外扩）*/
+  --time-stamp-pad-x: 3px;
+  --todo-check: #C5CDD9;         /* 待办图标里「对勾」的颜色 */
+  --todo-ico-size: 18px;
+  --todo-ico-stroke: 2.4;
+  --todo-ico-radius: 4px;
+  --todo-ico-hover: rgba(0, 0, 0, 0.056);
+  --todo-ico-done-line: var(--minor-text-color, var(--muted));
+  --minor-ico-size: 15px;
+  /* AI 标记只给图标上色，正文保持节点正常色；深色档另有对应色值。 */
+  --ainode-icolor: #b9b9b9;
+  --ainode-ico-size: 15px;
+  --ainode-ico-stroke: 2.4;
   /* ---- 备注栏的 AI 标记 logo（airemark，2026-10-14）----
      标记后备注左侧那条灰竖线拆成两段：上面这颗 logo + 下面还是原来的灰竖线。
      颜色跟节点标记同一个灰（--ainode-icolor），深色档自动跟着换。 */
@@ -553,9 +556,18 @@
   --mm-menu-min-w: 150px;                  /* 🎚 「＋添加」一级 / 二级菜单的**最小宽度**（2026-10-12）：
                                             字少时菜单不再塌窄（低于这个宽也保持这么宽）；字多照样自然撑开。
                                             一级（#node-more-menu）与二级（#node-more-sub）共用这一个值 */
+  --more-menu-hide-delay: 100ms;            /* 🎚 左下「更多」面板：鼠标移到别的工具栏按钮后，隔多久才收起（2026-11-13 用户定）：
+                                              菜单在按钮右侧展开，往上游走会先划过上面那些按钮，太快收就是「刚想点就没了」。
+                                              到点还会看一眼指针 —— 人回到菜单 / 按钮上就不收。填 0 = 立刻收 */
   --mm-sub-offset-x: 15px;                  /* 🎚 「＋添加」二级菜单相对一级的**额外右移量**（2026-10-12）：
                                             0 = 原样贴着一级（默认）；二级盖住一级就调大（如 12px）把两块分开。
                                             只在二级弹右侧时生效；空间不够翻到左侧那一档不受影响 */
+  --ai-mark-sub-gap: 0px;                  /* 🎚 「AI 生成标记」二级菜单与一级面板之间的**水平缝**（2026-11-12）：
+                                            基准 = 一级面板右边缘，正值往右让开、不盖住一级；0 = 两块边缘刚好接上；
+                                            负值 = 往左叠一点。窗口右边放不下、翻到左侧时也用同一个值。改完重载插件生效 */
+  --more-menu-bottom: 0px;                 /* 🎚 左下「更多」二级菜单底边的**额外微调**（2026-11-12）：
+                                            0 = 按工具栏内边距自动对齐整列底边；正值 = 菜单往上抬，负值 = 往下压。
+                                            觉得还差几像素就在这里 ±几 px，改完重载插件生效 */
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; color-scheme: light; } /* color-scheme（2026-09-20）：让浏览器画布/滚动条在首帧就用对应色调，
@@ -914,67 +926,70 @@ em { font-style: italic; } /* v2：_x_ 是标准斜体 */
 .node-row.td-done > .card .inline-wiki,
 .node-row.td-done > .card .inline-url,
 .node-row.td-done > .card .inline-file { text-decoration: line-through; }
-/* Minor 节点自身标记：标题前加置灰小箭头，区别于"被祖先 Minor 连坐置灰"的子节点（2026-08-26） */
-.card .minor-ico {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: var(--ico-hit-pad, 1px); flex: none; color: var(--node-fg, var(--minor-text-color));
-  border-radius: var(--todo-ico-radius, 4px);
-  position: relative; top: calc(var(--minor-ico-raise, 0px) * -1); /* 上移微调旋钮（正值上提）；水平位置见下面那组 --*-ico-x */
+/* 标题前缀：图形统一放在固定槽位里，槽位之间与前缀到正文的距离只由容器控制。
+   .tt 继续保持 inline，长标题的后续行仍从标题左缘正常续排。 */
+.card .title > .title-prefix {
+  display: inline-flex; align-items: center;
+  gap: var(--prefix-items-gap, 2px);
+  margin-right: var(--prefix-text-gap, 6px);
+  vertical-align: middle;
+  /* 🔴 垂直微调必须用 position + top，**不能用 transform**（2026-11-13 用户实报）：
+     transform 会让这个容器创建层叠上下文，把里面的黑色小字（.nm-tip，z-index:90）关在容器内，
+     容器自身 z-index 是 auto(=0) → 折叠数字（.fold-tag，z-index:2）和其它卡片的图标就透过来了。
+     换成 position:relative + top：视觉位移一样，但不创建层叠上下文，提示的 90 能正常压住它们。 */
+  position: relative;
+  top: var(--prefix-shift-y, -1px);
+  white-space: nowrap;
 }
-.card .title .minor-ico { margin-right: var(--minor-ico-tgap, var(--prefix-ico-gap, 3px)); vertical-align: var(--prefix-ico-va, -2px); }
-.card .minor-ico svg { width: var(--minor-ico-size, 12px); height: var(--minor-ico-size, 12px); display: block; stroke-width: var(--minor-ico-stroke, 2); }
+/* 图标区左缘跟随首个前缀元素（整排图标一起左右移动）——**所有卡片通用**，不分有无备注。
+   图形在 20px 槽位里居中，左右各有 (槽位 - 图形宽)/2 的留白 → 图标看着比下面那块内容缩进，
+   这里按「排在最前面的那个是谁」给整个 .title-prefix 一个负 margin-left 把图标拉回来。
+   只补第一个：后面的图标间距由 --prefix-items-gap 统一管，逐个补会把间距一起压掉。 */
+.card .title > .title-prefix:has(> .todo-ico:first-child)   { margin-left: calc(-1 * var(--prefix-inset-todo, 0px)); }
+.card .title > .title-prefix:has(> .now-ico:first-child)    { margin-left: calc(-1 * var(--prefix-inset-now, 0px)); }
+.card .title > .title-prefix:has(> .minor-ico:first-child)  { margin-left: calc(-1 * var(--prefix-inset-minor, 0px)); }
+.card .title > .title-prefix:has(> .ainode-ico:first-child) { margin-left: calc(-1 * var(--prefix-inset-ainode, 0px)); }
+.card .title > .title-prefix:has(> .time-stamp:first-child) { margin-left: calc(-1 * var(--prefix-inset-time, 0px)); }
+/* 有备注的卡片：在图标已经统一移动的基础上，备注整体（含左侧竖线与 airemark logo）再单独右移。
+   只有存在 .note 的卡片命中；旋钮在 :root 的 --note-inset-*，实机可微调。 */
+.card:has(> .title > .title-prefix > .todo-ico:first-child)   > .note { margin-left: var(--note-inset-todo, 0px); }
+.card:has(> .title > .title-prefix > .now-ico:first-child)    > .note { margin-left: var(--note-inset-now, 0px); }
+.card:has(> .title > .title-prefix > .minor-ico:first-child)  > .note { margin-left: var(--note-inset-minor, 0px); }
+.card:has(> .title > .title-prefix > .ainode-ico:first-child) > .note { margin-left: var(--note-inset-ainode, 0px); }
+.card:has(> .title > .title-prefix > .time-stamp:first-child) > .note { margin-left: var(--note-inset-time, 0px); }
+.card .title > .title-prefix > :is(.todo-ico, .now-ico, .minor-ico, .ainode-ico) {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 var(--prefix-ico-slot, 20px);
+  width: var(--prefix-ico-slot, 20px); height: var(--prefix-ico-slot, 20px);
+  padding: 0; margin: 0;
+  /* 🔴 必须有：.title-prefix 带 transform → 成为 absolute 后代的包含块。
+     子元素自己不是 positioned 的话，每个图标的黑色小字都会相对容器定位，
+     结果全部叠在容器正中、不跟随鼠标碰的那一个（2026-11-12 实踩） */
+  position: relative;
+  border-radius: var(--todo-ico-radius, 4px);
+  cursor: pointer;
+  transition: background var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
+}
+/* 图形尺寸独立于槽位：改大小不会改变点击热区、hover 背景或后续文字的位置。 */
+.card .todo-ico { display: inline-flex; align-items: center; justify-content: center; }
+.card .now-ico { display: inline-flex; align-items: center; justify-content: center; color: var(--node-fg, var(--now-color, #8B5CF6)); }
+/* 待办 + Now + Minor 三个同时出现 → 中间的 Now 补左边距（只这一种组合，其它组合一律不动）。
+   选择器权重高于上面那条统一的 `padding: 0; margin: 0`，能盖住。 */
+.card .title > .title-prefix:has(> .todo-ico):has(> .now-ico):has(> .minor-ico) > .now-ico {
+  margin-left: var(--now-ico-gap-fix, 1px);
+}
+.card .minor-ico { display: inline-flex; align-items: center; justify-content: center; color: var(--node-fg, var(--minor-text-color)); }
+.card .ainode-ico { display: inline-flex; align-items: center; justify-content: center; color: var(--node-fg, var(--ainode-icolor, currentColor)); }
+.card .todo-ico svg { width: var(--todo-ico-size, 18px); height: var(--todo-ico-size, 18px); display: block; }
+.card .now-ico svg { width: var(--now-ico-size, 16px); height: var(--now-ico-size, 16px); display: block; stroke-width: var(--now-ico-stroke, 3); }
+.card .minor-ico svg { width: var(--minor-ico-size, 15px); height: var(--minor-ico-size, 15px); display: block; stroke-width: var(--minor-ico-stroke, 2); }
+.card .ainode-ico svg { width: var(--ainode-ico-size, 15px); height: var(--ainode-ico-size, 15px); display: block; stroke-width: var(--ainode-ico-stroke, 2.4); }
+/* 待办每条 path 自带 stroke-width，必须直接在 path 上覆盖。 */
+.card .todo-ico svg path { stroke-width: var(--todo-ico-stroke, 2.4); }
+.card .title :is(.todo-ico, .now-ico, .minor-ico, .ainode-ico):hover { background: var(--todo-ico-hover, rgba(0,0,0,.08)); }
 /* 节点背景色（行尾注释 color:red/yellow；2026-08-21 定） */
 .card.color-red { background: var(--color-red) !important; color: var(--text) !important; }
 .card.color-yellow { background: var(--color-yellow) !important; color: var(--text) !important; }
-/* Now 标记（2026-08-27）：节点本身不变色，仅标题前加 now-ico 前缀；选中 Now 后整卡字体变紫（区别于 Minor 置灰）；尺寸/描边/上移见 CSS 顶部旋钮 */
-.card .now-ico { display: inline-flex; align-items: center; justify-content: center; padding: var(--ico-hit-pad, 1px); border-radius: var(--todo-ico-radius, 4px); color: var(--node-fg, var(--now-color, #8B5CF6)); vertical-align: var(--prefix-ico-va, -2px); position: relative; top: calc(var(--now-ico-raise, 0px) * -1); }
-.card .title .now-ico { margin-right: var(--now-ico-tgap, var(--prefix-ico-gap, 3px)); }
-.card .now-ico svg { width: var(--now-ico-size, 13px); height: var(--now-ico-size, 13px); display: block; stroke-width: var(--now-ico-stroke, 2); }
-/* AI 生成标记 ainode（2026-10-05）：节点前缀小图标，排在 Now / Minor 之后。
-   图标取 --ainode-icolor（定死 = 次要节点的置灰色，深浅各一份），纯 AI 态与混合态同色、只靠图形区分。
-   ⚠️ 描边必须写在这条 CSS 规则里（presentation attribute 会被它盖掉，见 minor-ico 那条同款坑）。 */
-.card .ainode-ico {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: var(--ico-hit-pad, 1px); flex: none; color: var(--node-fg, var(--ainode-icolor, currentColor));
-  border-radius: var(--todo-ico-radius, 4px);
-  position: relative; top: calc(var(--ainode-ico-raise, 0px) * -1);
-}
-.card .title .ainode-ico { margin-right: var(--ainode-ico-tgap, var(--prefix-ico-gap, 3px)); vertical-align: var(--prefix-ico-va, -2px); }
-.card .ainode-ico svg { width: var(--ainode-ico-size, 13px); height: var(--ainode-ico-size, 13px); display: block; stroke-width: var(--ainode-ico-stroke, 2); }
-/* 待办前缀图标（2026-09-20）：圆角框 + 对勾，排在最前（用户定「前面是小图标、后面是文字」）。
-   普通节点不显示它；待办 = 框跟节点字色 + 勾淡灰；已完成 = 框与勾都换主题色（.td-on）。 */
-.card .todo-ico {
-  display: inline-flex; align-items: center; justify-content: center;
-  /* 🎚 padding = **悬浮底色框**的大小（调大 → 底色框更宽、更好点）；图标尺寸本身靠 --todo-ico-size */
-  padding: var(--todo-ico-pad, 1px); border-radius: var(--todo-ico-radius, 4px); flex: none; cursor: pointer;
-  position: relative; top: calc(var(--todo-ico-raise, 1px) * -1);
-  transition: background var(--ui-btn-anim, 160ms) var(--ui-ease, ease);
-}
-.card .title .todo-ico { margin-right: var(--todo-ico-tgap, var(--prefix-ico-gap, 3px)); vertical-align: var(--prefix-ico-va, -2px); }
-/* ---- 四个前缀图标的**水平微调**（2026-10-14 用户定：四个要能分别调）----
-   ① 整体位置 `--prefix-ico-x` 只作用在**第一个图标**上 —— 图标组整体挪、彼此间距不变；
-   ② 每个图标另有自己的 `--todo/now/minor/ainode-ico-x` 做个别微调。
-   ⚠️ 一律用 margin-left，**不用 left**：left 只挪视觉、不改占位，会在图标与文字之间留出空隙
-      （2026-10-14 用户实报「往左调了，字后面空出个大空子」）。
-   ⚠️ 负值往左、正值往右；改完重载插件生效。 */
-.card .title > .todo-ico   { margin-left: var(--todo-ico-x, 0px); }
-.card .title > .now-ico    { margin-left: var(--now-ico-x, 0px); }
-.card .title > .minor-ico  { margin-left: var(--minor-ico-x, 0px); }
-.card .title > .ainode-ico { margin-left: var(--ainode-ico-x, 0px); }
-.card .title > .todo-ico:first-child   { margin-left: calc(var(--prefix-ico-x, 0px) + var(--todo-ico-x, 0px)); }
-.card .title > .now-ico:first-child    { margin-left: calc(var(--prefix-ico-x, 0px) + var(--now-ico-x, 0px)); }
-.card .title > .minor-ico:first-child  { margin-left: calc(var(--prefix-ico-x, 0px) + var(--minor-ico-x, 0px)); }
-.card .title > .ainode-ico:first-child { margin-left: calc(var(--prefix-ico-x, 0px) + var(--ainode-ico-x, 0px)); }
-.card .todo-ico svg { width: var(--todo-ico-size, 12px); height: var(--todo-ico-size, 12px); display: block; }
-/* ⚠️ 待办图标的粗细必须写在 **path** 上，写在 svg 上没用（2026-10-14）：
-   renderTodoIcon 里每条 path 都自带 stroke-width="2" 这个 presentation attribute，
-   它**优先于从 svg 继承下来的值** → `.card .todo-ico svg { stroke-width: … }` 会被它盖掉。
-   ⚠️ 只作用于卡片上的前缀图标（`.card .todo-ico`）—— 底部工具条那颗按钮不跟着变。 */
-.card .todo-ico svg path { stroke-width: var(--todo-ico-stroke, 2); }
-/* 悬浮给底色：让人一眼看出「这里能点」（2026-09-20 用户要；2026-10-05 起四个前缀图标都能点，一起给）*/
-.card .todo-ico:hover,
-.card .title :is(.now-ico, .minor-ico, .ainode-ico):hover { background: var(--todo-ico-hover, rgba(0,0,0,.08)); }
-.card .title :is(.now-ico, .minor-ico, .ainode-ico) { cursor: pointer; }
 /* 已完成待办：图标**跟着节点一起变灰**（2026-09-20 用户定：不要主题色/线色）*/
 .card .todo-ico.td-on { color: var(--node-fg, var(--minor-text-color, var(--muted))); --todo-check: var(--node-fg, var(--minor-text-color, var(--muted))); }
 /* 合并模式（2026-09-24 第九轮 + 同日微调）：母节点自己也是 todo + 有子待办 → 子进度指挥边框视觉
@@ -1255,12 +1270,23 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 .node-menu button[data-act="style"] { opacity: 1; }
 .node-menu button[data-act="style"].nm-fmt-bold .icon { stroke-width: 3.4; }
 
+/* ===== 时间戳入口（2026-11-12）=====
+   一整行就是一个按钮：没有时间戳 → 点了直接加；已经有 → 整行变主题色 + 时间文字，点了进编辑弹窗。
+   不再有右侧箭头 / 双热区 / 二级菜单（显示设置已挪到左下角「更多」）。 */
+.mm-time-row.nm-time-has-stamp { color: var(--time-custom-color, var(--accent)); } /* 整行图标 + 文字一起变色 */
+.nm-time-value { color: var(--time-custom-color, var(--accent)); font-variant-numeric: tabular-nums; }
+/* （显示设置的二级浮层已于 2026-11-12 整组删除：两个显示时间选项挪到左下角「更多」菜单，
+   时间戳行改成一整行一个按钮、点击直接进编辑弹窗。） */
+
 /* ===== 底部工具条「AI」按钮 + 下拉面板（2026-10-05；同日改版）=====
    面板形态改成**竖排、点击开合**（用户定：跟「＋添加」那颗一个长相，不再是悬停弹横排）——
    所以它复用 .node-more-menu（竖排那套），材质在文件末尾「浮层外观」的 id 名单里。
    这里只补它没有的两件：① 「添加 AI 生成标记」已标记时图标变主题色；② 新增那几个图标的描边粗细旋钮。 */
 #node-ai-menu .mm[data-act="aiMark"].on .icon { stroke: var(--accent); }
 #node-ai-menu .mm[data-act="aiMark"].on { color: var(--accent); } /* 文字也一起变主题色（用户 2026-10-05 定）*/
+/* 「AI 生成标记」二级面板：带标记那一行与一级同款主题色（2026-11-12 定）*/
+#node-ai-mark-sub .mm.on .icon { stroke: var(--accent); }
+#node-ai-mark-sub .mm.on { color: var(--accent); }
 
 /* ===== 右键菜单里的 AI 那组（2026-10-08 用户定：底部那四项"再放一份"）=====
    条目来自 NM_AI_ITEMS —— 与底部「AI」面板**同一份定义**（图标 / 文案 / 动作 / 小眼睛全共用），
@@ -1401,6 +1427,57 @@ body:has(#node-more-menu:not(.hidden)) .node-menu [data-act="more"] > .nm-tip { 
 
 .card .title { font-size: var(--card-font); font-weight: inherit; outline: none; flex: 1 1 auto; word-break: break-word; white-space: pre-line; /* pre-line：节点内换行 \n 渲染成换行（2026-08-30） */
   margin: var(--el-title-mt, 0px) 0 var(--el-title-mb, 0px); /* 正文的上/下边距（2026-10-10 用户定，默认 0）*/ }
+/* 标题里的「⤷」(U+2937)：改用内联 SVG 画，macOS / Windows 字形一致（2026-11-12）。
+   旋钮在 :root 的 --glyph-arrow-*：大小 / 上下 / 左右 / 颜色 / 浓淡 / 描边加粗 */
+.card .tt .glyph-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--glyph-arrow-size, 1.05em);
+  height: var(--glyph-arrow-size, 1.05em);
+  vertical-align: var(--glyph-arrow-y, -.12em);
+  margin: 0 var(--glyph-arrow-mx, .1em);
+  color: var(--glyph-arrow-color, inherit);
+  opacity: var(--glyph-arrow-opacity, .62);
+}
+.card .tt .glyph-arrow > svg { width: 100%; height: 100%; display: block; }
+/* 原图是实心填充、没有描边；想更粗就给 path 加同色描边（向外扩），0 = 原样 */
+.card .tt .glyph-arrow > svg path { stroke: currentColor; stroke-width: var(--glyph-arrow-stroke, 0); }
+/* 卡片时间小字：与图标同高，但宽度随内容自适应；左右留白固定，长日期不换行、不压缩。 */
+.card .title > .title-prefix > .time-stamp {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: auto; height: var(--prefix-ico-slot, 20px);
+  padding: 0 var(--time-stamp-pad-x, 3px); margin: 0;
+  position: relative; /* 同上：提示要相对自己定位，别叠到容器正中（2026-11-12） */
+  border-radius: var(--todo-ico-radius, 4px);
+  font-size: var(--time-stamp-font-size, 11px);
+  line-height: 1;
+  color: color-mix(in srgb, currentColor calc(var(--time-system-alpha, .58) * 100%), transparent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: default;
+}
+.card .title > .title-prefix > .time-stamp.is-custom {
+  color: color-mix(in srgb, var(--node-fg, var(--time-custom-color, var(--accent))) calc(var(--time-custom-alpha, .85) * 100%), transparent);
+  cursor: pointer;
+}
+.card .title > .title-prefix > .time-stamp.is-custom:hover { background: var(--todo-ico-hover, rgba(0,0,0,.08)); }
+.card .title > .title-prefix > .time-stamp.is-bold { font-weight: var(--time-stamp-bold-weight, 700); }
+/* 时间小字的黑色提示：一行一个时间，标签列固定宽度让时间值对齐（2026-11-12）。
+   只有带 data-tip-rows 的提示会走这套，其它提示保持原来的一行横排。 */
+[data-tip]:hover > .nm-tip.nm-tip-rows { display: flex; flex-direction: column; align-items: flex-start; }
+.nm-tip .nm-tip-time-row {
+  display: grid; grid-template-columns: var(--time-tip-label-w, 6.5em) auto;
+  column-gap: var(--time-tip-col-gap, 8px);
+  margin-bottom: var(--time-tip-row-gap, 2px);
+}
+.nm-tip .nm-tip-time-row.no-label { grid-template-columns: auto; } /* 裸值行不留空标签列 */
+.nm-tip .nm-tip-time-row:last-of-type { margin-bottom: 0; }
+.nm-tip .nm-tip-time-label { opacity: .7; }
+.nm-tip.nm-tip-rows > .nm-tip-h { margin-left: 0; opacity: .8; }
+.nm-tip .nm-tip-time-value > .nm-tip-h { margin-left: .4em; } /* 「（点击编辑）」跟在时间值后面 */
+/* 卡片前缀的黑色提示统一高度（2026-11-12）：原来 bottom:100% 按「各自盒子高度」算，
+   待办图标约 20px、时间小字只有 11px → 时间那条低了一截、压到卡片边框。
+   改成固定像素，四类前缀（待办 / Now / Minor / AI 标记 / 时间）的提示底边落在同一条线上。 */
+.card .title > .title-prefix > [data-tip] > .nm-tip { bottom: var(--card-prefix-tip-bottom, 20px); }
 /* 编辑态（标题/备注）：去掉背景框/焦点圈，正常编辑（2026-08-21 定） */
 [contenteditable="true"] { background: transparent; outline: none; }
 /* 编辑态整行格式效果（2026-08-22 机制改造：格式是属性，编辑框纯文字 + CSS 显示效果，内容里没有符号） */
@@ -1804,7 +1881,12 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
 
 /* ===== 三个点菜单（「更多」hover 浮出，白色设计与 slash 子菜单一致；下方 nodeMenu 共享逻辑） ===== */
 #more-menu {
-  position: absolute; left: 100%; top: auto; bottom: -1px; margin-left: 6px;
+  position: absolute; left: 100%; top: auto; margin-left: 6px;
+  /* 底边与整列工具栏平齐（2026-11-12 定）：本菜单的包含块是 #more-wrap（「更多」那颗按钮），
+     它比 #left-toolbar 外框底边高了「内边距 + 1px 边框」。原来写死 bottom: -1px，菜单底边就悬在
+     整列底边上方那一截。这里按 --ui-bar-pad 自动补回去；还差几像素就用 :root 的
+     --more-menu-bottom 微调（正值上移 / 负值下移）。*/
+  bottom: calc(-1 * (var(--ui-bar-pad, 6px) + 1px) + var(--more-menu-bottom, 0px));
   z-index: 41;
   background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
   padding: 6px;
@@ -1823,6 +1905,9 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
    提示会以整个菜单为基准、`top:50%` 直接飘到菜单外面（用户实报"鼠标悬浮没有任何提示"）。
    底部那个「更多」面板（`.node-more-menu .mm`）早就有这条，这里是补上。 */
 #more-menu .mm { position: relative; }
+/* 「显示系统时间」两个按钮的选中态（2026-11-12）：互斥二选一，选中整行文字 + 图标一起变主题色 */
+#more-menu .mm.on { color: var(--accent); }
+#more-menu .mm.on .icon { stroke: var(--accent); }
 #more-menu.open { display: flex; }
 #more-menu::before { /* 透明桥接：防鼠标从 more 按钮移向菜单时消失 */
   content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 12px; background: transparent;
@@ -2173,7 +2258,7 @@ body.locate-hovering .card.is-root:not(.locate-predict) { opacity: .25; filter: 
   background: var(--text); opacity: var(--tb-sep-a, .28);
 }
 /* Minor 按钮图标的上下位移（2026-09-20 旋钮：--tb-minor-raise，正值上提 / 负值下移，0=不挪）；
-   卡片里那个 Minor 前缀图标的位移是另一个旋钮 --minor-ico-raise（在顶部调参区），两者互不影响 */
+   只影响底部按钮，标题前缀的统一垂直校正走 --prefix-shift-y。 */
 .node-menu button[data-act="minor"] svg { position: relative; top: calc(var(--tb-minor-raise, 0px) * -1); }
 /* 对勾的着色：卡片里的小图标与工具条按钮共用同一套 class 名，一条规则覆盖两处 */
 .todo-ico svg .td-check,
@@ -2405,6 +2490,17 @@ body.hist-on #pro-cta-wrap { display: none; }
 /* 弹窗左下角那颗自定义按钮（2026-10-07：本地文件链接的「从本机选择」）——
    `margin-right: auto` 把它顶到最左，取消/确定留在右边。 */
 .wb-btn-left { margin-right: auto; }
+/* 时间戳弹窗（2026-11-12）：加宽不拥挤；年 / 月 / 日标签跟在输入框后面同一行 */
+.nm-time-dialog { min-width: 440px; padding: 22px 26px; }
+.nm-date-row { display: flex; align-items: center; gap: 12px; }
+.nm-date-field { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.nm-date-field .wb-input { flex: 1 1 auto; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.nm-date-field > .nm-date-unit { flex: none; font-size: 12px; color: var(--text-faint, #8a919e); white-space: nowrap; }
+.nm-date-error { margin-top: 10px; font-size: 12px; color: var(--nm-danger, #e5484d); }
+.nm-date-error.hidden { display: none; }
+/* 「删除时间戳」和「取消修改」同款白底描边，只把文字换成主题色（2026-11-12） */
+.wb-btn.nm-date-del-accent { color: var(--accent); }
+.wb-btn:disabled { opacity: .4; cursor: default; }
 
 .wb-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .wb-btn {
@@ -2607,6 +2703,7 @@ body.hist-on #pro-cta-wrap { display: none; }
 #node-more-sub,
 #node-style-menu,
 #node-ai-menu, /* 2026-10-05：底部「AI」那颗的横排子菜单 —— 漏了它就没有背景/描边/投影（用户当场抓到的） */
+#node-ai-mark-sub, /* 2026-11-12：「AI 生成标记」二级面板，同一套白玻璃材质 */
 #now-menu,
 .node-menu,
 #pro-cta,
@@ -2884,6 +2981,7 @@ body.nm-ui-faded .node-menu {
 .theme-dark .ctx-menu, /* ⚠️ .theme-dark .toast-below 同样已摘出 —— 见浅色那组的说明 */
 .theme-dark #node-style-menu,
 .theme-dark #node-ai-menu, /* 同上：深色那组也要有 */
+.theme-dark #node-ai-mark-sub, /* 同上：二级面板也要有 */
 .theme-dark #now-menu,
 .theme-dark #pro-cta {
   background-color: rgb(30 32 36 / var(--ui-bar-a, 1));

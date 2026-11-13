@@ -39,10 +39,10 @@ var I18N = {
     'pro.needActivate': '此功能激活可用',
     // 设置页尾注那一排（2026-10-07 用户定）：使用教程 · 加入群聊 · 更新历史 · Bug 反馈 · 版本号 · Make Something Wonderful
     'footer.tutorial': '使用教程',
-    'footer.joinGroup': '加入群聊',
+    'footer.joinGroup': '💬 加入群聊',
     'footer.releases': '更新历史',
     'footer.sponsor': '赞赏', // 尾注里的赞赏入口：点它弹二维码（2026-11-09 从设置项那一行并进来）
-    'footer.bug': 'Bug 反馈',
+    'footer.bug': '🐞 Bug 反馈',
     'footer.version': '版本',
     'toast.featureSoon': '功能开发中，敬请期待',   // AI 输入条「＋」在非作者本机上点了弹这句（2026-10-07 用户定）   // 未激活时点受控功能（含快捷键）弹的提示（2026-10-07 用户定）
     'tip.alreadyDefault': '当前已是默认路径',
@@ -159,7 +159,7 @@ var I18N = {
     'cmd.copyNodeLink': '其它｜复制节点链接', // 2026-09-21 由右键菜单注册成命令（⌥⌘C）
     'cmd.addChildDoc': '新建｜新建子文档', // 2026-10-12 用户定：从「其它｜」挪进「新建｜」组（与"在上方新建同级节点"那两条同组）；**不设默认键**，交用户自己绑（选中节点才有效）
     'cmd.copyAILocate': 'AI｜复制 AI 定位路径', // 2026-10-07 用户定：分类从「其它」改成「AI」
-    'cmd.saveShortcut': '视图整体｜保存为捷径', // 同上（⌘/；对当前视图的主节点建捷径）
+    'cmd.saveShortcut': '视图整体｜建立捷径', // 2026-11-11 改名：用户层统一叫「建立捷径」；选中文档节点时自动建文档捷径（见 runCanvasAction）
     'cmd.aiMark': 'AI｜添加 AI 生成标记', // 2026-10-05：一次打标、再触发清除（名字 2026-10-07 用户定成「添加…」，别管它也能删，就叫这个）
     'cmd.aiRules': 'AI｜添加 AI 更改规则', // 2026-10-07 用户定：新注册的命令（菜单里那项同源）
     'cmd.editNote': '编辑文本｜节点备注', // 命令：画布动作（默认 Shift+Enter）
@@ -188,7 +188,7 @@ var I18N = {
     'badge.bookmark': '↗', // 文件列表里书签文件右侧的小字（触发点在 main.js updateBookmarkBadges：拼进文件树徽章 CSS）
     'badge.mindmap': '28 Notes', // 文件列表里导图文件右侧的小字（同上，main.js updateBookmarkBadges）
     'menu.newMindmap': '新建思维导图', // 文件面板右键空白处/文件夹 → 新建菜单项（2026-09-01）
-    'menu.newDocShortcut': '新建文档捷径', // 文件列表右键**文件** → 在该文件所在文件夹建一个 doclink 壳（2026-10-19）
+    'menu.newDocShortcut': '建立捷径', // 文件列表右键**文件 / 捷径**（2026-11-11 用户定）：用户层只有「建立捷径」一个名字，内部按最终指向的文件类型自动分派（导图 → 视图捷径、其余 → 文档捷径；壳先解析到最终文件，不套壳）
     'menu.newDocShortcutHint': '不写默认为原文档名', // 上面那一项命名弹框输入框里的灰色占位提示（2026-10-19）
     'menu.importToMap': '转入思维导图', // 文件列表右键文件 → 把文件搬进 28Notes-Files/docs/ 并新建导图（2026-10-08；「用思维导图管理文档」开关开着才出现）
     // 上面那项现在是个**二级菜单**（2026-10-12 用户定）：进去分两条 —— 新建导图（原行为）/ 挂到当前导图的选中节点。
@@ -297,6 +297,11 @@ var I18N = {
     'settings.footnote': '更多', // 「更多」节标题（2026-09-16 由「尾注」改名）
     'settings.qrMissing': '（二维码图片未找到）', // 赞助二维码图片缺失时的占位文字
     'settings.sponsor': '赞赏开发者', // 赞助项名称
+    // 「关于」栏（2026-11-11 用户定）：设置页第三栏，左标题 + 右按钮，不要备注小字
+    'settings.about': '关于',
+    'settings.aboutContact': '联系', // 第 4 行（右边两颗按钮：加入群聊 / Bug 反馈）
+    'settings.btnView': '👀 查看', // 使用教程 / 更新历史右侧的按钮
+    'settings.btnBuyMe': '🧤 Buy Me A Coffee', // 赞赏那行的按钮（2026-11-11 用户定：品牌名，中英同形）
     'settings.sponsorThanks': '谢谢！', // 赞助弹窗里二维码下方那句话
     'settings.bug': 'Bug 与功能建议', // 建议反馈项名称
     'settings.bugMd': '请添加 Up 主微信：Hi28Notes 沟通。或加入群聊 →', // 建议反馈内容（2026-09-01 去 <br> 压成一段，无空行）
@@ -342,11 +347,17 @@ var I18N = {
     'license.okActivated': '激活成功，感谢支持！', // 激活成功提示
     'license.okDeactivated': '已解除激活', // 解除激活提示
     // ---- 许可证栏（2026-09-04 合并为一行：未激活 / 已激活各一套文案）----
-    'license.ctaTitle': '激活创新 Pro 版', // 未激活时的栏目标题
+    'license.ctaTitle': '许可证（未激活）', // 未激活时的行标题（2026-11-11 用户定：叫「许可证」，不再叫「激活创新 Pro 版」）
     'license.ctaDescTrialMd': '你的试用期还剩 {0} 天。试用结束后，部分创新功能将受限。', // 试用中备注（{0}=剩余天数）
     'license.ctaDescExpiredMd': '你的试用期已结束，请激活创新 Pro 版以使用全部功能。', // 试用已结束备注
     'license.howToActivateBtn': '如何激活 ↗', // 设置页右侧按钮 → 直接弹激活教程弹窗
-    'license.activeTitle': '已激活创新 Pro 版', // 已激活时的栏目标题
+    'license.activeTitle': '许可证（已激活）', // 已激活时的行标题（2026-11-11 用户定）
+    // 激活详情弹窗（2026-11-11 用户定）
+    'license.detailBtn': '激活详情', // 已激活时右侧第 1 颗按钮 → 弹窗
+    'license.detailTitle': '激活详情', // 弹窗标题
+    'license.keyLabel': '激活码', // 弹窗里那行浅色小字，点开才显示真实激活码
+    'license.copiedKey': '激活码已复制', // 复制激活码后的提示
+    'license.closeBtn': '关闭', // 弹窗右下角
     'license.activeDescMd': '许可证号：{0}；设备上限：{1}；激活时间：{2}\n更换设备后，请点击右侧「解除绑定」后，再至新设备激活。', // 已激活备注（{0}许可证号 {1}设备上限 {2}激活时间）
     'license.unbindBtn': '解除绑定', // 已激活时右侧按钮（换设备前先解绑）
     // ---- 调试项（2026-10-18 起收在「高级 → 实验性功能」标题右侧的小虫子后面）----
@@ -372,6 +383,10 @@ var I18N = {
     'debug.aiPlusMenuDesc': '默认关闭。开启后，AI 编辑栏左侧的 + 按钮可点击。',
     'debug.log': '日志', // 调试项（2026-10-18）：**统一诊断日志总开关** —— 与具体功能无关，开着才把诊断日志打到控制台
     'debug.logDesc': '默认关闭。开启后，控制台会出现诊断日志，以定位 Bug 根源。普通用户建议关闭。',
+    'debug.frontmatter': 'Front Matter', // 调试区（2026-11-11 用户定）：右侧面板末尾多一组 frontmatter
+    'debug.frontmatterDesc': '默认关闭。开启后可在右侧面板查看 Front Matter。',
+    'debug.timeCreatedEntry': '节点创建时间入口',
+    'debug.timeCreatedEntryDesc': '在左下「更多」菜单里显示「显示节点创建时间」这一项（默认隐藏；只影响入口，卡片显示逻辑不受影响）',
     'license.okCopied': '回执已复制', // 复制回执成功提示
     'license.proRequired': '这是 Pro 功能，激活后可用。', // 受控功能被拦时的提示
     'license.err.unknown': '激活失败，请检查激活码', // 未归类错误兜底
@@ -493,6 +508,14 @@ var I18N = {
     'nm.aiEditTip': '点击后，让 AI 快速编辑', // 那一行的悬浮提示（2026-10-06 用户定）
     'nm.aiMark': '添加 AI 生成标记', // 子菜单项：未标记时（点一下 = 打标）
     'nm.aiMarkOn': '清除 AI 生成标记', // 子菜单项：已标记时（ai / mix 都是这一条，图标+文字变主题色，再点 = 清除）
+    // 带备注时那一行变成二级菜单：父项固定叫「AI 生成标记」，两条子项各自判「添加 / 清除」（2026-11-12 定）
+    // ⚠️ aiMarkGroupTip 预留不引用：二级入口不挂黑色小字提示（会挡在展开的二级旁边）
+    'nm.aiMarkGroup': 'AI 生成标记',
+    'nm.aiMarkGroupTip': '点击后，选择给节点还是备注添加标记',
+    'nm.aiMarkNode': '为节点添加标记',
+    'nm.aiMarkNodeOn': '为节点清除标记',
+    'nm.aiMarkNote': '为节点备注添加标记',
+    'nm.aiMarkNoteOn': '为节点备注清除标记',
     // 那一行的**悬浮提示分三态**（用户 2026-10-05 定：沿用原来右键那套 —— 行文字只有"添加/清除"两态，
     // 但提示要把"这节点现在是纯 AI 还是混合"说准）
     'nm.aiMarkTip': '点击后，将此节点标记为 AI 生成==space==（{0}）', // 未标记
@@ -590,7 +613,7 @@ var I18N = {
     'notice.pickPathFail': '没能拿到这个文件的完整路径（当前平台可能不支持，请手动粘贴路径）',
     'more.addNodeLinkPh': '[[文件名#节点ID]]',
     // 「建议反馈」行右侧的加群按钮（2026-09-20 从代码里抽出来：英文界面曾只有中文）
-    'settings.joinGroupBtn': '加入群聊',
+    'settings.joinGroupBtn': '💬 加入群聊',
     // Pro / 付费两个弹窗的文案（2026-09-20 抽出少量固定句；2026-09-27 正文全部抽到这里）。
     // 版面（哪块在前、间距多大）由 main.js 的 PRO_PAGES 清单决定，这里只管字；改字不用动代码。
     // 价格 / 邮箱 / 微信号 / 活动链接是**商业参数**，走 main.js 的 PRO_PLAN（不在这里）。
@@ -734,8 +757,9 @@ var I18N = {
     'ctx.deleteTipImage': '点击后，可删除此图片',
     'ctx.deleteTipVideo': '点击后，可删除此视频',
     'ctx.deleteTipAudio': '点击后，可删除此音频',
-    'ctx.bookmark': '建立视图捷径', // 菜单项：为该节点创建书签文件（2026-10-11 改名：与新增的「建立文档捷径」区分）
-    'ctx.saveDocShortcut': '建立文档捷径', // 菜单项（仅文档节点，2026-10-11 用户定）：建 28notes: doclink 壳，点壳直接打开文档
+    'ctx.bookmark': '建立捷径', // 菜单项：为该节点创建视图捷径文件（2026-11-11 用户定：用户层统一叫「建立捷径」，不再暴露"视图 / 文档"两套机制）
+    'ctx.bookmarkTree': '直达节点树', // 文档节点二级菜单第 1 项（2026-11-11）：父项已叫「建立捷径」，这里只说结果 = 建视图捷径
+    'ctx.saveDocShortcut': '直达文档本身', // 文档节点二级菜单第 2 项：建 doclink 壳，点壳直接打开文档（2026-11-11 改成二级子项）
     'ctx.saveDocShortcutTip': '点击后，可将此文档保存为快捷页面==space==（按住 {Alt} 拖拽：快速建立捷径）', // 后缀段显式给 tipH
     'ctx.dupDoc': '新建副本', // 文档节点右键（2026-10-19）：复制正文到 docs/ + 同级插一个节点
     'ctx.dupDocTip': '点击后，会生成该文档的副本', // 黑色小字提示（2026-10-11 用户定文案）
@@ -797,6 +821,7 @@ var I18N = {
     'aiLocate.nodeHead': '【1. 找到待编辑文档，路径：{0}；2. 查看文档顶部的 FrontMatter 提示，了解编辑时需严格遵循的格式准则{1}；3. 快照已由插件自动保存，无需再手动备份（跳过 index.md 的「改文件前」流程，不要再跑 snapshot.py）；4. 使用节点 id 定位到要编辑的节点，节点 ID 为：{2}；',
     'aiLocate.ruleSuffixImport': '，以及梳理 AI 网页回答的方式', // 拼进第 2 条的 {1}（有导入链接时才加）
     'aiLocate.askDefault': '5. 基于用户指令开始编辑】', // 框里没写东西、也没导入链接
+    'aiLocate.editTime': '4.5 本次改稿时间 = {0}（新增 / 改写节点写时间时照抄这个值，不要自己编）；', // 动态注入：格式见 spec §4
     'aiLocate.ask': '5.用户指令：{0}】', // 框里写了指令
     'aiLocate.askImport': '5.用户指令：梳理 AI 网页回答，网页链接：{0}；具体指令：{1}】', // 有链接 + 框里也写了
     'aiLocate.askImportNoText': '5.用户指令：梳理 AI 网页回答，网页链接：{0}】', // 只有链接
@@ -853,6 +878,41 @@ var I18N = {
     'hist.yesterday': '昨天', // 时间线时间：昨天
     'hist.dateMD': '{0} 月 {1} 日', // 时间线时间：同年（{0}=月 {1}=日）
     'hist.dateYMD': '{0} 年 {1} 月 {2} 日', // 时间线时间：跨年（{0}=年 {1}=月 {2}=日）
+    // ---- 节点时间戳（2026-11-12）----
+    'time.menu': '时间戳',
+    'time.createdLabel': '创建时间',
+    'time.modifiedLabel': '最后编辑时间',
+    'time.stampLabel': '自定义时间戳',
+    'time.clickEdit': '（点击编辑）',
+    'time.labelSep': '：',
+    'time.itemSep': '；',
+    'time.add': '添加时间戳',
+    'time.edit': '修改时间戳',
+    'time.delete': '删除时间戳',
+    'time.showCreated': '显示节点创建时间',
+    'time.showModified': '显示节点时间', // 2026-11-13 用户定：菜单按钮上短一点；「最后修改」这层意思交给悬浮提示说
+    // 已经选中时按钮文案翻成「隐藏…」：按钮永远描述「点一下会发生什么」（2026-11-13 用户定）
+    'time.hideCreated': '隐藏节点创建时间',
+    'time.hideModified': '隐藏节点时间', // 与 showModified 成对：按钮永远说「点一下会发生什么」
+    'time.editTitle': '修改时间戳',
+    'time.year': '年',
+    'time.month': '月',
+    'time.day': '日',
+    'time.confirmEdit': '确定修改',
+    'time.cancelEdit': '取消修改',
+    'time.invalid': '请输入有效的年月日',
+    'time.dayBefore': '前天',
+    'time.tomorrow': '明天',
+    'time.dayAfter': '后天',
+    'time.tipClickEdit': '点击编辑此时间戳',
+    // 只有「点一下会做事」的菜单项才有黑色小字；靠悬浮展开菜单的行不给（2026-11-12）
+    'time.tipAdd': '点击后，可添加时间戳',
+    'time.tipEdit': '点击后，可修改或删除时间戳',
+    'time.tipDelete': '点击后，删除这个时间戳',
+    'time.tipShowCreated': '点击后，显示节点创建时间',
+    'time.tipShowModified': '点击后，显示节点最后修改时间',
+    'time.tipHideCreated': '点击后，隐藏节点创建时间',
+    'time.tipHideModified': '点击后，隐藏节点最后修改时间',
     'hist.rename': '重命名此版本', // 每条记录「⋯」菜单：给这条版本改名
     'hist.lock': '锁定此版本', // 「⋯」菜单：锁住这一版（不参与自动清理）——与点条目上的小锁同一动作；「此版本」跟同菜单的重命名 / 删除保持一致
     'hist.unlock': '取消锁定', // 「⋯」菜单：解锁这一版（重新参与自动清理）
@@ -906,6 +966,8 @@ var I18N = {
     'panel.noParents': '暂无思维导图在管理本文档。', // 第 2 组空态
     'panel.noDocsNotMap': '当前文档不是思维导图，没有被管理的子文档。', // 2026-10-19：组 1 在普通文档下的占位
     'panel.grpHist': '历史记录', // 属性页第 3 组（上面「保存规则」小组 + 下面平铺列表）
+    'panel.grpFrontmatter': 'Front Matter', // 属性页第 4 组（2026-11-11，实验开关打开才出现）
+    'panel.fmEmpty': '此文件没有 Front Matter.',
     'panel.grpNormal': '正常文档', // 文档库页第 2 组（2026-10-19 用户定：给"按思维导图查看"套的外框，点开才显示）
     // 2026-10-19 用户定：孤儿组空态的两行说明（`\n` 会被 `_mkNote` 转成 <br>）。
     //   第二行解释"什么是孤儿文档"，免得用户看到「暂无孤儿文件。」一头雾水。
@@ -1140,18 +1202,18 @@ var I18N = {
     // Tip for the home button in the top bar's path trio (2026-10-06; the back/forward pair reuses mm.pathBack / mm.pathFwd)
     'tip.pathHome': 'Path Settings',
     // Hover hints for the header breadcrumb (2026-11-09): only the three rename-capable spots get one
-    'crumb.tipFile': 'Click to rename this file',
-    'crumb.tipRoot': 'Click to rename the root node',
-    'crumb.tipRootGo': 'Click to go back to the root node',
-    'crumb.tipMerged': 'Click to rename the file and the root node',
-    'pro.needActivate': 'Activate to use this feature',
+    'crumb.tipFile': 'Click to Rename This File',
+    'crumb.tipRoot': 'Click to Rename the Root Node',
+    'crumb.tipRootGo': 'Click to Go Back to the Root Node',
+    'crumb.tipMerged': 'Click to Rename the File and the Root Node',
+    'pro.needActivate': 'Activate to Use This Feature',
     'footer.tutorial': 'Tutorial',
-    'footer.joinGroup': 'Join Group',
+    'footer.joinGroup': '💬 Join Group',
     'footer.releases': 'Release Notes',
     'footer.sponsor': 'Tip',
-    'footer.bug': 'Bug Report',
+    'footer.bug': '🐞 Bug Report',
     'footer.version': 'Version',
-    'toast.featureSoon': 'Coming soon',
+    'toast.featureSoon': 'Coming Soon',
     'tip.alreadyDefault': 'Already the Default Path',
     'tip.toggleSidebar': 'Show File List',   // 2026-10-10: shortened to mirror 「显示文件列表」
     'more.splitRight': 'Split Right',
@@ -1205,30 +1267,30 @@ var I18N = {
     'notice.fileMissing': 'The File This Link Points to Does Not Exist: ',
     'notice.openFileFail': 'Failed to Open File: ',
     'notice.noteMissing': 'Note Not Found: ',
-    'notice.importDocFail': 'Move failed: ', // 「转入思维导图」失败（错误跟在后面，2026-10-08）
+    'notice.importDocFail': 'Move Failed: ', // 「转入思维导图」失败（错误跟在后面，2026-10-08）
                                              // 🔤 2026-10-12 用户定：英文那个动词统一 "Import" → "Move"
                                              //    —— 见下方 menu.importToMap 那条的理由（与「转出 = Move Out」成对）
     // Nothing was added — the import to a selected node was undone (2026-10-12)
     'notice.importRolledBack': 'Nothing was added — the move was undone. The file is back at: {0}',
     // Undo was clicked after its window closed (2026-10-17)
-    'notice.undoExpired': 'That undo has expired',
+    'notice.undoExpired': 'That Undo Has Expired',
     // Hint above the node while a file is dragged in from the file explorer (2026-10-17).
     // Only shown while the pointer is over a node; over empty canvas there is no hint at all.
-    'extDrop.dropHere': 'Release to import into this node',
+    'extDrop.dropHere': 'Release to Import into This Node',
     // Dragging the mind map itself onto one of its own nodes (2026-10-17)
-    'extDrop.selfHere': 'A Mind Map Cannot Be Imported Into Itself',
+    'extDrop.selfHere': 'A Mind Map Cannot Be Imported into Itself',
     'extDrop.shortcutHere': 'Release to Create a Shortcut in This Node',
-    'extDrop.dragToNode': 'Drop Onto a Node to Move It In (Release to Cancel)',
-    'extDrop.dragToNodeCopy': 'Drop Onto a Node to Create a Shortcut (Release to Cancel)',
+    'extDrop.dragToNode': 'Drop onto a Node to Move It in (Release to Cancel)',
+    'extDrop.dragToNodeCopy': 'Drop onto a Node to Create a Shortcut (Release to Cancel)',
     // Dropping a canvas node outside the canvas = move it out to the vault
-    'extDrop.dropOut': 'Release to move out to the vault',
+    'extDrop.dropOut': 'Release to Move Out to the Vault',
     // Hold ⌘ and drag out: mirror the subtree outside — documents become shortcut shells, the rest folders
     'extDrop.shortcutOut': 'Release to Create a Shortcut in the Vault', // 2026-10-18: ⌘ → ⌥ (macOS reserves ⌘ for system drags)
-    'notice.moveOutDocFail': 'Move out failed: ', // "Move out to vault" failed (error follows, 2026-10-08)
+    'notice.moveOutDocFail': 'Move Out Failed: ', // "Move out to vault" failed (error follows, 2026-10-08)
     'notice.openNoteFail': 'Failed to Open Note: ',
     'notice.fsDocUnsupported': 'This document does not support the mind map fullscreen focus mode. Exited fullscreen.',
     'notice.copyFailSnap': 'Failed to Create a Copy: ',
-    'notice.githubUnset': 'GitHub Link Is Not Configured yet',
+    'notice.githubUnset': 'GitHub Link Is Not Configured Yet',
     'cmd.newMap': 'New Mind Map (28 Notes)',
     'cmd.boldNode': 'Text | Bold Node',
     'cmd.redNode': 'Node | Mark Selected Node Red',
@@ -1242,7 +1304,7 @@ var I18N = {
     'cmd.copyNodeLink': 'Other | Copy Node Link',
     'cmd.addChildDoc': 'New | Add Child Document', // 2026-10-12: moved from "Other |" to "New |" (no default hotkey — user binds it)
     'cmd.copyAILocate': 'AI | Copy AI Locate Path',
-    'cmd.saveShortcut': 'View | Save as Shortcut',
+    'cmd.saveShortcut': 'View | Create Shortcut',
     'cmd.aiMark': 'AI | Add AI-Generated Mark',
     'cmd.aiRules': 'AI | Add AI Rules',
     'cmd.editNote': 'Text | Node Note',
@@ -1253,10 +1315,10 @@ var I18N = {
     'cmd.searchPanel': 'Locate | Search Nodes',
     'cmd.toggleSourceView': 'Toggle | Source / Mind-Map View',
     'cmd.addSiblingAbove': 'New | Add Sibling Above',
-    'cmd.addParentSibling': 'New | Add Sibling One Level up',
+    'cmd.addParentSibling': 'New | Add Sibling One Level Up',
     'cmd.editStart': 'Cursor | Move Caret to Node Start',
     'cmd.editEnd': 'Cursor | Move Caret to Node End',
-    'cmd.centerNode': 'Locate | Center Selected Node (Works while Editing)',
+    'cmd.centerNode': 'Locate | Center Selected Node (Works While Editing)',
     'cmd.centerRoot': 'Locate | Center Root Node',
     'cmd.openAsMarkdown': 'View in Obsidian Editor',
     'cmd.openAsMindmap': 'View in 28 Notes Mind Map Editor',
@@ -1264,12 +1326,12 @@ var I18N = {
     'copy.suffix': ' Copy',
     'snap.beforeRestore': 'Before Restore · ',
     'snap.restoredTo': 'Restored to · ',
-    'snap.beforeAiEdit': 'AI backup before edit', // Snapshot auto-saved when the user clicks "AI locate node" / "AI edit" (2026-09-27)
+    'snap.beforeAiEdit': 'AI Backup before Edit', // Snapshot auto-saved when the user clicks "AI locate node" / "AI edit" (2026-09-27)
                                                   // ⚠️ Must match snapshot.py's DEFAULT_NAME['en'] exactly (the external AI script uses the same name)
     'badge.bookmark': '↗',
     'badge.mindmap': 'Mind Map',
     'menu.newMindmap': 'New Mind Map',
-    'menu.newDocShortcut': 'New Document Shortcut', // File list right-click on a file → creates a doclink shell next to that file (2026-10-19)
+    'menu.newDocShortcut': 'New Shortcut', // File list right-click on a file / shortcut (2026-11-11): one user-facing name; type is decided internally from the final target
     'menu.newDocShortcutHint': 'Leave Empty to Use the Document Name',
     // 🔤 2026-10-12 用户定：英文动词 "Import" → **"Move"**（同一家族全部跟着改，见下方 more.importRepoDoc）。
     //    理由：这个动作本质就是**把文件搬进** 28Notes-Files/docs/，不是"导入一份副本"；
@@ -1288,7 +1350,7 @@ var I18N = {
     'settings.uiHeading': 'Interface',
     'settings.groupSettings': 'Settings',
     'settings.language': 'Interface Language',
-    'settings.langAuto': 'Follow Obsidian (default)', // 2026-10-18: the default tag is now just "(default)" (matches the Chinese side)
+    'settings.langAuto': 'Follow Obsidian (Default)', // 2026-10-18: the default tag is now just "(default)" (matches the Chinese side)
     'settings.langZh': '中文',
     'settings.langEn': 'English',
     'settings.theme': 'Interface Style',
@@ -1302,7 +1364,7 @@ var I18N = {
     'palette.resetTip': 'Restore Default ({0})',
     'settings.themeFeishuPink': 'Pink Lines',
     // 2026-09-17: media split into images/video/audio → cleanup now covers all three; wording "images" → "attachments"
-    'cleanup.heading': 'Clean up Unused Attachments',
+    'cleanup.heading': 'Clean Up Unused Attachments',
     'cleanup.desc': 'To support undo after deletion, attachments (images / videos / etc.) are not deleted when you delete a node that holds them.<br> Unused attachments can therefore pile up — a scan every six months is recommended.',
     'cleanup.scanBtn': 'Start Scan',
     'cleanup.scanning': 'Scanning…',
@@ -1366,8 +1428,8 @@ var I18N = {
     'settings.presetRow': 'About',
     'settings.presetRowDesc': 'When Everything Is off, the "Add" Button Hides as Well.',
     'settings.presetDefault': 'Restore Defaults',
-    'settings.presetAllOn': 'Turn Everything on',
-    'settings.presetAllOff': 'Turn Everything off',
+    'settings.presetAllOn': 'Turn Everything On',
+    'settings.presetAllOff': 'Turn Everything Off',
     'settings.subEntryRow': 'Add Other Content',
     'settings.subEntryRowDesc': '▶︎ Buttons Below This Entry Fold into the Sub-Menu.',
     'settings.addPanelEmpty': '(No Items to Show)',
@@ -1378,6 +1440,10 @@ var I18N = {
     'settings.footnote': 'More',
     'settings.qrMissing': '(QR Code Image Not Found)',
     'settings.sponsor': 'Tip Developer',
+    'settings.about': 'About', // 3rd settings section (2026-11-11)
+    'settings.aboutContact': 'Contact',
+    'settings.btnView': '👀 View',
+    'settings.btnBuyMe': '🧤 Buy Me a Coffee',
     'settings.sponsorThanks': 'Thank You!',
     'settings.bug': 'Bugs & Feature Requests',
     'settings.bugMd': 'Add the creator on WeChat: Hi28Notes. Or join the group chat →',
@@ -1407,27 +1473,32 @@ var I18N = {
     'pro.viewBtn': 'View Pro Features',
     'pro.ctaBtn': 'Activate Pro',
     'pro.barActivate': 'Activate Pro',
-    'pro.barDays': 'Activate Pro ({0} days)',
-    'pro.barExpired': 'Activate Pro (Trial ended)',
+    'pro.barDays': 'Activate Pro ({0} Days)',
+    'pro.barExpired': 'Activate Pro (Trial Ended)',
     'pro.desc': 'These Features Require Pro Activation',
-    'pro.empty': '(No Pro Features yet)',
+    'pro.empty': '(No Pro Features Yet)',
     'license.inputPh': 'Paste Your Activation Code (Starts with 28N)',
     'license.activateBtn': 'Activate',
     'license.deactivateBtn': 'Deactivate',
     'license.lidLabel': 'License ID',
     'license.devicesLabel': 'Device Limit',
-    'license.atLabel': 'Activated at',
+    'license.atLabel': 'Activated At',
     'license.receiptLabel': 'Activation Receipt',
     'license.receiptHintMd': 'When moving to a new device or adding one, send this receipt to the developer to register it. Not required for normal use.',
     'license.copyBtn': 'Copy',
     'license.okActivated': 'Activated. Thank you for the support!',
     'license.okDeactivated': 'Deactivated',
     // ---- License section (2026-09-04 merged into a single row) ----
-    'license.ctaTitle': 'Activate 28 Notes Pro',
+    'license.ctaTitle': 'License (Inactive)',
     'license.ctaDescTrialMd': 'Your trial has {0} days left. Some Pro features will be limited once it ends.',
     'license.ctaDescExpiredMd': 'Your trial has ended. Activate 28 Notes Pro to use all features.',
     'license.howToActivateBtn': 'How to Activate ↗',
-    'license.activeTitle': '28 Notes Pro Activated',
+    'license.activeTitle': 'License (Activated)',
+    'license.detailBtn': 'Activation Details',
+    'license.detailTitle': 'Activation Details',
+    'license.keyLabel': 'License Key',
+    'license.copiedKey': 'License Key Copied',
+    'license.closeBtn': 'Close',
     'license.activeDescMd': 'License ID: {0}; Device limit: {1}; Activated: {2}\n\nBefore switching devices, click "Unbind" on the right, then activate on the new device.',
     'license.unbindBtn': 'Unbind',
     // ---- Debug options (2026-10-18: behind the bug icon on the Experimental Features heading) ----
@@ -1435,7 +1506,7 @@ var I18N = {
     // Removed (2026-10-20): debug.hideLeftOnDoc — promoted to a real setting, see splitMore.hideSidebars.
     'debug.fsBtnPos': 'Full-Screen Button Position', // Debug option (2026-10-18): which side of the title bar the full-screen button sits on
     'debug.fsBtnPosDesc': '', // 2026-10-18: no description — the two option labels say it all
-    'debug.fsRight': 'Right (default)',
+    'debug.fsRight': 'Right (Default)',
     'debug.fsLeft': 'Left',
     // Removed (2026-10-20): debug.hideLeftOnDocDesc
     // ⚠️ 2026-10-18: the default option is tagged "(default)" — the longer "(user default)" tag is retired.
@@ -1447,6 +1518,10 @@ var I18N = {
     'debug.aiPlusMenuDesc': 'Off by default. When on, the + button on the left of the AI editing bar becomes clickable.',
     'debug.log': 'Logs', // Debug option (2026-10-18): master switch for ALL diagnostic logs — feature-agnostic
     'debug.logDesc': 'Off by default. When on, diagnostic logs appear in the console to help track down bugs. Regular users should keep it off.',
+    'debug.frontmatter': 'Front Matter', // debug area (2026-11-11): adds a Front Matter group at the end of the side panel
+    'debug.frontmatterDesc': 'Off by default. When on, the side panel shows the file\'s Front Matter.',
+    'debug.timeCreatedEntry': 'Node Creation Time Entry',
+    'debug.timeCreatedEntryDesc': 'Shows the “Show node creation time” item in the bottom-left More menu (hidden by default; only the entry is affected, card display logic is untouched).',
     'license.okCopied': 'Receipt Copied',
     'license.proRequired': 'This is a Pro feature. Activate to use it.',
     'license.err.unknown': 'Activation failed. Please check the code.',
@@ -1472,7 +1547,7 @@ var I18N = {
     // longer needed (after the cut the map is empty and shows a "New root node" button — no need to
     // teach deleting the map).
     'hint.docLine1': 'Select the node, then cut and paste it where you want it.',
-    'emptyRoot.btn': 'New root node', // button shown in the middle of an empty map (no root line yet, 2026-10-11)
+    'emptyRoot.btn': 'New Root Node', // button shown in the middle of an empty map (no root line yet, 2026-10-11)
     'emptyRoot.placeholder': 'Enter node name', // placeholder pre-filled after clicking the button (selected, so typing replaces it)
     'tb.closeSplits': 'Close Split Panes==space==({Mod} and Click for Split Settings)', // icon on the canvas right edge (2026-10-11): closes the doc split panes on the right; 2026-10-20: {Mod}+click opens the split settings modal; suffix goes to tipH
     'cut.drillRootOut': 'Cut — the view moved up one level', // shown after cutting the root of a drilled-in view
@@ -1492,7 +1567,7 @@ var I18N = {
     'tip.icoClearNow': 'Clear Now Mark',
     'tip.icoClearMinor': 'Clear Minor Mark',
     'tip.icoClearAi': 'Clear the AI-Generated Mark',
-    'tip.icoClearAiMix': 'Clear the AI-Generated Mark==space==(with Human Content)',
+    'tip.icoClearAiMix': 'Clear the AI-Generated Mark==space==(With Human Content)',
     'tip.aiRemarkNa': 'Click to Clear the AI-Generated Mark on This Note==space==(No Note on This Node Yet — Currently Unavailable)',
     'tip.unfold': 'Click to Unfold',
     'tip.fold': 'Click to Fold',
@@ -1530,8 +1605,8 @@ var I18N = {
     // (tb.viewFilter* keys removed with the three-mode mechanism: 2026-10-18)
     'tb.aiEdit': 'AI Edit', // bottom-left AI button (the Hold-Mod hint was removed 2026-10-05)
     'tb.doclib': 'Mind Map Document Library', // tooltip of the bottom-left documents button (back 2026-10-10, renamed)
-    'tb.joinGroupBtn': 'Join the group chat==space==(hide this button in Settings)', // bottom-left group button (2026-10-10); suffix goes to tipH
-    'tb.guideBtn': 'Open the user guide==space==(hide this button in Settings)', // bottom-left guide button (2026-10-10)
+    'tb.joinGroupBtn': 'Join the Group Chat==space==(Hide This Button in Settings)', // bottom-left group button (2026-10-10); suffix goes to tipH
+    'tb.guideBtn': 'Open the User Guide==space==(Hide This Button in Settings)', // bottom-left guide button (2026-10-10)
     'aiBar.send': 'Send', // AI 输入条（2026-09-28）：关闭叉与加号不挂提示，只有发送挂
     'aiBar.placeholder': 'What do you want AI to do?',
     'aiBar.hintView': 'Edit Current View',
@@ -1557,9 +1632,17 @@ var I18N = {
     'nm.aiEditTip': 'Click to Let AI Edit It Quickly',
     'nm.aiMark': 'Add AI Mark',
     'nm.aiMarkOn': 'Clear AI Mark',
+    // With a note present, this row becomes a submenu: fixed parent label + two independently toggled items (2026-11-12)
+    // aiMarkGroupTip is kept but unused: the submenu entry shows no black tooltip
+    'nm.aiMarkGroup': 'AI Mark',
+    'nm.aiMarkGroupTip': 'Click to Choose Where to Add the Mark',
+    'nm.aiMarkNode': 'Add Mark to Node',
+    'nm.aiMarkNodeOn': 'Clear Mark from Node',
+    'nm.aiMarkNote': 'Add Mark to Node Note',
+    'nm.aiMarkNoteOn': 'Clear Mark from Node Note',
     'nm.aiMarkTip': 'Click to Mark This Node as AI-Generated==space==({0})',
     'nm.aiMarkTipAi': 'Click to Clear the AI-Generated Mark==space==({0})',
-    'nm.aiMarkTipMix': 'Click to Clear the AI-Generated Mark==space==(with Human Content) ({0})',
+    'nm.aiMarkTipMix': 'Click to Clear the AI-Generated Mark==space==(With Human Content) ({0})',
     'nm.aiRemarkTip': 'Click to Mark This Node\'s Note as AI-Generated',
     'nm.aiRemarkTipOn': 'Click to Clear the AI-Generated Mark on This Note',
     'nm.aiRemarkTipMix': 'Click to Clear the AI-Generated Mark on This Note (with Human Content)==space==(with Human Content)',
@@ -1636,7 +1719,7 @@ var I18N = {
     'more.pickLocalPrompt': 'Choose a File or Folder to Link',
     'notice.pickPathFail': 'Could not get the full path of that file (not supported on this platform — paste the path manually).',
     'more.addNodeLinkPh': '[[File Name#Node ID]]',
-    'settings.joinGroupBtn': 'Join Group Chat',
+    'settings.joinGroupBtn': '💬 Join Group Chat',
     // Copy for the Pro / payment modals (a few lines on 2026-09-20; the full body on 2026-09-27).
     // Layout (order and spacing) lives in PRO_PAGES in main.js — this file holds the words only.
     // Price, email, WeChat ID and the share link are business values and live in PRO_PLAN (main.js), not here.
@@ -1692,7 +1775,7 @@ var I18N = {
     'toast.copyCreated': 'Copy Created: {0}',
     'toast.copyShellFail': 'Failed to Create the Document Shortcut — This Copy Was Not Created',
     'toast.copied': 'Copied',
-    'toast.copiedPlain': 'Copied Without Formatting',
+    'toast.copiedPlain': 'Copied without Formatting',
     'toast.cut': 'Cut',
     'toast.histSnapGone': 'The version you were viewing could not be found (it may have been deleted). Open history and pick a version again.',
     'toast.restoreFinishFail': 'This version is already restored in the file, but the canvas failed to refresh — reopen this map to see it',
@@ -1708,14 +1791,14 @@ var I18N = {
     'toast.docMovedOut': 'Moved Out', // Move-out success ({0} = document name, {1} = destination folder, 2026-10-08)
     // One-step undo reply (2026-10-17): after clicking the "Undo" on the toast
     'toast.undoDone': 'Undone',
-    'toast.undoGone': 'Cannot Undo (the Target Node No Longer Exists)',
+    'toast.undoGone': 'Cannot Undo (The Target Node No Longer Exists)',
     // ⌘ drag-out: mirror finished ({0} = top-level name, {1} = destination)
-    'toast.mapCopiedOut': 'Shortcut Created in {1}',
+    'toast.mapCopiedOut': 'Shortcut Created In {1}',
     'toast.doclibLinkCopied': 'Wikilink copied — paste it into a mind map', // "Copy Link" in the documents panel succeeded
-    'toast.docRefGone': 'That Reference No Longer Exists (the Mind Map May Have Changed)', // Locating from the panel found no matching node
+    'toast.docRefGone': 'That Reference No Longer Exists (The Mind Map May Have Changed)', // Locating from the panel found no matching node
     'toast.locateReveal': 'The target node was hidden by a view filter — turned the filter off for you', // Panel locate target hidden by hideMinor/Now filter → auto turn it off (2026-10-11)
     'toast.docDeleted': 'Deleted: {0}', // Stored document deleted successfully ({0} = document name)
-    'notice.docDeleteFail': 'Delete failed: ', // Deleting a stored document failed (error follows)
+    'notice.docDeleteFail': 'Delete Failed: ', // Deleting a stored document failed (error follows)
     'toast.nodeLinkCopied': 'Copied — Paste It on the Node to Link', // node link copied
 
     'warn.root': 'Line {0}: unrecognized (the first line should be the central topic `- Central topic`); kept as-is',
@@ -1775,11 +1858,12 @@ var I18N = {
     'ctx.deleteTipImage': 'Click to Delete This Image',
     'ctx.deleteTipVideo': 'Click to Delete This Video',
     'ctx.deleteTipAudio': 'Click to Delete This Audio',
-    'ctx.bookmark': 'Create View Shortcut',
-    'ctx.saveDocShortcut': 'Create Document Shortcut', // doc nodes only (2026-10-11): creates a 28notes: doclink shell that opens the doc directly
+    'ctx.bookmark': 'Create Shortcut', // user-facing name unified (2026-11-11): "view / document" split is internal only
+    'ctx.bookmarkTree': 'To Node Tree', // doc nodes, submenu item 1 (parent already says "Create Shortcut")
+    'ctx.saveDocShortcut': 'To the Document Itself', // doc nodes, submenu item 2: creates a 28notes: doclink shell
     'ctx.saveDocShortcutTip': 'Click to Save This Document as a Shortcut Page==space==(Hold {Alt} and Drag to Create One Quickly)', // suffix goes to tipH
     'ctx.dupDoc': 'Duplicate Document',
-    'ctx.dupDocTip': 'Click to create a copy of this document', // black hover tip
+    'ctx.dupDocTip': 'Click to Create a Copy of This Document', // black hover tip
     // ---- Export mind map (2026-10-10, user's call; the old per-document "Move out of vault" is merged in) ----
     'ctx.exportMap': 'Export Mind Map',
     'ctx.exportMapTip': 'Click to Export This Node Tree to the Vault==space==(or Drag / Hold {Alt} and Drag to Export) ({0})', // light segment (drag note + hotkey) goes whole into tipH
@@ -1788,9 +1872,9 @@ var I18N = {
     'export.doneRootTitle': 'Exported',
     'export.doneToast': 'Exported',
     'export.doneNotice': 'Exported',
-    'export.snapName': 'Before export',
-    'notice.exportMapFail': 'Export failed: ',
-    'export.warnTitle': 'Confirm Before Exporting',
+    'export.snapName': 'Before Export',
+    'notice.exportMapFail': 'Export Failed: ',
+    'export.warnTitle': 'Confirm before Exporting',
     // NOTE: the dialog body uses setText (no markdown) — do not use **bold** markup here.
     'export.warnBody': 'This node tree contains the following extra content, which will be cleared on export. Please confirm before continuing. (You can still review the cleared content in the mind map history afterwards.)',
     'export.warnOk': 'Export Anyway',
@@ -1829,6 +1913,7 @@ var I18N = {
     'aiLocate.nodeHead': '【1. Find the document to edit, path: {0}; 2. Check the FrontMatter hint at the top of the document for the format rules you must follow strictly{1}; 3. A snapshot has already been saved automatically by the plugin — do not back up again (skip the "Before editing" section of index.md and do not run snapshot.py); 4. Use the node id to locate the node to edit, node ID: {2}; ',
     'aiLocate.ruleSuffixImport': ', as well as how to digest an AI web answer',
     'aiLocate.askDefault': '5. Start editing based on the user\'s instruction】',
+    'aiLocate.editTime': '4.5 Edit time for this pass = {0} (copy this value when writing node times; do not invent your own);',
     'aiLocate.ask': '5. User instruction: {0}】',
     'aiLocate.askImport': '5. User instruction: digest the AI web answer, web link: {0}; specific instruction: {1}】',
     'aiLocate.askImportNoText': '5. User instruction: digest the AI web answer, web link: {0}】',
@@ -1876,6 +1961,40 @@ var I18N = {
     'hist.yesterday': 'Yesterday',
     'hist.dateMD': '{0}/{1}',
     'hist.dateYMD': '{1}/{2}/{0}',
+    // ---- Node timestamps (2026-11-12) ----
+    'time.menu': 'Timestamp',
+    'time.createdLabel': 'Created',
+    'time.modifiedLabel': 'Last Edited',
+    'time.stampLabel': 'Custom Timestamp',
+    'time.clickEdit': '(Click to Edit)',
+    'time.labelSep': ': ',
+    'time.itemSep': '; ',
+    'time.add': 'Add Timestamp',
+    'time.edit': 'Edit Timestamp',
+    'time.delete': 'Delete Timestamp',
+    'time.showCreated': 'Show Node Creation Time',
+    'time.showModified': 'Show Node Time', // 2026-11-13: shorter on the menu button; "last edited" is left to the tooltip
+    'time.hideCreated': 'Hide Node Creation Time',
+    'time.hideModified': 'Hide Node Time',
+    'time.editTitle': 'Edit Timestamp',
+    'time.year': 'Year',
+    'time.month': 'Month',
+    'time.day': 'Day',
+    'time.confirmEdit': 'Save',
+    'time.cancelEdit': 'Cancel',
+    'time.invalid': 'Enter a Valid Year, Month, and Day',
+    'time.dayBefore': 'The Day before Yesterday',
+    'time.tomorrow': 'Tomorrow',
+    'time.dayAfter': 'The Day after Tomorrow',
+    'time.tipClickEdit': 'Click to Edit This Timestamp',
+    // Only items that do something on click get a tooltip; hover-to-open rows do not (2026-11-12)
+    'time.tipAdd': 'Click to Add a Timestamp',
+    'time.tipEdit': 'Click to Edit or Remove This Timestamp',
+    'time.tipDelete': 'Click to Remove This Timestamp',
+    'time.tipShowCreated': 'Click to Show Node Creation Time',
+    'time.tipShowModified': 'Click to Show Node Last Edited Time',
+    'time.tipHideCreated': 'Click to Hide Node Creation Time',
+    'time.tipHideModified': 'Click to Hide Node Last Edited Time',
     'hist.rename': 'Rename Version',
     'hist.lock': 'Lock Version',
     'hist.unlock': 'Unlock Version',
@@ -1894,7 +2013,7 @@ var I18N = {
     'panel.grpProps': 'File Properties',
     'panel.grpManage': 'Document Management',
     'panel.grpDerived': 'Derived Shortcuts',
-    'panel.noDerived': 'No shortcuts point to this file',
+    'panel.noDerived': 'No Shortcuts Point to This File',
     'panel.propSrc': 'Source: ',
     'panel.propSrcGone': 'Source File Deleted',
     'panel.propLinks': 'Links: ',
@@ -1912,21 +2031,23 @@ var I18N = {
     'panel.tabLib': 'Mind Map Document Library',
     'panel.tabSearch': 'Search',
     'search.ph': 'Search titles or notes …',
-    'search.scopeView': 'Current mind map',
-    'search.scopeAll': 'All mind maps',
+    'search.scopeView': 'Current Mind Map',
+    'search.scopeAll': 'All Mind Maps',
     'search.searching': 'Searching …',
     'search.empty': 'Not found.',
     'search.more': '{0} more.',
     'search.notMap': 'Search works only inside a mind map. (If it is not detected, click the refresh button at the top right.)',
     'search.hint': '',
-    'search.clear': 'Clear search',
+    'search.clear': 'Clear Search',
     'search.gone': 'This node no longer exists (it may have been deleted or renamed).',
-    'search.gotoFail': 'Could not open that mind map (file moved or deleted)',
+    'search.gotoFail': 'Could Not Open That Mind Map (File Moved or Deleted)',
     'panel.grpDocs': 'Managed Documents', // 2026-10-19: always shown (was "map files only")
     'panel.grpParents': 'Mind Maps Managing This File',
     'panel.noParents': 'No mind map is managing this file yet.',
     'panel.noDocsNotMap': 'This file is not a mind map, so it has no managed sub-documents.', // 2026-10-19
     'panel.grpHist': 'History',
+    'panel.grpFrontmatter': 'Front Matter', // 4th group (2026-11-11, only when the experimental toggle is on)
+    'panel.fmEmpty': 'This file has no Front Matter.',
     'panel.grpNormal': 'Documents', // Library tab, 2nd group (wraps the by-map view; collapsed by default)
     // 2026-10-19: two-line placeholder — the second line explains what an "orphan" is.
     'doclib.noOrphan': 'No orphan documents.\nOrphan = a document imported into the mind map database but not yet managed by any mind map.',
@@ -1941,36 +2062,36 @@ var I18N = {
     // Tab 4 (warning triangle, 2026-10-09): which maps manage the document of the CURRENTLY SELECTED node
     'doclib.secManage': 'Problem Documents Managed in Multiple Places', // Name / tooltip of tab 4 (alert triangle)
     'doclib.blkMaps': 'Mind Maps Managing This Document', // Unused since 2026-10-09 (that heading row was removed)
-    'doclib.clearFilter': 'Clear filter', // "Clear filter ✕" at the top of tab 4 (only when arrived via "Manage This Document")
+    'doclib.clearFilter': 'Clear Filter', // "Clear filter ✕" at the top of tab 4 (only when arrived via "Manage This Document")
     'doclib.noMultiDoc': 'No document is managed in more than one place yet.', // Empty state of tab 4
     'doclib.blkDoc': 'Document', // Unused since 2026-10-09 (tab 4 now lists foldable documents, no such heading)
-    'doclib.manageNoSel': 'Select a document node in a mind map first',
-    'doclib.manageNone': 'This document is not managed by any mind map right now', // Empty state (nothing / non-document selected)
+    'doclib.manageNoSel': 'Select a Document Node in a Mind Map First',
+    'doclib.manageNone': 'This Document Is Not Managed by Any Mind Map Right Now', // Empty state (nothing / non-document selected)
     'doclib.whyMultiRef': 'Why a document should not be managed in more than one place ↗', // Small link at the bottom of tab 4
     'doclib.mgrOccurrence': 'Occurrence {0}', // Rows inside the fold when one map references it several times
     // "Stop managing this occurrence" (the ✕ on each row of tab 4): drops just THIS reference, file untouched
     'doclib.unmanageTitle': 'Stop managing this occurrence?',
     'doclib.unmanageBody': 'This only affects this one node; the other nodes managing this document are untouched. This cannot be undone.',
-    'doclib.unmanageOk': 'Stop managing it',
+    'doclib.unmanageOk': 'Stop Managing It',
     'doclib.unmanagedPlaceholder': '"No longer managed: {0}"', // Plain text written into the map (persisted to disk)
-    'toast.docUnmanaged': 'Stopped managing one occurrence: {0}',
+    'toast.docUnmanaged': 'Stopped Managing One Occurrence: {0}',
     'notice.unmanageFail': 'Could not stop managing it: ',
     // The three "view as" keys (viewMode / viewFlat / viewByMap) were removed 2026-10-09
     // together with the "By document" view (the two view modes were merged into one).
     // The right-most button in that row (two states, mirroring Obsidian's own Outline pane)
-    'doclib.collapseAll': 'Collapse all',
-    'doclib.expandAll': 'Expand all',
+    'doclib.collapseAll': 'Collapse All',
+    'doclib.expandAll': 'Expand All',
     // Tab 2 "By document" has three collapsible groups (2026-10-09); the group name says it all,
     // so rows inside no longer carry the "not managed by any mind map" sub-line.
     'doclib.grpOrphan': 'Orphaned Documents Not Managed Yet', // 2026-10-19: "files" → "documents"
-    'doclib.grpMulti': 'Managed in More Than One Place', // Group 2: referenced by 2+ nodes
+    'doclib.grpMulti': 'Managed in More than One Place', // Group 2: referenced by 2+ nodes
     'doclib.grpSingle': 'Managed in One Place', // Group 3: referenced by exactly 1 node
-    'doclib.toggle': 'Expand / collapse',
+    'doclib.toggle': 'Expand / Collapse',
     // "Locate the node" (2026-10-09): in a row's "More" menu / the hover button in the tree's second level.
     // Opens (or activates) that mind map and selects + centres the node referencing this file.
     'doclib.locate': 'Locate Node',
     'doclib.warnJump': 'This document is managed in more than one place; keeping it in one is recommended (click to manage)',
-    'doclib.locateN': 'Locate occurrence {0}', // One entry per reference when a map references it several times
+    'doclib.locateN': 'Locate Occurrence {0}', // One entry per reference when a map references it several times
     // ⚠️ These two are UNUSED since 2026-10-09 (the "What Are Orphaned Documents?" button was removed —
     //    the group name "Orphaned Files Not Managed Yet" says it all). Keys kept in case it comes back.
     'doclib.helpToggle': 'What Are Orphaned Documents?',
@@ -1998,9 +2119,9 @@ var I18N = {
     'docNode.askMulti': 'The nodes being deleted include {0} managed file(s), {1} of whose references are managed elsewhere (see "More" at the top right of the view → "View managed documents"). Delete those files as well?', // {0}=selected file count {1}=references elsewhere
     // Multi-selection where **none** of them is managed anywhere else (2026-10-09 — "0 of whose references…" read badly)
     'docNode.askMultiOnly': 'The nodes being deleted include {0} managed file(s). Delete those files as well?', // {0}=selected file count
-    'docNode.onlyNode': 'Delete node only', // Second button
-    'docNode.nodeAndDoc': 'Delete node and document', // Third button (destructive → mod-warning)
-    'docNode.nodesAndDocs': 'Delete nodes and files', // Same, but for a MULTI-selection (may mix documents and attachments, 2026-10-09)
+    'docNode.onlyNode': 'Delete Node Only', // Second button
+    'docNode.nodeAndDoc': 'Delete Node and Document', // Third button (destructive → mod-warning)
+    'docNode.nodesAndDocs': 'Delete Nodes and Files', // Same, but for a MULTI-selection (may mix documents and attachments, 2026-10-09)
     // Plain text written into mind maps to replace the link when a document is deleted (persisted to disk).
     // The surrounding quotes were requested 2026-10-08 so it reads as one chunk, distinct from the rest of the node.
     // (When the node holds nothing but that link, the whole line is removed instead — no placeholder at all.)
@@ -2014,10 +2135,10 @@ var I18N = {
     // The keys stay (so old data / external references don't break) but must not be referenced in code.
     'import.mapPrefix': 'Imported →', // ⛔ RETIRED (was the new map's file name)
     'import.rootTitle': 'Imported — cut and paste it wherever you like →', // ⛔ RETIRED (was the root node text)
-    'import.helpLink': 'Learn how to manage documents with mind maps', // ⛔ RETIRED (was the help link under the root node)
+    'import.helpLink': 'Learn How to Manage Documents with Mind Maps', // ⛔ RETIRED (was the help link under the root node)
     // ---- "Rename the imported file" (2026-10-08, spec §4.7) ----
-    'doclib.renameTitle': 'Rename the Moved-in File',
-    'doclib.renameHint': 'Enter a new file name (no extension needed)',
+    'doclib.renameTitle': 'Rename the Moved-In File',
+    'doclib.renameHint': 'Enter a New File Name (No Extension Needed)',
     // New child document (2026-10-09): the "Add → Child Document" row and the "Add Child Document"
     // command both go through this input. The file really lands in 28Notes-Files/docs/, and the node
     // is written as `[[28Notes-Files/docs/name]]` (with the path, to stay unambiguous).
@@ -2040,17 +2161,17 @@ var I18N = {
     'folderBad.notFound': 'No such folder. Search for the folder name below and pick one from the dropdown before confirming.',
     'folderBad.inData': 'This folder is already in the mind map database.',
     'notice.importRepoFail': 'Could not move the document: ',
-    'toast.childDocCreated': 'Child document created: {0}',
+    'toast.childDocCreated': 'Child Document Created: {0}',
     'notice.newChildDocFail': 'Could not create the child document: ',
     'notice.docNameBad': 'That name cannot be used for a document (no \\ / : * ? " < > | or # | ^ [ ]): ',
     'toast.docRenamed': 'Renamed: {0}',
     'notice.renameTaken': 'That name is already taken: ',
-    'notice.renameFail': 'Rename failed: ',
+    'notice.renameFail': 'Rename Failed: ',
     'notice.renameBadName': 'A name cannot contain \\ / : * ? " < > | or # | ^ [ ]',
     // ---- Folder import (2026-10-08, spec §4.3) ----
-    'toast.folderImported': 'Folder moved in: {0}',
+    'toast.folderImported': 'Folder Moved In: {0}',
     'toast.renamedNote': ' (duplicate names were renamed)',
-    'notice.importFolderFail': 'Folder move failed: ',
+    'notice.importFolderFail': 'Folder Move Failed: ',
     'notice.importFolderSkipped': '{0} file(s) have names that cannot be written as links (# | ^ [ ] etc.) — skipped and left in place',
     // ---- "Import blocked" dialog (2026-10-10, user's call): if anything fails the check, nothing is moved
     // at all — but say which file, where it is, why, and how to fix it. ----
@@ -2069,7 +2190,7 @@ var I18N = {
     //   Purely informational — moves nothing. Body allows HTML (<b> / <br>), rendered via innerHTML.
     //   ⚠️ Modifier keys must use the {Alt} placeholder (T() maps it to ⌥ / Alt per platform).
     'importHelp.title': '★ About Moving Documents In',
-    'importHelp.detailBtn': '★ Learn More About Moving In',
+    'importHelp.detailBtn': '★ Learn More about Moving In',
     'importHelp.intro1': 'Drag a document or folder from the left file list <b>straight onto a mind map</b> to manage it with the map.',
     'importHelp.intro2': 'The other way round works too: drag a node tree from the mind map back to the left file list to move it out.',
     'importHelp.tipsTitle': 'Tips:',
@@ -2098,19 +2219,19 @@ var I18N = {
     // inside the dialog body (`max-height: 55vh; overflow-y: auto`).
     'doclib.blockedBody': '{0} of the file names contain invalid characters, so the entire import was cancelled. Fix them as suggested below and try importing again:',
     'doclib.blockedWhere': 'Folder: {0}',
-    'doclib.blockUnknown': '(no file specified)',
-    'doclib.blockEmptyName': 'The file name is empty',
+    'doclib.blockUnknown': '(No File Specified)',
+    'doclib.blockEmptyName': 'The File Name Is Empty',
     'doclib.blockEmptyNameFix': 'Please give it a name',
-    'doclib.blockChar': 'This file name contains the character "{0}"',
+    'doclib.blockChar': 'This File Name Contains the Character "{0}"',
     'doclib.blockCharFix': 'That character has a special meaning in the Obsidian wiki-link syntax [[...]] and will cause a conflict. Remove it, or replace it with another character.',
     // Leading/trailing spaces: the link text gets trimmed, so the link cannot find this file
     // (reported by the user 2026-10-10 with `优化版 .md`).
-    'doclib.blockSpace': 'This file name has extra spaces at the start or end',
+    'doclib.blockSpace': 'This File Name Has Extra Spaces at the Start or End',
     'doclib.blockSpaceFix': 'Spaces at the start or end of [[link]] text are ignored, so the link cannot find this file (clicking the node shows "Note Not Found"). Please remove them from the file name.',
     // A file with no extension: Obsidian's link resolver **appends `.md`** before looking the file up,
     // so such a file can never be linked (reported by the user 2026-10-10; confirmed by reading
     // getLinkpathDest in obsidian.asar — this is a verified fact, not a guess).
-    'doclib.blockNoExt': 'This file has no extension',
+    'doclib.blockNoExt': 'This File Has No Extension',
     'doclib.blockNoExtFix': 'Obsidian appends .md when resolving [[links]], so a file without an extension can never be opened. Give it an extension (for a plain-text note, .md will do).',
     'hist.panelTitle': 'Mind Map History', // Panel tab name / tooltip / the small title on both history tabs (shortened 2026-10-10)
     'hist.rules': 'Save Rules',
