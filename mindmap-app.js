@@ -147,10 +147,8 @@ const state = { tree: null, selectedId: null, dragId: null, dragIds: null, view:
   canvasBgLight: '',
   canvasBgDark: '',
   // 卡片上的系统时间（全局互斥二选一：'' = 都不显示 / 'created' / 'modified'；自定义 stamp 不受它约束）
+  //   入口只有「更多」菜单里那一颗按钮：点击切「最后修改时间」显隐，按住 Cmd/Ctrl 点击切「创建时间」显隐。
   timeDisplay: '',
-  // 「显示节点创建时间」入口是否出现在左下「更多」菜单（2026-11-13，调试区开关；默认关）
-  //   ⚠️ 只影响入口显隐，动作分发 / 卡片渲染 / 数据生成全部照旧
-  timeCreatedEntry: false,
   // 搜索高亮（2026-11-10）：q = 当前搜索词（小写；空 = 不高亮），
   //   activeId = 刚从搜索结果点过来的那条命中（同一批里只有它加重显示）
   searchHl: { q: '', activeId: '' }
@@ -674,6 +672,10 @@ const ICONS = {
   'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
   // 「关闭右侧分屏」（2026-10-11 用户给的设计稿 Group 66.svg，原稿 fill #343434 → 改 currentColor 跟主题/深浅色）
   'close-splits': '<path fill="currentColor" d="M80.762 58.134C79.628 58.134 78.9231 57.2758 78.9231 55.9426L78.9078 35.9594C78.9078 34.6262 79.6127 33.768 80.7467 33.768C81.3597 33.768 81.8501 34.0285 82.509 34.3504L102.201 43.9129C103.504 44.5565 103.917 45.1388 103.917 45.951C103.917 46.7632 103.504 47.3609 102.201 48.0045L82.509 57.5517C81.8654 57.8735 81.375 58.134 80.762 58.134Z"/><path fill="currentColor" d="M45.6778 83.8583C24.0774 83.8583 6.52019 66.3375 6.52019 44.7007C6.52019 23.0638 24.0774 5.54309 45.6778 5.54309C67.3146 5.54309 84.8718 23.0638 84.8718 44.7007C84.8718 66.3375 67.3146 83.8583 45.6778 83.8583ZM35.2236 62.4764C37.4091 62.4764 38.5748 61.6386 40.2868 59.016L45.5321 51.0387H45.8599L50.9231 59.016C52.4894 61.6022 53.7278 62.4764 55.9862 62.4764C58.9731 62.4764 60.9766 60.5458 60.9766 57.7775C60.9766 56.4662 60.5394 55.3005 59.4467 53.9164L52.4529 44.6642L59.4831 35.3393C60.5759 33.9551 61.013 32.7895 61.013 31.5146C61.013 28.7462 59.0096 26.8157 56.0591 26.8157C53.8007 26.8157 52.5258 27.7263 50.9959 30.2761L46.042 38.2533H45.6778L40.4689 30.2761C38.7933 27.6535 37.5913 26.8157 35.3693 26.8157C32.4553 26.8157 30.379 28.7827 30.379 31.551C30.379 32.8623 30.8525 34.028 31.9453 35.4486L38.8298 44.6278L31.7996 53.9892C30.7068 55.3734 30.2697 56.5026 30.2697 57.8139C30.2697 60.5458 32.2731 62.4764 35.2236 62.4764Z"/>',
+  // 「把右侧文档分屏并进左边」（2026-11-15 设计稿 Group 70.svg）：圆 + 四角 + 右箭头，与上面 close-splits 同一族。
+  //   原稿 viewBox 102×79，整组平移到 close-splits 的 108×89 坐标系 → 两颗图标的圆大小与位置完全一致；
+  //   fill 改 currentColor，颜色跟着按钮的 --close-splits-color / 深浅色走。
+  'fullscreen-docpane': '<g fill="currentColor" transform="translate(6.1778 5.2007)"><path d="M74.762 52.134C73.628 52.134 72.9231 51.2758 72.9231 49.9426L72.9078 29.9594C72.9078 28.6262 73.6127 27.768 74.7467 27.768C75.3597 27.768 75.8501 28.0285 76.509 28.3504L96.201 37.9129C97.5036 38.5565 97.9174 39.1388 97.9174 39.951C97.9174 40.7632 97.5036 41.3609 96.201 42.0045L76.509 51.5517C75.8654 51.8735 75.375 52.134 74.762 52.134Z"/><path d="M39.5 0C61.3152 0 79 17.6848 79 39.5C79 61.3152 61.3152 79 39.5 79C17.6848 79 0 61.3152 0 39.5C0 17.6848 17.6848 0 39.5 0ZM25 36.7227C22.5147 36.7227 20.5 38.7374 20.5 41.2227V51.6084C20.5 53.474 21.142 55.3216 22.3711 56.7822L22.624 57.0684L22.8945 57.3457C24.2769 58.6926 26.1417 59.4999 28.1484 59.5H38.7773C41.2626 59.5 43.2773 57.4853 43.2773 55C43.2773 52.5147 41.2626 50.5 38.7773 50.5H29.5V41.2227C29.5 38.7375 27.4851 36.7229 25 36.7227ZM40.5 19.5C38.0147 19.5 36 21.5147 36 24C36 26.4853 38.0147 28.5 40.5 28.5H49.7773V37.7773C49.7773 40.2625 51.7923 42.2771 54.2773 42.2773C56.7626 42.2773 58.7773 40.2626 58.7773 37.7773V27.3916C58.7773 25.526 58.1353 23.6784 56.9062 22.2178L56.6533 21.9316L56.3828 21.6543C55.0005 20.3074 53.1357 19.5001 51.1289 19.5H40.5Z"/></g>',
   // AI 输入条（2026-09-28，lucide）：发送箭头 / 关闭叉
   'arrow-up': '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
   'x': '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -745,6 +747,8 @@ const ICON_SET = {
   // 「关闭右侧分屏」图标（2026-10-11，用户给的设计稿 Group 66.svg）：圆 + 叉 + 右箭头，
   //   实心填充、原稿 viewBox 是 108×89（不是 lucide 的 24×24）→ 必须在这里单独声明宽高比。
   'close-splits': { vb: '0 0 108 89', fill: true },
+  // 「并进左边」那颗与 X 同坐标系（108×89）、同为实心填充 → 两颗一起受 --close-splits-size 控制，视觉一样大。
+  'fullscreen-docpane': { vb: '0 0 108 89', fill: true },
 };
 // 带 <mask> 的图标每渲染一次就换一套唯一 id —— 全局递增计数器（见 renderIcon 里的说明）
 let nmIconMaskSeq = 0;
@@ -3090,14 +3094,9 @@ function autoScrollOnDrag(e) {
 }
 viewMap.addEventListener('dragover', autoScrollOnDrag);
 // ===== 贝塞尔连线（父卡片右缘 → 子卡片左缘，S 形曲线） =====
-// 主题（2026-08-31 起累计）：
-//   默认 = 顶部 :root 旋钮原值（蓝色基调）
-//   飞书蓝线 = --edge 切到 --edge-feishu
-//   飞书灰线版 = 不切 --edge（保持 --edge 默认灰 #c5cdd9）
-//   飞书粉线版（2026-09-01）= 连线+主节点背景+选中/hover/定位按钮等蓝色系全部覆盖为粉色调，对应 --*-pink 旋钮
-// 深色模式开关（2026-09-18）：在画布根元素挂/摘 .theme-dark —— mindmap-app.css 末尾的深色令牌块据此生效。
-// 明暗 × 风格是两条**独立的类轴**（.theme-dark × .nm-theme-*），纯 CSS 组合出全部状态；
-// 深色下切主题、主题下切深色，都只是类的增减，不存在「内联被清掉要重放」这类双轨 bug。
+// 主题（2026-11-15 重做）：颜色由宿主主题引擎算好，随 setThemeVars 下发，这里只把变量写进 DOM。
+//   一个主题色（蓝 / 粉 / 灰 / 自定义）派生连线、节点底色、选中框、悬停底等全部颜色；
+//   .nm-theme-* 那套三档类已删除，深色仍靠 .theme-dark（由画布底色亮度决定）。
 // 主题色（2026-09-20）：链接色默认跟随 **Obsidian 的主题色**。画布是 iframe，自己读不到宿主的 CSS 变量，
 // 所以宿主把 Obsidian 当前的链接色/强调色读出来随 init / setAccent 推下来（见 main.js obsidianAccentColor）。
 // 落点写在内联 `--nm-ob-accent` 上，由 CSS 决定谁引用它（mindmap-app.css 的 --link-color）——
@@ -3119,12 +3118,30 @@ function applyDarkMode(on) {
 // 画布背景色（2026-09-20，设置页调色板小窗）：用户在每档下自定义的底色，写成 html 上的内联 --bg。
 // 为什么用内联：--bg 是 CSS 令牌，浅色在 :root、深色在 .theme-dark 块里 —— 内联样式优先级最高，
 // 一处覆盖两档；空串 = 撤掉内联、回到 CSS 默认（浅 #ffffff / 深 #1c1c1c）。
-// 只动 --bg 一个令牌：连线色、卡片底、控件配色等仍由主题 / 深色块决定（用户要的是「画布背景色」这一项）。
+// ⚠️ 2026-11-15：主题引擎接管后 --bg 由 applyThemeVars 统一给（它是混色的基底），这里不再插手 ——
+//    否则启动顺序一变就会把主题算好的底色清掉。
+let themeVarsOn = false;
 function applyCanvasBg() {
+  if (themeVarsOn) return;
   const v = nmDarkOn ? state.canvasBgDark : state.canvasBgLight;
   const st = document.documentElement.style;
   if (v) st.setProperty('--bg', v);
   else st.removeProperty('--bg');
+}
+// 主题引擎下发的一整套变量（2026-11-15）：宿主算好具体色值，这里只负责写进 DOM。
+//   变量挂 html（优先级压过 CSS 与 .nm-theme-* 类）；画布区域的中性色挂 #view-map
+//   —— 菜单 / 弹窗挂在 body 下，不能被改成浅字压在白玻璃上。
+function applyThemeVars(v) {
+  if (!v || typeof v !== 'object') return;
+  themeVarsOn = true;
+  const cl = document.documentElement.classList;
+  NM_THEME_CLASSES.forEach((c) => cl.remove(c)); // 内联接管后旧主题类不再需要
+  cl.toggle('theme-dark', !!v.dark);
+  nmDarkOn = !!v.dark;
+  const st = document.documentElement.style;
+  if (v.vars) Object.keys(v.vars).forEach((k) => st.setProperty(k, v.vars[k]));
+  const view = document.getElementById('view-map');
+  if (view && v.neutral) Object.keys(v.neutral).forEach((k) => view.style.setProperty(k, v.neutral[k]));
 }
 // 主题类名（2026-09-18 收编）：applyTheme 从「JS 逐个写内联变量」改为「只切类」，
 // 所有颜色值住 mindmap-app.css 的 .nm-theme-* 类（用户改色只去 CSS 一个地方）。
@@ -6487,23 +6504,21 @@ function deleteStampNow(node) {
   emitUpdate(); render();
   closeAddMenus();
 }
-// 「更多」菜单里那两个「显示系统时间」按钮的选中态：互斥二选一，选中的挂 .on（跟 AI 标记二级菜单同一套视觉）
+// 「更多」菜单里那一颗「显示节点时间」按钮：名字与提示都按当前显示态刷。
+//   三态：''（都不显示）/ 'modified'（最后修改时间）/ 'created'（创建时间）。
+//   按钮名只有「显示 / 隐藏节点时间」两档；提示按三态各自说清「点一下会发生什么」，
+//   隐藏态的提示额外带一段浅色后缀，讲清按住 Cmd/Ctrl 点击会显示创建时间。
 function refreshTimeDisplayBtns() {
-  [['time-created', 'created'], ['time-modified', 'modified']].forEach(([act, val]) => {
-    const b = document.querySelector('#more-menu .mm[data-act="' + act + '"]');
-    if (!b) return;
-    const on = state.timeDisplay === val;
-    b.classList.toggle('on', on);
-    // 选中时文案翻成「隐藏…」：按钮永远描述「点一下会发生什么」（2026-11-13 用户定）
-    const isCreated = act === 'time-created';
-    const label = T(on ? (isCreated ? 'time.hideCreated' : 'time.hideModified')
-                       : (isCreated ? 'time.showCreated' : 'time.showModified'));
-    const lab = b.querySelector('.mm-label');
-    if (lab) lab.textContent = label;
-    const tip = T(on ? (isCreated ? 'time.tipHideCreated' : 'time.tipHideModified')
-                     : (isCreated ? 'time.tipShowCreated' : 'time.tipShowModified'));
-    if (b.dataset.tip !== tip) { b.dataset.tip = tip; nmApplyTip(b, tip); }
-  });
+  const b = document.querySelector('#more-menu .mm[data-act="time-modified"]');
+  if (!b) return;
+  const mode = state.timeDisplay;
+  b.classList.toggle('on', !!mode);
+  const lab = b.querySelector('.mm-label');
+  if (lab) lab.textContent = T(mode ? 'time.hideModified' : 'time.showModified');
+  const tip = T(mode === 'created' ? 'time.tipHideCreated'
+    : mode === 'modified' ? 'time.tipHideModified' : 'time.tipShowModified');
+  // 拿 tipSrc 记住「带 ==space== 的完整文案」：data-tip 被 nmApplyTip 拆过之后只剩正文，直接比会每轮重复刷
+  if (b.dataset.tipSrc !== tip) { b.dataset.tipSrc = tip; nmApplyTip(b, tip); }
 }
 function applyTimeDisplayChoice(value) {
   const v = (value === 'created' || value === 'modified') ? value : '';
@@ -10078,6 +10093,10 @@ window.addEventListener('message', e => {
     applyTheme(msg.value); // 类驱动后，深色叠加自动由 .theme-dark × .nm-theme-* 组合表达，无需重放
     return;
   }
+  if (msg.type === 'setThemeVars') { // 主题引擎推送（2026-11-15）：宿主算好的一整套变量写进 DOM，即时生效
+    applyThemeVars(msg);
+    return;
+  }
   if (msg.type === 'fsMode') { applyFsMode(msg.mode); return; } // 全屏档变化（2026-09-22）：路径条让位见 applyFsMode
   if (msg.type === 'setHideHint') { // 设置页切换「隐藏新增页面提示」→ 即时生效（2026-09-01）
     state.hideHint = !!msg.value;
@@ -10127,7 +10146,7 @@ window.addEventListener('message', e => {
     applyAiFeaturesVisibility();
     return;
   }
-  if (msg.type === 'setTimeDisplay') { // 「更多」菜单的两个显示时间按钮（2026-11-12）：所有画布同步
+  if (msg.type === 'setTimeDisplay') { // 「更多」菜单那颗显示时间按钮（2026-11-12）：所有画布同步
     const v = (msg.value === 'created' || msg.value === 'modified') ? msg.value : '';
     const changed = state.timeDisplay !== v;
     state.timeDisplay = v;
@@ -10135,11 +10154,6 @@ window.addEventListener('message', e => {
     refreshTimeDisplayBtns();
     // 发起切换的那张画布已经本地重绘过；广播回来值相同就别再画第二次（图大时会顿一下）
     if (changed && state.tree && state.view === 'map') { render(); drawEdges(); }
-    return;
-  }
-  if (msg.type === 'setTimeCreatedEntry') { // 「显示节点创建时间」入口开关（2026-11-13，调试区）：只切菜单显隐
-    state.timeCreatedEntry = msg.value === true;
-    updateMoreMenu();
     return;
   }
   if (msg.type === 'setDocsLibrary') { // 设置页「高级 → 实验性功能 → 文档库」（2026-10-08）：正开着的画布立刻生效
@@ -10641,12 +10655,10 @@ window.addEventListener('message', e => {
     if (typeof msg.hideHint === 'boolean') state.hideHint = !!msg.hideHint;
     // 卡片时间显示态也要在首帧之前就位（否则开屏先不显示、随后整树再刷一遍）
     state.timeDisplay = (msg.timeDisplay === 'created' || msg.timeDisplay === 'modified') ? msg.timeDisplay : '';
-    refreshTimeDisplayBtns(); // 「更多」菜单两个按钮的选中态（2026-11-13：切画布 / 新开画布要立刻对上）
-    state.timeCreatedEntry = msg.timeCreatedEntry === true; // 「显示节点创建时间」入口（2026-11-13，调试区；默认关）
-    // 菜单重算不在这里做：同一个 init 处理里往下就有 updateMoreMenu()（morePanel 到位后那一次），
-    //   这里只要把状态写好，那一次自然就按开关收 / 放（少一次多余的 DOM 操作）
+    refreshTimeDisplayBtns(); // 「更多」菜单那颗时间按钮的文案与提示（2026-11-13：切画布 / 新开画布要立刻对上）
     applyIncoming(msg.text, { filename: msg.filename || '', filePath: msg.filePath || '', aiScriptPath: msg.aiScriptPath || '', drillPid: drillPid, isLink: !!msg.isLink, defaultPid: msg.defaultPid || '' }); // filePath：init 必须透传，否则 state.filePath 空 → 复制 AI 定位路径只剩文件名（2026-09-01 修）
-    applyTheme(msg.theme || 'default'); // 主题随 init 下发（2026-08-31）
+    applyTheme(msg.theme || 'feishu'); // 主题档（2026-11-15 起由主题引擎统一算色）
+    applyThemeVars(msg.themeVars);     // 整套主题变量随 init 下发（2026-11-15）：必须排在 applyTheme 之后
     // 画布底色两档随 init 下发（2026-09-20）：必须先写进 state，再 applyDarkMode —— 它内部会按当前档贴底色。
     // msg.dark 已是「宿主算好的结论」（跟随档 = Obsidian 明暗；强制档 = 用户选的那档），前端不重复判断。
     if (msg.canvasBg && typeof msg.canvasBg === 'object') {
@@ -14171,6 +14183,22 @@ function ensureCloseSplitsBtn() {
   wrap.appendChild(b);
   closeSplitsBtn = b;
 
+  // 「全屏」（2026-11-15）：与 X 上下并列，把右侧分屏里的标签整组并进左边这个标签组，
+  //   再激活右边当前显示的那页 → 那份文档一下占满整个主区（看起来就是它被放大了）。
+  //   显隐跟着容器走（applyDocSplits），图标 / 尺寸 / 颜色与 X 共用 --close-splits-* 那套旋钮。
+  const f = document.createElement('button');
+  f.id = 'btn-fullscreen-docpane';
+  f.type = 'button';
+  f.className = 'close-splits-btn fullscreen-pane-btn';
+  f.innerHTML = renderIcon('fullscreen-docpane', 20);
+  f.addEventListener('click', (e) => {
+    e.stopPropagation();
+    vscode.postMessage({ type: 'fullscreenDocPane' });
+  });
+  nmApplyTip(f, T('tb.fullscreenDocPane'));
+  f.dataset.side = 'left';
+  wrap.appendChild(f);
+
   if (SPLIT_MORE_BTN_ENABLED) {
     // 「更多」（2026-10-20 用户定）：鼠标悬浮「关闭分屏」时，它**下面**冒出三个点；
     //   点开是宿主那边一个小弹窗（「点击文档节点时，自动隐藏侧边栏」开关）。
@@ -14519,7 +14547,7 @@ function toggleLeftMoreMenu() {
 //   ③ 「join-group / guide」2026-10-10 曾搬到**左下角按钮**，2026-10-20 搬回菜单（sep3 也跟着回来）；
 //      设置页那两行开关仍走 settings.morePanel.hidden（token 名没变，自动生效）。
 // ⚠️ 数组字面量里**只放字符串**：test.mjs 会把它抠出来 `JSON.parse`，夹注释会当场炸（2026-10-20 实踩）。
-const NM_MORE_ORDER = ['undo', 'redo', 'sep0', 'time-created', 'time-modified', 'sep1', 'props', 'doclib', 'search', 'sep2',
+const NM_MORE_ORDER = ['undo', 'redo', 'sep0', 'time-modified', 'sep1', 'props', 'doclib', 'search', 'sep2',
   'history', 'save-snapshot', 'sep3', 'join-group', 'guide'];
 // 锁定项：必须在菜单里、且关不掉（设置页里那几行是「开 + 置灰」）。脏数据里带着它们也一律纠正回来。
 const NM_MORE_LOCKED = ['history', 'save-snapshot']; // 「设置与 Bug 提报」2026-09-18 用户定允许关闭
@@ -14531,10 +14559,7 @@ function nmMoreShown() {
   const raw = (state.morePanel && typeof state.morePanel === 'object') ? state.morePanel : {};
   const hidden = new Set(Array.isArray(raw.hidden) ? raw.hidden : []);
   return nmCleanRows(NM_MORE_ORDER.filter(tk =>
-    // 「显示节点创建时间」入口（2026-11-13，调试区开关，默认关）：只把这一项从菜单里隐掉，
-    //   动作分发、卡片渲染、数据生成一律不动（开关打开就原样出现）
-    (tk !== 'time-created' || state.timeCreatedEntry)
-    && (nmIsSep(tk) || !hidden.has(tk) || NM_MORE_LOCKED.indexOf(tk) >= 0)));
+    nmIsSep(tk) || !hidden.has(tk) || NM_MORE_LOCKED.indexOf(tk) >= 0));
 }
 // 应用到静态骨架：条目挂 .hidden（CSS `#more-menu .mm.hidden` 收掉），分隔线按 data-sep 定位
 function updateMoreMenu() {
@@ -14565,9 +14590,11 @@ function updateMoreMenu() {
     //   浅色后缀段走骨架的 data-tip-h（显式给；没有就没有那一段）。
     nmApplyTip(btn, btn.dataset.tip || label);
   });
-  refreshTimeDisplayBtns(); // 两个「显示系统时间」按钮的初始选中态（2026-11-12）
+  refreshTimeDisplayBtns(); // 「显示节点时间」那颗按钮的初始文案与提示（2026-11-12）
 })();
 document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
+  // 按下那一刻先记 Cmd/Ctrl：click 是松开鼠标才触发，先松修饰键再松鼠标会读不到（Windows 上 Ctrl 也算）。
+  btn.addEventListener('mousedown', e => { btn._modDown = !!(e.metaKey || e.ctrlKey); });
   btn.onclick = e => {
     e.stopPropagation();
     const act = btn.dataset.act;
@@ -14600,9 +14627,16 @@ document.getElementById('more-menu').querySelectorAll('.mm').forEach(btn => {
     // 2026-10-20：从菜单按钮搬回菜单（2026-10-10 曾搬去左下角）
     else if (act === 'join-group') openUrl(JOIN_GROUP_URL);
     else if (act === 'guide') openUrl(GUIDE_URL);
-    // 显示系统时间（2026-11-12 从「添加 → 时间戳」的二级浮层搬来）：互斥二选一，再点一次即取消
-    else if (act === 'time-created') applyTimeDisplayChoice(state.timeDisplay === 'created' ? '' : 'created');
-    else if (act === 'time-modified') applyTimeDisplayChoice(state.timeDisplay === 'modified' ? '' : 'modified');
+    // 显示系统时间（2026-11-12 从「添加 → 时间戳」的二级浮层搬来）：
+    //   两颗按钮合成一颗 —— 点击切「最后修改时间」显隐，按住 Cmd/Ctrl 点击切「创建时间」显隐。
+    //   已经有时间在显示时，点击一律先隐藏（按钮叫「隐藏节点时间」，名副其实）。
+    //   修饰键按「mousedown 快照 > click 事件 > 全局按键状态」三级取，别只读 click。
+    else if (act === 'time-modified') {
+      const cmd = (btn._modDown != null) ? btn._modDown : (!!(e.metaKey || e.ctrlKey) || nmCmdHeld);
+      btn._modDown = null;
+      applyTimeDisplayChoice(cmd ? (state.timeDisplay === 'created' ? '' : 'created')
+        : (state.timeDisplay ? '' : 'modified'));
+    }
     // 🔴 「join-group / guide」2026-10-10 搬到左下角按钮了（见 btn-join-group / btn-guide 的 onclick），这两支撤掉
     else if (act === 'settings') { vscode.postMessage({ type: 'log', text: '更多菜单→打开设置请求发出' }); vscode.postMessage({ type: 'openSettings' }); } // 更多菜单「设置与 bug 提报」（2026-09-01）
     else if (act === 'hotkeys') { vscode.postMessage({ type: 'openHotkeys' }); } // 更多菜单「快捷键」→ 打开原生快捷键页并预填搜索只看本插件（2026-09-18）

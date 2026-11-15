@@ -218,9 +218,34 @@ var I18N = {
     'settings.langZh': '中文', // 语言下拉选项二
     'settings.langEn': 'English', // 语言下拉选项三
     'settings.theme': '界面样式', // 主题设置项名称（2026-08-31）
-    'settings.themeFeishu': '蓝线', // 主题下拉：飞书蓝线（2026-09-01 与灰/粉对称，改为带括号）
-    'settings.themeFeishuGray': '灰线', // 主题下拉：飞书灰线
-    'settings.themeFeishuPink': '粉线', // 主题下拉：飞书粉线（2026-09-01 新增）
+    'settings.themeFeishu': '蓝色', // 主题下拉（2026-11-15 用户定：不再叫「蓝线」）
+    'settings.themeFeishuGray': '灰色',
+    'settings.themeFeishuPink': '粉色',
+    'settings.themeCustom': '自定义', // 主题下拉第四档：选它才出现左边的「设置」按钮
+    'settings.themeCustomBtn': '设置', // 设置页那颗文字按钮（2026-11-15 用户定：图标改文字）
+    // ——「自定义界面」弹窗（2026-11-15）——
+    'custom.title': '自定义界面',
+    'custom.themeColor': '主题色',
+    'custom.bgLight': '浅色模式',
+    'custom.bgDark': '深色模式',
+    'custom.confirm': '确认',
+    'custom.cancel': '取消',
+    'custom.done': '已应用自定义主题',
+    'custom.lightMode': '浅色',
+    'custom.darkMode': '深色',
+    'custom.pickColor': '自己挑一个颜色',
+    'custom.pickThis': '点击设为此颜色', // 预设色圆悬浮提示（不再显示色号 —— 用户看色号没意义）
+    'custom.bgTitle': '画布颜色',
+    'custom.bgReset': '恢复默认',
+    'custom.themeColorCustom': '自定义主题色',
+    'custom.bgTitleCustom': '自定义画布颜色',
+    'custom.reset': '还原',
+    'custom.customColor': '自定义颜色',
+    'custom.colorPurple': '紫色',
+    'custom.colorOrange': '橙色',
+    'custom.colorGreen': '绿色',
+    'custom.colorCyan': '青蓝色',
+    'custom.colorAqua': '水蓝色',
     // 画布明暗 + 背景色（2026-09-20）：设置页「界面样式」左边那个调色板小按钮弹出来的小窗
     'palette.tip': '高级样式设计',
     'palette.title': '高级样式设计',
@@ -248,13 +273,7 @@ var I18N = {
     'settings.hideHintDesc': '新增思维导图后，主节点下方会有一行新手提示，可选择隐藏。',
     // （「待办按钮位置」「视图筛选」两套设置项及其标题 / 选项文案 2026-10-18 全部删除 ——
     //   两项均定稿固定：待办按钮恒在底部、视图筛选恒为「展开」，设置页不再有这两行）
-    // ---- AI 生成标记（ainode）的配色（2026-10-05，只在调试组）----
-    'settings.aiMarkPalette': '色卡', // 常驻色卡（不是选项）：小色块 + 中文颜色名
-    // 12 个 iOS 官方色 + 一个次要节点的置灰：只给中文名，不给色号（用户看色号没概念）
-    'aiColor.orange': '橙色', 'aiColor.yellow': '黄色', 'aiColor.green': '绿色', 'aiColor.blue': '蓝色',
-    'aiColor.cyan': '青色', 'aiColor.lightblue': '轻蓝色', 'aiColor.waterblue': '水蓝色',
-    'aiColor.purple': '紫色', 'aiColor.magenta': '红紫色', 'aiColor.pink': '粉色',
-    'aiColor.brown': '棕色', 'aiColor.gray': '灰色', // 灰 = 次要节点的置灰色；2026-10-05 起节点上固定用这个（那三个设置项已删）
+    // （调试组的「色卡」及其 12 个颜色名于 2026-11-15 删除：颜色改由主题引擎统一算，不再需要对照表。）
     // 二级页入口右侧的灰字说明（2026-09-18 用户定：两行都去掉，入口只留标题 + 箭头）
     'settings.uiSimplify': '界面简化', // 「界面」栏的原生二级页（2026-09-18）：收纳文件类型徽标 / 新增页面提示等
     'settings.advanced': '高级', // 「更多」栏的原生二级页（2026-09-18）：收纳低频且影响数据的操作
@@ -385,8 +404,6 @@ var I18N = {
     'debug.logDesc': '默认关闭。开启后，控制台会出现诊断日志，以定位 Bug 根源。普通用户建议关闭。',
     'debug.frontmatter': 'Front Matter', // 调试区（2026-11-11 用户定）：右侧面板末尾多一组 frontmatter
     'debug.frontmatterDesc': '默认关闭。开启后可在右侧面板查看 Front Matter。',
-    'debug.timeCreatedEntry': '节点创建时间入口',
-    'debug.timeCreatedEntryDesc': '在左下「更多」菜单里显示「显示节点创建时间」这一项（默认隐藏；只影响入口，卡片显示逻辑不受影响）',
     'license.okCopied': '回执已复制', // 复制回执成功提示
     'license.proRequired': '这是 Pro 功能，激活后可用。', // 受控功能被拦时的提示
     'license.err.unknown': '激活失败，请检查激活码', // 未归类错误兜底
@@ -415,6 +432,8 @@ var I18N = {
     // 2026-10-20 用户定：三个点那颗「分屏设置」按钮隐藏，改由「⌘/Ctrl + 点击」打开同一个弹窗 →
     //   提示里补一句手势说明（用户写的「cmd」改成 {Mod} 占位，Mac=⌘ / Win=Ctrl，别写死字面量）。
     'tb.closeSplits': '关闭右侧分屏==space==（按住 {Mod} 点击：查看分屏设置）', // 画布右边缘那颗图标（2026-10-11）：一键关掉右侧的文档分屏；后缀段显式给 tipH
+    'tb.fullscreenDocPane': '全屏显示右侧文档', // X 下面那颗（2026-11-15）：右侧标签并进左边标签组、激活右边当前页
+    'notice.docPaneMergeUnsupported': '当前 Obsidian 版本不支持合并分屏，布局保持原样', // 布局树 API 拿不到时给的一句话
     'cut.drillRootOut': '已剪切，画面退回上一层', // 下钻里把当层母节点剪切走后的提示（画面忽然换层要说一声）
     // ============ 导图画面：节点图标 / 折叠箭头 / 备注等悬停提示 ============
     'tip.todoIconTodo': '设为已完成', // 待办节点标题前小方框的悬停提示（2026-09-20；2026-10-06 撤掉 ⌘ 那段）
@@ -889,10 +908,9 @@ var I18N = {
     'time.add': '添加时间戳',
     'time.edit': '修改时间戳',
     'time.delete': '删除时间戳',
-    'time.showCreated': '显示节点创建时间',
+    // 菜单里只有一颗按钮，名字永远是「显示 / 隐藏节点时间」，不随画面显示的是哪种时间而变
     'time.showModified': '显示节点时间', // 2026-11-13 用户定：菜单按钮上短一点；「最后修改」这层意思交给悬浮提示说
     // 已经选中时按钮文案翻成「隐藏…」：按钮永远描述「点一下会发生什么」（2026-11-13 用户定）
-    'time.hideCreated': '隐藏节点创建时间',
     'time.hideModified': '隐藏节点时间', // 与 showModified 成对：按钮永远说「点一下会发生什么」
     'time.editTitle': '修改时间戳',
     'time.year': '年',
@@ -909,10 +927,10 @@ var I18N = {
     'time.tipAdd': '点击后，可添加时间戳',
     'time.tipEdit': '点击后，可修改或删除时间戳',
     'time.tipDelete': '点击后，删除这个时间戳',
-    'time.tipShowCreated': '点击后，显示节点创建时间',
-    'time.tipShowModified': '点击后，显示节点最后修改时间',
-    'time.tipHideCreated': '点击后，隐藏节点创建时间',
-    'time.tipHideModified': '点击后，隐藏节点最后修改时间',
+    // 隐藏态：正文说普通点击，浅色后缀说按住 {Mod} 点击；{Mod} 按平台换成 ⌘ / Ctrl
+    'time.tipShowModified': '点击后，显示节点最后修改时间==space==（按住 {Mod} 点击：显示节点创建时间）',
+    'time.tipHideCreated': '点击后，隐藏节点创建时间', // 画面正显示创建时间时
+    'time.tipHideModified': '点击后，隐藏节点最后修改时间', // 画面正显示最后修改时间时
     'hist.rename': '重命名此版本', // 每条记录「⋯」菜单：给这条版本改名
     'hist.lock': '锁定此版本', // 「⋯」菜单：锁住这一版（不参与自动清理）——与点条目上的小锁同一动作；「此版本」跟同菜单的重命名 / 删除保持一致
     'hist.unlock': '取消锁定', // 「⋯」菜单：解锁这一版（重新参与自动清理）
@@ -1354,15 +1372,40 @@ var I18N = {
     'settings.langZh': '中文',
     'settings.langEn': 'English',
     'settings.theme': 'Interface Style',
-    'settings.themeFeishu': 'Blue Lines',
-    'settings.themeFeishuGray': 'Gray Lines',
+    'settings.themeFeishu': 'Blue',
+    'settings.themeFeishuGray': 'Gray',
     // Canvas light/dark + background (2026-09-20): opened from the palette button left of "Interface style"
     'palette.tip': 'Advanced Styling',
     'palette.title': 'Advanced Styling',
     'palette.bgLight': 'Custom Background｜Light Mode',
     'palette.bgDark': 'Custom Background｜Dark Mode',
     'palette.resetTip': 'Restore Default ({0})',
-    'settings.themeFeishuPink': 'Pink Lines',
+    'settings.themeFeishuPink': 'Pink',
+    'settings.themeCustom': 'Custom', // fourth theme option (2026-11-15): only this one shows the button
+    'settings.themeCustomBtn': 'Settings',
+    // —— Custom Interface modal (2026-11-15) ——
+    'custom.title': 'Custom Interface',
+    'custom.themeColor': 'Theme Color',
+    'custom.bgLight': 'Light Mode',
+    'custom.bgDark': 'Dark Mode',
+    'custom.confirm': 'Confirm',
+    'custom.cancel': 'Cancel',
+    'custom.done': 'Custom theme applied',
+    'custom.lightMode': 'Light',
+    'custom.darkMode': 'Dark',
+    'custom.pickColor': 'Pick a custom color',
+    'custom.pickThis': 'Click to use this color',
+    'custom.bgTitle': 'Canvas Color',
+    'custom.bgReset': 'Reset to default',
+    'custom.themeColorCustom': 'Custom theme color',
+    'custom.bgTitleCustom': 'Custom canvas color',
+    'custom.reset': 'Reset',
+    'custom.customColor': 'Custom color',
+    'custom.colorPurple': 'Purple',
+    'custom.colorOrange': 'Orange',
+    'custom.colorGreen': 'Green',
+    'custom.colorCyan': 'Cyan',
+    'custom.colorAqua': 'Sky blue',
     // 2026-09-17: media split into images/video/audio → cleanup now covers all three; wording "images" → "attachments"
     'cleanup.heading': 'Clean Up Unused Attachments',
     'cleanup.desc': 'To support undo after deletion, attachments (images / videos / etc.) are not deleted when you delete a node that holds them.<br> Unused attachments can therefore pile up — a scan every six months is recommended.',
@@ -1397,11 +1440,8 @@ var I18N = {
     'settings.hideHintDesc': 'After creating a new mind-map, a beginner hint appears below the root node. You can choose to hide it. ',
     // (The "To-Do Button Placement" and "View Filter" settings and all their labels were removed 2026-10-18 —
     //  both are fixed now: the To-Do button always sits at the bottom, the filter always uses the expanded form.)
-    'settings.aiMarkPalette': 'Swatches',
-    'aiColor.orange': 'Orange', 'aiColor.yellow': 'Yellow', 'aiColor.green': 'Green', 'aiColor.blue': 'Blue',
-    'aiColor.cyan': 'Cyan', 'aiColor.lightblue': 'Light Blue', 'aiColor.waterblue': 'Water Blue',
-    'aiColor.purple': 'Purple', 'aiColor.magenta': 'Magenta', 'aiColor.pink': 'Pink',
-    'aiColor.brown': 'Brown', 'aiColor.gray': 'Gray', // Gray = the muted gray used for Minor nodes; hard-coded as of 2026-10-05
+    // (The debug-area "Swatches" row and its 12 color names were removed 2026-11-15 — colors are
+    //  computed by the theme engine now, so the lookup table is gone.)
     'settings.uiSimplify': 'Interface Simplification', // Native sub-page under "Interface" (2026-09-18)
     'settings.advanced': 'Advanced', // Native sub-page under "More" (2026-09-18)
     'settings.motion': 'Motion', // Under "Advanced" (2026-09-20): node shift transition, on by default
@@ -1520,8 +1560,6 @@ var I18N = {
     'debug.logDesc': 'Off by default. When on, diagnostic logs appear in the console to help track down bugs. Regular users should keep it off.',
     'debug.frontmatter': 'Front Matter', // debug area (2026-11-11): adds a Front Matter group at the end of the side panel
     'debug.frontmatterDesc': 'Off by default. When on, the side panel shows the file\'s Front Matter.',
-    'debug.timeCreatedEntry': 'Node Creation Time Entry',
-    'debug.timeCreatedEntryDesc': 'Shows the “Show node creation time” item in the bottom-left More menu (hidden by default; only the entry is affected, card display logic is untouched).',
     'license.okCopied': 'Receipt Copied',
     'license.proRequired': 'This is a Pro feature. Activate to use it.',
     'license.err.unknown': 'Activation failed. Please check the code.',
@@ -1550,6 +1588,8 @@ var I18N = {
     'emptyRoot.btn': 'New Root Node', // button shown in the middle of an empty map (no root line yet, 2026-10-11)
     'emptyRoot.placeholder': 'Enter node name', // placeholder pre-filled after clicking the button (selected, so typing replaces it)
     'tb.closeSplits': 'Close Split Panes==space==({Mod} and Click for Split Settings)', // icon on the canvas right edge (2026-10-11): closes the doc split panes on the right; 2026-10-20: {Mod}+click opens the split settings modal; suffix goes to tipH
+    'tb.fullscreenDocPane': 'Fullscreen the Right Pane', // button below the X (2026-11-15): merges the right tabs into the left tab group and activates the current right tab
+    'notice.docPaneMergeUnsupported': 'This Obsidian version does not support merging split panes. The layout was left unchanged.',
     'cut.drillRootOut': 'Cut — the view moved up one level', // shown after cutting the root of a drilled-in view
 
     'tip.todoIconTodo': 'Mark as Done', // to-do node prefix icon (2026-09-20; the {Mod} hint was removed 2026-10-06)
@@ -1972,9 +2012,8 @@ var I18N = {
     'time.add': 'Add Timestamp',
     'time.edit': 'Edit Timestamp',
     'time.delete': 'Delete Timestamp',
-    'time.showCreated': 'Show Node Creation Time',
+    // One menu button for both time kinds; the label never changes with the active time kind
     'time.showModified': 'Show Node Time', // 2026-11-13: shorter on the menu button; "last edited" is left to the tooltip
-    'time.hideCreated': 'Hide Node Creation Time',
     'time.hideModified': 'Hide Node Time',
     'time.editTitle': 'Edit Timestamp',
     'time.year': 'Year',
@@ -1991,10 +2030,10 @@ var I18N = {
     'time.tipAdd': 'Click to Add a Timestamp',
     'time.tipEdit': 'Click to Edit or Remove This Timestamp',
     'time.tipDelete': 'Click to Remove This Timestamp',
-    'time.tipShowCreated': 'Click to Show Node Creation Time',
-    'time.tipShowModified': 'Click to Show Node Last Edited Time',
-    'time.tipHideCreated': 'Click to Hide Node Creation Time',
-    'time.tipHideModified': 'Click to Hide Node Last Edited Time',
+    // Hidden state: the body describes a plain click, the dim suffix describes a {Mod} click (Cmd on Mac / Ctrl elsewhere)
+    'time.tipShowModified': 'Click to Show Node Last Edited Time==space==(Hold {Mod} and Click to Show Node Creation Time)',
+    'time.tipHideCreated': 'Click to Hide Node Creation Time', // creation time is on screen
+    'time.tipHideModified': 'Click to Hide Node Last Edited Time', // last edited time is on screen
     'hist.rename': 'Rename Version',
     'hist.lock': 'Lock Version',
     'hist.unlock': 'Unlock Version',

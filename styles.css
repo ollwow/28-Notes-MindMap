@@ -40,6 +40,42 @@
       Obsidian 自己那条 body:not(.show-view-header) .view-header{display:none} 没有 !important，
       我们这条更具体 + !important 稳赢。 */
 body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header { display: flex !important; }
+/* 2026-11-15：标题栏（路径条那一条）也跟着画布底色走。
+   ⚠️ 只命中 data-type="28notes-mindmap" —— 文档 / 白板等别的视图一律不动。
+   两个变量由 applyThemeAll() 写到 body：--shin-canvas-bg = 当前画布底色，
+   --shin-canvas-fg = 按底色亮度切好的深 / 浅文字色。 */
+/* ⚠️ 必须 !important：Obsidian 自己有 `.workspace-leaf.mod-active .view-header`
+   （叶子一激活就刷回它的底色）—— 不加的话「点一下视图，路径条颜色瞬间没了」（2026-11-15 用户实报）。 */
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header {
+  background: var(--shin-canvas-bg, transparent) !important;
+}
+/* 标签页（tab）也跟着画布底色走 —— **只认插件自己给导图 tab 打的 .shin-canvas-tab 标记**
+   （main.js 的 markCanvasTabs() 打的；tab 上的 data-type 是 markdown，认不出自定义视图），
+   而且只刷**激活的那一个**。标签栏容器一律不碰 —— 碰了同一个栏里别的 type 会跟着变色
+   （2026-11-15 用户实报「串到别的 type 了」）。 */
+.workspace-tab-header.shin-canvas-tab.is-active {
+  /* 底部两侧的弧形是 ::before / ::after 用 --tab-background-active 画的，
+     只改 tab 背景不会带它变；同步这个变量才能消掉两侧的异色缺角。 */
+  --tab-background-active: var(--shin-canvas-bg, var(--background-primary));
+  --tab-outline-color: transparent;
+}
+.workspace-tab-header.shin-canvas-tab.is-active,
+.workspace-tab-header.shin-canvas-tab.is-active .workspace-tab-header-inner {
+  background: var(--shin-canvas-bg, var(--background-primary)) !important;
+  border-color: transparent !important;
+  color: var(--shin-canvas-fg, inherit);
+}
+/* 兜底 ②：路径条里的几个直接子容器一律透明，别挡住 .view-header 的背景
+   （用户实报「路径条左侧有个小豁口」）。只动直接子元素，按钮自己的 hover 底色不受影响。 */
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header > * {
+  background: transparent;
+}
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header #shin-mm-crumb,
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header #shin-mm-crumb .c-seg,
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header .clickable-icon,
+body .workspace-leaf-content[data-type="28notes-mindmap"] .view-header .view-actions button {
+  color: var(--shin-canvas-fg, inherit);
+}
 
 /* ② 面包屑**住进那根"弹簧"里**（官方就是这结构：弹簧里放面包屑 + 文件名）。
       弹簧（.view-header-title-container，flex:1 1 auto）留着 → 右侧那排照样贴右；
@@ -588,15 +624,16 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .workspace-leaf-content[data-type="28notes-mindmap"] .view-content {
   padding: 0;
   overflow: hidden;
+  /* iframe 首帧 / 重建期间露出的是这层；与画布同色，切文件时不闪默认白。 */
+  background: var(--shin-canvas-bg, var(--background-primary));
 }
 .workspace-leaf-content[data-type="28notes-mindmap"] iframe.shin-mindmap-frame {
   width: 100%;
   height: 100%;
   border: 0;
   display: block;
-  /* 2026-09-20：换文件会销毁旧 iframe 重建新的，那几毫秒里框内是空的 —— 不垫底色就露出浏览器默认白，
-     暗色模式下就是「闪一下白」。跟着 Obsidian 的编辑区底色走，明暗都对。 */
-  background: var(--background-primary);
+  /* srcdoc 尚未画出第一帧时，iframe 自己也先垫画布色。 */
+  background: var(--shin-canvas-bg, var(--background-primary));
 }
 
 /* 隐藏 28Notes-Files 附件文件夹（v2 §3.6：不用 . 前缀——Obsidian 忽略点号文件夹会导致不索引、图片渲染不出） */
@@ -627,8 +664,8 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
   display: inline-flex; align-items: center; justify-content: center;
   flex: none; width: auto; height: var(--shin-pro-h, 26px); margin-left: 4px;
   padding: 0 9px; border-radius: 6.5px;
-  background: var(--shin-mm-accent, #1b75ff); color: #fff;
-  border: 0.5px solid color-mix(in srgb, var(--shin-mm-accent, #1b75ff) 55%, #fff);
+  background: var(--shin-pro-bg, var(--shin-mm-accent, #1b75ff)); color: var(--shin-on-accent, #fff) !important;
+  border: 0.5px solid color-mix(in srgb, var(--shin-pro-bg, var(--shin-mm-accent, #1b75ff)) 55%, #fff);
   font-size: 12px; line-height: 1; font-weight: 500;
   white-space: nowrap; cursor: pointer; user-select: none;
   /* 这颗是 <a>（复用 .clickable-icon）→ 浏览器/Obsidian 会给链接加下划线，2026-10-21 用户实报要去掉 */
@@ -636,7 +673,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 }
 .view-actions .shin-header-pro:hover {
   filter: brightness(1.12);
-  background: var(--shin-mm-accent, #1b75ff); /* 压掉 .clickable-icon:hover 的灰底 */
+  background: var(--shin-pro-bg, var(--shin-mm-accent, #1b75ff)); /* 压掉 .clickable-icon:hover 的灰底 */
 }
 
 /* ═══ 折叠层级条（Obsidian 官方状态栏版，2026-08-30 v2）═══════
@@ -984,7 +1021,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .pm-cta{
   position:absolute; left:50%; bottom:var(--pm-cta-bottom); transform:translateX(-50%); z-index:5;
   padding:10px 24px; border:var(--pm-cta-border-w) solid var(--pm-cta-border-c) !important; border-radius:999px;
-  background:var(--pm-cta-bg,#0070f5) !important; color:#fff !important; font-size:14px; font-weight:600; cursor:pointer;
+  background:var(--pm-cta-bg,#0070f5) !important; color:var(--pm-cta-fg,#fff) !important; font-size:14px; font-weight:600; cursor:pointer;
   background-image:none !important; outline:none !important;
   box-shadow:0 2px 10px var(--pm-cta-shadow,rgba(0,112,245,.35));
 }
@@ -1061,7 +1098,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .theme-dark .pm-shell .modal{ background:#1f2230; border-color:#3a4a6a; }
 .theme-dark .pm-shell .modal-close-button{ color:#cfcfcf; }
 .theme-dark .pm-shell .pm-mask, .theme-dark .pay-mask{ background:linear-gradient(180deg, rgba(31,34,48,0) 0%, rgba(31,34,48,.96) 100%); }
-.theme-dark .pm-blue, .theme-dark .pm-sec-h, .theme-dark .pay-h, .theme-dark .pay-num{ color:#5b9bff; }
+.theme-dark .pm-blue, .theme-dark .pm-sec-h, .theme-dark .pay-h, .theme-dark .pay-num{ color:var(--pm-blue, #5b9bff); } /* 2026-11-15：不再写死浅蓝，跟主题色 */
 .theme-dark .pm-old{ color:rgba(255,255,255,.35); }
 .theme-dark .pay-note, .theme-dark .pay-alt{ color:#7d8598; }
 .theme-dark .pay-email{ color:#5b9bff; }
@@ -1971,20 +2008,7 @@ h3.nm-debug-toggle-host { display: flex; align-items: center; justify-content: s
 .shin-hist-lock .svg-icon { width: 12px; height: 12px; position: relative; }
 .shin-hist-more .svg-icon { width: 15px; height: 15px; position: relative; }
 
-/* ===== 调试组顶部的常驻色卡（2026-10-05）=====
-   不是选项，只作对照：一排「小色块 + 中文颜色名」，作者一眼取到名字与色号。
-   色号由 JS 从 AI_MARK_COLORS 内联到 style.background，这里只管排布。 */
-.shin-palette-row {
-  display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 6px;
-}
-.shin-palette-item {
-  display: flex; align-items: center; gap: 5px;
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
-}
-.shin-palette-dot {
-  width: 12px; height: 12px; border-radius: 50%; flex: none;
-  box-shadow: 0 0 0 1px var(--background-modifier-border); /* 浅色（如黄）在白底上也能看清轮廓 */
-}
+/* （调试组顶部的常驻色卡样式 2026-11-15 删除：色卡本身已去掉，颜色由主题引擎统一算。） */
 
 /* ===== 深色模式（跟随 Obsidian 明暗）：徽标字换浅色（2026-09-18） =====
    徽标在宿主文档里，Obsidian 的 body.theme-dark 直接可用；要微调就改这里这一个值。 */
@@ -2014,6 +2038,42 @@ body.theme-dark {
    ③ 控件顺序（↺ 恢复默认 在前、色块在后）是在 main.js 里调挂载顺序实现的，不在 CSS。 */
 .shin-palette-modal .setting-item { align-items: center; }
 .shin-palette-modal .modal-title { margin-bottom: var(--size-4-3, 12px); }
+
+/* ══ 「自定义界面」弹窗（2026-11-15）══
+   上排居中放 8 个预设色 + 彩色自定义圆；分隔线下两行各自可调，改出偏差才露「还原」。 */
+.shin-ct-modal {
+  width: min(560px, 92vw);
+  --shin-ct-dot-size: 32px;
+  --shin-ct-top-gap: 9px;
+  --shin-ct-sep-gap: 22px;
+  --shin-ct-row-gap: 12px;
+  --shin-ct-foot-gap: 24px;
+}
+.shin-ct-modal .modal-title { display: none; }
+.modal.shin-ct-modal .modal-content { padding-top: 22px; }
+.shin-ct-modal .shin-ct-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--shin-ct-top-gap, 9px); margin: 0 auto var(--shin-ct-sep-gap, 22px); }
+.shin-ct-modal .shin-ct-dot { position: relative; overflow: hidden; width: var(--shin-ct-dot-size, 24px); height: var(--shin-ct-dot-size, 24px); border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform .1s ease; flex: none; }
+.shin-ct-modal .shin-ct-dot:hover { transform: scale(1.12); }
+.shin-ct-modal .shin-ct-dot.is-on { border-color: var(--text-normal); outline: 2px solid var(--background-primary); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.shin-ct-modal .shin-ct-dot-custom { background: conic-gradient(from 0deg, #f44, #f94, #6c6, #4cc, #47f, #a4f, #f44); }
+.shin-ct-modal .shin-ct-sep { height: 1px; background: var(--background-modifier-border); margin: 0 0 10px; }
+.shin-ct-modal .shin-ct-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; margin: var(--shin-ct-row-gap, 12px) 0; font-size: var(--font-ui-small, 13px); }
+.shin-ct-modal .shin-ct-label { flex: none; color: var(--text-normal); }
+.shin-ct-modal .shin-ct-line-control,
+.shin-ct-modal .shin-ct-bgctl { display: flex; align-items: center; gap: 8px; }
+.shin-ct-modal .shin-ct-bgtxt { color: var(--text-muted); font-size: var(--font-ui-small, 13px); }
+.shin-ct-modal .shin-ct-color,
+.shin-ct-modal .shin-ct-bgdot { width: 22px; height: 22px; padding: 0; border: 1px solid var(--background-modifier-border); border-radius: 50%; background: none; cursor: pointer; flex: none; -webkit-appearance: none; appearance: none; overflow: hidden; }
+.shin-ct-modal .shin-ct-color::-webkit-color-swatch-wrapper,
+.shin-ct-modal .shin-ct-bgdot::-webkit-color-swatch-wrapper { padding: 0; }
+.shin-ct-modal .shin-ct-color::-webkit-color-swatch,
+.shin-ct-modal .shin-ct-bgdot::-webkit-color-swatch { border: none; border-radius: 50%; }
+.shin-ct-modal .shin-ct-div { width: 1px; height: 22px; background: var(--background-modifier-border); margin: 0 2px; flex: none; }
+.shin-ct-modal .shin-ct-reset { display: none; width: 24px; height: 24px; padding: 0; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 6px; flex: none; }
+.shin-ct-modal .shin-ct-reset.is-on { display: inline-flex; align-items: center; justify-content: center; }
+.shin-ct-modal .shin-ct-reset svg { width: var(--shin-ct-reset-ico, 14px); height: var(--shin-ct-reset-ico, 14px); }
+.shin-ct-modal .shin-ct-reset:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.shin-ct-modal .shin-ct-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--shin-ct-foot-gap, 24px); }
 
 /* ============================================================
    窗口全屏（2026-09-22 用户定）

@@ -220,8 +220,9 @@
   --empty-btn-fs: 14px;             /* 字号 ✅ */
   --empty-btn-ico: 16px;            /* 加号图标大小 ✅ */
 
-  /* ---- 右侧「关闭分屏」图标（2026-10-11 用户定；图标本体现画在 mindmap-app.js 的 ICONS['close-splits']）----
-     有右侧文档分屏时出现在画布右边缘，点一下把那组文档分屏全关掉 */
+  /* ---- 右侧「关闭分屏 / 全屏」两颗图标（2026-10-11；2026-11-15 在 X 下面加第二颗）----
+     有右侧文档分屏时出现在画布右边缘：上面 X = 关掉那组分屏，下面 = 把那组标签并进左边标签组。
+     两颗图标都画在 mindmap-app.js 的 ICONS 里，共用下面这套 --close-splits-* 旋钮。 */
   --close-splits-right: 4px;       /* 离画布**右边缘**的距离 ✅ */
   --close-splits-top-gap: 6px;     /* 离画布**顶边**多远（默认贴顶、不再居中，2026-10-11 用户定）✅
                                        想挪回来一点就调大；想回到"垂直居中"：calc(50% - 18px)（按钮半高≈18px） */
@@ -231,7 +232,8 @@
   --close-splits-hover-bg: rgba(128,128,128,.16); /* 悬停底色 ✅ */
   --close-splits-radius: 6px;       /* 悬停底色的圆角 ✅ */
   --close-splits-pad: 5px;          /* 图标四周的留白（悬停底色比图标大多少）✅ */
-  --close-splits-more-gap: 0px;     /* 「更多」那颗与「关闭分屏」之间的缝（2026-10-20）✅ */
+  --close-splits-gap: 0px;        /* 🎚 X 与「全屏」两颗的上下距离：正数留缝 / 0 紧贴 / 负数重叠；改完要 Reload 插件 */
+  --close-splits-more-gap: 0px;     /* 三点「更多」恢复悬浮时与上一颗的额外缝（2026-10-20），当前不显示 */
   --close-splits-fs-extra: 34px;    /* 全屏时 X 再往下让多少（2026-10-20 用户实报"全屏下有时点不到"：顶部被系统状态栏 / 窗口条压住）✅ */
 
   /* ---- 「被多处管理」的文档节点（2026-10-09 用户定；当天二次改版：改成**两层框**）----
@@ -423,34 +425,10 @@
   /* ---- 贝塞尔曲线 ---- */
   --edge: #c5cdd9;            /* 曲线颜色（品牌参考：普通颜色 5A82F5；拖拽颜色 ABC0F9）*/
   --edge-width: 1.5px;        /* 曲线粗细 */
-  --edge-feishu: #5A82F5;     /* 飞书主题连线蓝（2026-08-31）：设置页主题选「飞书」时 --edge 会切到这个色。可自定义 */
-  /* ---- 飞书粉线版（2026-09-01 定）：连线+主节点背景+选中/hover/定位按钮 等蓝色系全部覆盖为粉。改完重载插件生效 ---- */
-  --edge-pink: #F06292;                /* 粉线版连线颜色：默认 #F06292（粉红 400） */
-  --edge-dim: #c5cdd9;                 /* 🎚 2026-09-24 试验：Minor / 已完成节点的连线颜色（固定灰，**不跟主题走** ——
-                                          蓝线/粉线主题下这些线也一律变灰）。默认值 = 灰色主题的线色，所以灰色主题下看不出变化 */
-  --edge-dim-alpha: .45;               /* 🎚 置灰线的**不透明度**（2026-09-24 补）：
-                                          · 灰线主题（默认）：线本来就是灰的，只改颜色**区分不出来** → 靠"变淡"区分。
-                                          · 蓝线 / 粉线主题：靠颜色就能区分 → 那边覆盖回 1（保持实心，别平白变淡）。
-                                          调小 = 更淡；调 1 = 不淡化（回到只靠颜色区分）。 */
-  --root-bg-pink: #FFE4EC;             /* 粉线版主节点背景：默认 #FFE4EC（粉 50） */
-  --accent-pink: #E91E63;              /* 粉线版强调色（替换 --accent 蓝 #0d72ff）：默认 #E91E63（粉 500）*/
-  --sel-pink: #ffeef4;                 /* 粉线版工具栏 hover 背景色（替换 --sel 蓝 #d0e3ff）：默认 #FFB6D5（粉 200）*/
-  --sel-root-pink: #C2185B;            /* 粉线版根节点选中外框（替换 --sel-root #0044ff）：默认 #C2185B（粉 700）*/
-  --sel-lv1-pink: #E91E63;             /* 粉线版一级节点选中外框（替换 --sel-lv1 #0d72ff）：默认 #E91E63。 */
-  --sel-ln-pink: #E91E63;              /* 粉线版普通节点选中外框（替换 --sel-ln）：默认 #E91E63。 */
-  --hover-border-pink: #F8BBD0;        /* 粉线版 hover 外框（替换 --hover-border #b5cfff）：默认 #F8BBD0（粉 100）。 */
-  --hover-border-root-pink: #F8BBD0;   /* 粉线版根 hover 外框（替换 --hover-border-root #b5cfff）：默认 #F8BBD0。 */
-  --drag-edge-pink: 233, 30, 99;       /* 粉线版拖拽预测曲线颜色 RGB 分量（= #E91E63 粉 500，与 --accent-pink 一致）。配 --drag-edge-alpha-feishuPink 调透明度 */
-  --drag-edge-alpha-feishuPink: 0.35;  /* 粉线版预测曲线透明度（2026-09-01 定稿）。CSS 静态值，不放设置页 */
-  --drag-edge-alpha-feishu: 0.35;      /* 蓝线版预测曲线透明度（2026-09-01 定稿）。CSS 静态值，不放设置页 */
-  --drag-edge-alpha-feishuGray: 1;     /* 灰线版预测曲线透明度（定稿）。CSS 静态值，不放设置页 */
-  --l1-bg-pink: #FCE4EC;              /* 粉线版预测父节点底（替换 --l1-bg 蓝 #e8f0ff）：默认 #FCE4EC（粉 50，与 --root-bg-pink 同色系） */
-  --fold-border-pink: #F8BBD0;        /* 粉线版折叠钮边框（替换 --fold-border 蓝 #b5cfff）：默认 #F8BBD0（粉 100，与 --hover-border-pink 同色系） */
-  --fold-color-pink: #E91E63;         /* 粉线版折叠图标/数字色（替换 --fold-color 蓝 #4263eb）：默认 #E91E63（粉 500，与 --accent-pink 一致） */
-  /* 同级预测节点边框（粉线版）：复用粉线版选中边框色（RGB 分量），分根/一级/普通三级 */
-  --sib-predict-pink: 233, 30, 99;        /* 一级：= 粉线版选中边框 --sel-lv1-pink (#E91E63) */
-  --sib-predict-ln-pink: 233, 30, 99;     /* 普通：= 粉线版选中边框 --sel-ln-pink (#E91E63) */
-  --sib-predict-root-pink: 194, 24, 91;   /* 根：= 粉线版选中边框 --sel-root-pink (#C2185B) */
+  /* Minor / 已完成节点的连线：固定灰，**不跟主题走**（主题色模式下这些线也一律变灰）。
+     2026-11-15 起主题由 JS 引擎算色（一个主题色派生整套），三档各自那一大堆 --*-pink / --edge-feishu 已删。 */
+  --edge-dim: #c5cdd9;
+  --edge-dim-alpha: .45;               /* 置灰线的不透明度：调小更淡、调 1 = 实心 */
 
   /* ---- 空格 + 拖拽平移（2026-08-31）---- */
   /* #view-map.space-pan / .space-panning 的抓手光标规则在文件末尾「空格平移」一节 */
@@ -514,7 +492,7 @@
   --drag-edge-alpha: 1;       /* 拖拽预测曲线透明度：由各主题 --drag-edge-alpha-* 静态决定（不放设置页，调参直接改上面三个变量）✅ */
 
   /* 同级预测节点边框（2026-09-01；拖拽预测为同级时，节点本体加一圈=选中边框色的浅/实边框；配 --sib-predict-alpha 调透明度）。
-     颜色复用选中边框色（RGB 分量），分根/一级/普通三级；粉线版见 --sib-predict-pink / -ln-pink / -root-pink */
+     颜色复用选中边框色（RGB 分量），分根/一级/普通三级。 */
   --sib-predict: 13, 114, 255;        /* 一级节点：= 选中边框 --sel-lv1 (#0d72ff) */
   --sib-predict-ln: 13, 114, 255;      /* 普通节点：= 选中边框 --sel-ln (#4263eb) */
   --sib-predict-root: 13, 114, 255;     /* 根节点：= 选中边框 --sel-root (#0044ff) */
@@ -736,10 +714,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--close-splits-more-gap, 4px);
+  gap: 0; /* 两颗的间距交给第二颗按钮的 margin-top，见下面那条 */
   z-index: 20;
 }
 .split-ctrl.hidden { display: none; }
+/* X 与下面「全屏」的上下距离：走 margin-top 而不是 flex gap ——
+   gap 不接受负数，设了负值整条声明会被浏览器丢掉（表现就是「调了没反应」）；
+   margin 正负都吃，负数 = 两颗重叠。三点「更多」恢复时另有它自己的额外缝。 */
+.split-ctrl .fullscreen-pane-btn { margin-top: var(--close-splits-gap, 8px); }
+/* 三点「更多」恢复悬浮时与上一颗的额外缝（那颗按钮当前隐藏，这条不生效）。 */
+.split-ctrl .split-more-btn { margin-top: var(--close-splits-more-gap, 0px); }
 /* 全屏（窗口内 / 桌面）时 X 往下让一截（2026-10-20 用户实报「全屏下有时候点不到」）：
    全屏时顶部那条被系统状态栏 / 窗口标题条压住，6px 的贴顶间距会落在它底下 —— 指针点下去命中的是状态栏。
    🎚 --close-splits-fs-extra 调让多少（默认 34px，设 0 = 不让）。 */
@@ -3043,60 +3027,14 @@ body.nm-ui-faded .node-menu {
 .theme-dark .fold-tag:hover .fold-arrow svg { opacity: 1; }
 
 /* ══════════════════════════════════════════════════════════════════
-   主题切换：类驱动（2026-09-18 收编，替代 applyTheme 的 JS 内联）。
-   JS 现在只负责往根元素挂/摘 .nm-theme-* 类；所有颜色值住这里。
-   规则：改主题色 → 改对应类的值；深色 × 主题 → 改 .theme-dark.nm-theme-* 组合块。
+   主题：**由 JS 主题引擎接管**（2026-11-15）。
+   宿主按「一个主题色 + 画布底色」算好整套色值，以 setThemeVars 下发，前端写成 html 内联变量
+   （优先级压过这里的 :root / .theme-dark 默认值）。
+   三档预设（蓝 / 粉 / 灰）也只是三个不同的主题色，走同一套公式 ——
+   原来的 .nm-theme-feishu / -Gray / -Pink 三个类和 .theme-dark.nm-theme-feishuPink 组合块
+   （共 50+ 个写死色值）已整段删除。想改主题观感 → 改 main.js 的 THEME_MIX / THEME_PRESETS，
+   别再往这里加主题类。
    ══════════════════════════════════════════════════════════════════ */
-.nm-theme-feishu {
-  --edge: var(--edge-feishu);
-  --drag-edge-alpha: var(--drag-edge-alpha-feishu);
-  --edge-dim-alpha: 1;   /* 蓝线：置灰线靠**颜色**（蓝→灰）就能区分，不必再淡化 */
-}
-.nm-theme-feishuGray {
-  --drag-edge-alpha: var(--drag-edge-alpha-feishuGray);
-}
-.nm-theme-feishuPink {
-  --edge: var(--edge-pink);
-  --edge-dim-alpha: 1;   /* 粉线：置灰线靠**颜色**（粉→灰）就能区分，不必再淡化 */
-  --root-bg: var(--root-bg-pink);
-  --accent: var(--accent-pink);
-  --sel: var(--sel-pink);
-  --sel-root: var(--sel-root-pink);
-  --sel-lv1: var(--sel-lv1-pink);
-  --sel-ln: var(--sel-ln-pink);
-  --hover-border: var(--hover-border-pink);
-  --hover-border-root: var(--hover-border-root-pink);
-  --drag-edge: var(--drag-edge-pink);
-  --drag-edge-alpha: var(--drag-edge-alpha-feishuPink);
-  --l1-bg: var(--l1-bg-pink);
-  --fold-border: var(--fold-border-pink);
-  --fold-color: var(--fold-color-pink);
-  --pro-cta-color: var(--accent-pink);
-  --sib-predict: var(--sib-predict-pink);
-  --sib-predict-ln: var(--sib-predict-ln-pink);
-  --sib-predict-root: var(--sib-predict-root-pink);
-}
-/* —— 深色 × 粉线：组合选择器（两个类的优先级压过上面所有单类，覆盖 .theme-dark 的蓝色深色值）——
-   原先是 JS 内联（applyPinkDarkInline，已删）；现在改色直接改这里的值。 */
-.theme-dark.nm-theme-feishuPink {
-  --accent: #F06292;
-  --sel-root: #F06292;
-  --sel-lv1: #F06292;
-  --sel-ln: #F06292;
-  --fold-color: #F06292;
-  --pro-cta-color: #F06292;
-  --root-bg: #EB4B63;   /* 粉线深色主节点底（2026-09-18 用户定 #EB4B63；改这里这一个值） */
-  --l1-bg: #33202b;     /* 拖拽预测父节点底 */
-  --sel: #33202b;       /* 菜单/按钮悬停底 */
-  --hover-border: #7a415c;
-  --hover-border-root: #7a415c;
-  --fold-border: #7a415c;
-  --edge: var(--edge-pink);            /* 连线不改暗（用户定：深浅同亮，改浅粉线色深色自动跟） */
-  --drag-edge: 233, 30, 99;
-  --sib-predict: 240, 98, 146;
-  --sib-predict-ln: 240, 98, 146;
-  --sib-predict-root: 214, 60, 106;
-}
 
 /* ===== 搜索命中高亮（2026-11-10）=====
    搜索结果里命中当前这张导图时，画布上**命中的那几个字**也标出来（不是整张卡片）。
