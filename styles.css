@@ -2039,24 +2039,27 @@ body.theme-dark {
 .shin-palette-modal .setting-item { align-items: center; }
 .shin-palette-modal .modal-title { margin-bottom: var(--size-4-3, 12px); }
 
-/* ══ 「自定义界面」弹窗（2026-11-15）══
-   上排居中放 8 个预设色 + 彩色自定义圆；分隔线下两行各自可调，改出偏差才露「还原」。 */
+/* ══ 「自定义界面样式」弹窗（2026-11-15 建 / 2026-11-16 重做）══
+   进来只有主题色 / 画布颜色两行；整套预设配色收进左下角「配色参考」，展开才在分隔线下面露出那排色球。
+   色球两档（球里两颗小点，亮哪颗＝第几档）：1 档只换主题色、画布回默认；2 档连预设底色一起换。
+   选中态 = 球自己的颜色留一圈间隙描边（照用户给的参考，球里不放图标，只放那两颗小点）。 */
 .shin-ct-modal {
   width: min(560px, 92vw);
-  --shin-ct-dot-size: 32px;
-  --shin-ct-top-gap: 9px;
-  --shin-ct-sep-gap: 22px;
-  --shin-ct-row-gap: 12px;
-  --shin-ct-foot-gap: 24px;
+  --shin-ct-dot-size: 40px;                                  /* 配色参考里那颗球的大小 */
+  --shin-ct-top-gap: 12px;                                   /* 球与球之间的横向间距 */
+  --shin-ct-row-gap: 12px;                                   /* 主题色 / 画布颜色两行各自的上下外边距 */
+  --shin-ct-foot-gap: 34px;                                  /* 画布颜色行 → 底部按钮行的间距（想拉近/推远改这个） */
+  --shin-ct-sep-gap: 16px;                                   /* 画布颜色行 → 配色参考分隔线的间距 */
+  --shin-ct-mark-size: 6px;                                  /* 球里那颗小点的大小 */
+  --shin-ct-mark-gap: 4px;                                   /* 两颗小点之间的距离 */
+  --shin-ct-ring-w: 2px;                                     /* 选中描边的粗细 */
+  --shin-ct-ring-gap: 3px;                                   /* 描边与球之间的白圈 */
+  --shin-ct-restore-color: var(--text-error, #e5484d);       /* 「还原为默认色」的红 */
+  --shin-ct-restore-tint: rgba(229, 72, 77, .12);            /* 还原按钮的悬浮底色 */
+  --shin-ct-restore-gap: 24px;                               /* 还原按钮 → 浅色模式 的实际间距（写多少就是多少） */
 }
-.shin-ct-modal .modal-title { display: none; }
-.modal.shin-ct-modal .modal-content { padding-top: 22px; }
-.shin-ct-modal .shin-ct-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--shin-ct-top-gap, 9px); margin: 0 auto var(--shin-ct-sep-gap, 22px); }
-.shin-ct-modal .shin-ct-dot { position: relative; overflow: hidden; width: var(--shin-ct-dot-size, 24px); height: var(--shin-ct-dot-size, 24px); border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform .1s ease; flex: none; }
-.shin-ct-modal .shin-ct-dot:hover { transform: scale(1.12); }
-.shin-ct-modal .shin-ct-dot.is-on { border-color: var(--text-normal); outline: 2px solid var(--background-primary); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
-.shin-ct-modal .shin-ct-dot-custom { background: conic-gradient(from 0deg, #f44, #f94, #6c6, #4cc, #47f, #a4f, #f44); }
-.shin-ct-modal .shin-ct-sep { height: 1px; background: var(--background-modifier-border); margin: 0 0 10px; }
+.shin-ct-modal .modal-title { font-size: var(--font-ui-medium, 15px); margin-bottom: var(--size-4-2, 8px); }
+.modal.shin-ct-modal .modal-content { padding-top: 4px; }
 .shin-ct-modal .shin-ct-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; margin: var(--shin-ct-row-gap, 12px) 0; font-size: var(--font-ui-small, 13px); }
 .shin-ct-modal .shin-ct-label { flex: none; color: var(--text-normal); }
 .shin-ct-modal .shin-ct-line-control,
@@ -2069,11 +2072,27 @@ body.theme-dark {
 .shin-ct-modal .shin-ct-color::-webkit-color-swatch,
 .shin-ct-modal .shin-ct-bgdot::-webkit-color-swatch { border: none; border-radius: 50%; }
 .shin-ct-modal .shin-ct-div { width: 1px; height: 22px; background: var(--background-modifier-border); margin: 0 2px; flex: none; }
-.shin-ct-modal .shin-ct-reset { display: none; width: 24px; height: 24px; padding: 0; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 6px; flex: none; }
-.shin-ct-modal .shin-ct-reset.is-on { display: inline-flex; align-items: center; justify-content: center; }
-.shin-ct-modal .shin-ct-reset svg { width: var(--shin-ct-reset-ico, 14px); height: var(--shin-ct-reset-ico, 14px); }
-.shin-ct-modal .shin-ct-reset:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.shin-ct-modal .shin-ct-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--shin-ct-foot-gap, 24px); }
+/* 「还原为默认色」：画布色偏离默认才出现在「浅色模式」左边，红框红字的按钮（鼓励用户点它）。
+   与「浅色模式」的间距 = --shin-ct-restore-gap（.shin-ct-bgctl 的 8px gap 已扣掉，写多少就是多少）。 */
+.shin-ct-modal .shin-ct-restore { display: none; padding: 3px 10px; margin-right: calc(var(--shin-ct-restore-gap, 24px) - 8px); border: 1px solid var(--shin-ct-restore-color); background: transparent; box-shadow: none; color: var(--shin-ct-restore-color); font-size: var(--font-ui-smaller, 12px); line-height: 1.3; cursor: pointer; border-radius: 6px; flex: none; }
+.shin-ct-modal .shin-ct-restore.is-on { display: inline-flex; align-items: center; }
+.shin-ct-modal .shin-ct-restore:hover { background: var(--shin-ct-restore-tint); color: var(--shin-ct-restore-color); border-color: var(--shin-ct-restore-color); }
+/* 配色参考：默认整块不占位，展开才露分隔线 + 色球排 */
+.shin-ct-modal .shin-ct-palette { display: none; }
+.shin-ct-modal .shin-ct-palette.is-open { display: block; }
+.shin-ct-modal .shin-ct-sep { height: 1px; background: var(--background-modifier-border); margin: var(--shin-ct-sep-gap, 10px) 0 16px; }
+.shin-ct-modal .shin-ct-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--shin-ct-top-gap, 12px); padding: var(--shin-ct-ring-gap, 3px) 0; margin: 0 auto; }
+.shin-ct-modal .shin-ct-dot { position: relative; overflow: hidden; width: var(--shin-ct-dot-size, 40px); height: var(--shin-ct-dot-size, 40px); border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform .1s ease; flex: none; }
+.shin-ct-modal .shin-ct-dot:hover { transform: scale(1.08); }
+.shin-ct-modal .shin-ct-dot.is-on { outline: var(--shin-ct-ring-w, 2px) solid var(--shin-ct-dot-color, var(--text-normal)); outline-offset: var(--shin-ct-ring-gap, 3px); }
+/* 球里那两颗小点：居中、无底衬（当前档亮，另一颗半透明白）；带一点点暗描边，浅色球上也看得清 */
+.shin-ct-modal .shin-ct-steps { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: var(--shin-ct-mark-gap, 4px); pointer-events: none; }
+.shin-ct-modal .shin-ct-step { width: var(--shin-ct-mark-size, 6px); height: var(--shin-ct-mark-size, 6px); border-radius: 50%; background: rgba(255, 255, 255, .45); box-shadow: 0 0 2px rgba(0, 0, 0, .45); }
+.shin-ct-modal .shin-ct-step.is-on { background: #fff; }
+/* 底部按钮行：左「配色参考」是带框的次要按钮，右「取消 / 确认」走原生按钮 */
+.shin-ct-modal .shin-ct-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: var(--shin-ct-foot-gap, 24px); }
+.shin-ct-modal .shin-ct-palette-btn { margin-right: auto; padding: 4px 12px; border: 1px solid var(--background-modifier-border); background: var(--background-secondary, transparent); box-shadow: none; color: var(--text-normal); font-size: var(--font-ui-small, 13px); cursor: pointer; border-radius: 6px; }
+.shin-ct-modal .shin-ct-palette-btn:hover { background: var(--background-modifier-hover); border-color: var(--background-modifier-border-hover, var(--background-modifier-border)); color: var(--text-normal); }
 
 /* ============================================================
    窗口全屏（2026-09-22 用户定）
