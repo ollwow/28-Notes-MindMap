@@ -7,7 +7,7 @@
 - 设计理念源自「[28 笔记法](https://space.bilibili.com/481595180)」，可一键聚焦重点 / 隐藏非重点。
 - 简洁，优雅，易用。
 
-![28 Notes MindMap](https://raw.githubusercontent.com/ollwow/28-Notes-MindMap/main/assets/banner.png)
+<img alt="banner" src="https://github.com/user-attachments/assets/23a08e2f-7ae2-4677-ba5a-1b2d71f63123" />
 
 ---
 <br>
@@ -256,7 +256,7 @@
 - Design inspired by the "[28 Notes Method](https://space.bilibili.com/481595180)", with one-click focus on key points / hiding of non-essentials.
 - Simple, elegant, and easy to use.
 
-![28 Notes MindMap](https://raw.githubusercontent.com/ollwow/28-Notes-MindMap/main/assets/banner.png)
+<img alt="banner" src="https://github.com/user-attachments/assets/23a08e2f-7ae2-4677-ba5a-1b2d71f63123" />
 
 ---
 
