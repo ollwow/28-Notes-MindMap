@@ -2117,6 +2117,35 @@ body.shin-mm-fullscreen .status-bar:hover { opacity: 1; }
 /* 全屏时收掉 `.titlebar` —— Obsidian 设置 → 外观 →「显示标签页标题栏」
    （**没开这个设置时页面上根本没有这个元素**，规则写了也无害）。 */
 body.shin-mm-fullscreen .titlebar { display: none !important; }
+/* 🔴 窗口全屏下把**我们自己那条标题栏**当系统标题栏用：空白处按住就能拖窗口（2026-11-17 用户实报后补）。
+   病因：Obsidian 给窗口留的拖拽区只有两处 —— `.titlebar` 和 `.workspace-tab-header-container-inner`
+   （都给着 `-webkit-app-region: drag`）。全屏专注模式把它们**都藏了**（上面两条），于是窗口一处可拖的地方
+   都不剩，按住顶端拖不动。窗口档尤其明显：桌面档由系统管窗口，感觉不出来。
+   做法：给接管后的那行标题栏（`.shin-mm-header-taken`）加 drag，再把里面**所有可点的东西**显式标回 no-drag。
+   ⚠️ 两条 Electron 的硬规矩（别当成 bug 去"修"）：
+      ① 可拖拽区域**吞掉全部指针事件** —— 落在这块上的 hover / click / mouseenter 一个都不会有。
+         所以子元素漏标 no-drag 就点不动（按钮、路径段、改名框都算）。
+      ② 反过来说，**悬停在空白处不会把这条标题栏"点亮"**（透明度停在 --shin-mm-fs-dim）；
+         鼠标移到按钮 / 路径段上照样会亮 —— 那些是 no-drag，事件照常。这是预期行为，不是没生效。
+   ⚠️ 只给窗口档：桌面档（:not 里排除的那个）由系统管窗口，插一脚反而会跟系统全屏空间打架。 */
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken {
+  -webkit-app-region: drag;
+  user-select: none;   /* 拖的时候别顺手把标题栏的文字选中（Electron 官方建议） */
+}
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken a,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken button,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken input,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken .clickable-icon,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken .c-seg,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken #shin-mm-nav,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken .view-actions {
+  -webkit-app-region: no-drag;
+}
+/* 上面那条 user-select: none 别殃及**原地改名**（路径段变 contenteditable 时要能正常选字 / 拖光标） */
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken .c-seg.is-editing,
+body.shin-mm-fullscreen:not(.shin-mm-fullscreen-native) .shin-mm-header-taken input {
+  user-select: text;
+}
 /* 🔴 `.view-header`（视图自己的头）2026-10-06 起**不再隐藏**，而且全屏时它必须留着：
    我们的路径三键 / 面包屑 / 全屏按钮现在都住在这条标题栏上（见上面「接管标签页标题栏」那一段）——
    把它藏了，全屏后连"退出全屏"那颗按钮都找不到了。
@@ -2320,4 +2349,28 @@ body.shin-mm-fs-noanim *::after {
   background-color: var(--nav-item-background-active);
   color: var(--nav-item-color-active);
   border-radius: var(--radius-s, 4px);
+}
+
+/* ============ AI 测试面板（2026-11-16，第一阶段临时工装）============
+   右侧栏面板的排版。只作用于 .shin-ai-panel 内部，不影响别处。
+   ⚠️ 临时工装：接真模型后随功能一起改造。 */
+.shin-ai-panel { padding: 12px 14px 24px; }
+.shin-ai-sec { margin-bottom: 20px; }
+.shin-ai-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.shin-ai-sel {
+  font-size: 13px; line-height: 1.6; color: var(--text-normal);
+  background: var(--background-secondary); border-radius: 6px; padding: 8px 10px;
+  word-break: break-word;
+}
+.shin-ai-row { display: flex; gap: 8px; margin-top: 8px; }
+.shin-ai-warn { font-size: 12px; color: var(--text-warning); margin-top: 6px; }
+.shin-ai-draft {
+  font-size: 13px; line-height: 1.9; color: var(--text-normal);
+  background: var(--background-secondary); border-radius: 6px; padding: 8px 10px;
+  word-break: break-word;
+}
+.shin-ai-note {
+  font-size: 12px; line-height: 1.6; color: var(--text-faint);
+  margin-top: 24px; padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
 }

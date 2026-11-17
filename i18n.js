@@ -162,6 +162,18 @@ var I18N = {
     'cmd.saveShortcut': '视图整体｜建立捷径', // 2026-11-11 改名：用户层统一叫「建立捷径」；选中文档节点时自动建文档捷径（见 runCanvasAction）
     'cmd.aiMark': 'AI｜添加 AI 生成标记', // 2026-10-05：一次打标、再触发清除（名字 2026-10-07 用户定成「添加…」，别管它也能删，就叫这个）
     'cmd.aiRules': 'AI｜添加 AI 更改规则', // 2026-10-07 用户定：新注册的命令（菜单里那项同源）
+    // AI 测试面板（2026-11-16，第一阶段临时工装）：右侧栏面板文案，接真模型后改造
+    'aiPanel.title': 'AI 测试（假数据）',
+    'aiPanel.selection': '当前选中节点',
+    'aiPanel.noSelection': '未选中 —— 先在画布上点一个节点',
+    'aiPanel.refresh': '重新读取',
+    'aiPanel.readonly': '历史记录页是只读的，不能扩展',
+    'aiPanel.step1': '第 1 步：生成候选子节点',
+    'aiPanel.generate': '生成 3 个子节点（假）',
+    'aiPanel.step2': '第 2 步：预览（还没写进文件）',
+    'aiPanel.apply': '写入画布',
+    'aiPanel.cancel': '取消',
+    'aiPanel.mockNote': '这一步的草案是写死的假数据，不调用任何模型。先确认「选中 → 预览 → 写入 → 撤销」这条链路是通的，再接真的。',
     'cmd.editNote': '编辑文本｜节点备注', // 命令：画布动作（默认 Shift+Enter）
     'cmd.toggleShowNow': '视图整体｜（只）显示 Now 当前节点', // 命令：画布动作（默认 Mod+Alt+N）
     'cmd.toggleHideMinor': '视图整体｜显示/隐藏 Minor 次要节点', // 命令：画布动作（默认 Mod+Alt+M）
@@ -397,6 +409,8 @@ var I18N = {
     'debug.logDesc': '默认关闭。开启后，控制台会出现诊断日志，以定位 Bug 根源。普通用户建议关闭。',
     'debug.frontmatter': 'Front Matter', // 调试区（2026-11-11 用户定）：右侧面板末尾多一组 frontmatter
     'debug.frontmatterDesc': '默认关闭。开启后可在右侧面板查看 Front Matter。',
+    'debug.harness': 'Harness', // 调试区（2026-11-17 用户定）：AI 测试面板**总开关**（整个面板在不在）
+    'debug.harnessDesc': '默认关闭。开启后，左侧功能区出现「AI 测试」按钮，点开是右侧栏的 AI 测试面板；关闭则整个面板不存在（已打开的标签页会一起关掉）。',
     'license.okCopied': '回执已复制', // 复制回执成功提示
     'license.proRequired': '这是 Pro 功能，激活后可用。', // 受控功能被拦时的提示
     'license.err.unknown': '激活失败，请检查激活码', // 未归类错误兜底
@@ -1318,6 +1332,18 @@ var I18N = {
     'cmd.saveShortcut': 'View | Create Shortcut',
     'cmd.aiMark': 'AI | Add AI-Generated Mark',
     'cmd.aiRules': 'AI | Add AI Rules',
+    // AI test panel (2026-11-16, stage-1 scaffolding)
+    'aiPanel.title': 'AI test (mock)',
+    'aiPanel.selection': 'Selected node',
+    'aiPanel.noSelection': 'Nothing selected — click a node on the canvas first',
+    'aiPanel.refresh': 'Refresh',
+    'aiPanel.readonly': 'History view is read-only; cannot expand',
+    'aiPanel.step1': 'Step 1: generate candidate children',
+    'aiPanel.generate': 'Generate 3 children (mock)',
+    'aiPanel.step2': 'Step 2: preview (not written to file yet)',
+    'aiPanel.apply': 'Write to canvas',
+    'aiPanel.cancel': 'Cancel',
+    'aiPanel.mockNote': 'These drafts are hard-coded mock data; no model is called. The point is to confirm the select → preview → write → undo chain works before wiring up the real API.',
     'cmd.editNote': 'Text | Node Note',
     'cmd.toggleShowNow': 'View | Show Only Now Nodes',
     'cmd.toggleHideMinor': 'View | Show/Hide Minor Nodes',
@@ -1546,6 +1572,8 @@ var I18N = {
     'debug.logDesc': 'Off by default. When on, diagnostic logs appear in the console to help track down bugs. Regular users should keep it off.',
     'debug.frontmatter': 'Front Matter', // debug area (2026-11-11): adds a Front Matter group at the end of the side panel
     'debug.frontmatterDesc': 'Off by default. When on, the side panel shows the file\'s Front Matter.',
+    'debug.harness': 'Harness', // debug area (2026-11-17): master switch for the AI test panel (whether the panel exists at all)
+    'debug.harnessDesc': 'Off by default. When on, an "AI test" button appears in the ribbon and opens the AI test panel in the right sidebar; when off, the panel does not exist at all (any open tab is closed).',
     'license.okCopied': 'Receipt Copied',
     'license.proRequired': 'This is a Pro feature. Activate to use it.',
     'license.err.unknown': 'Activation failed. Please check the code.',

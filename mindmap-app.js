@@ -3647,6 +3647,9 @@ function buildCard(node, depth, done) {
   if (allNodeImgs.length) {
     const imgs = document.createElement('div');
     imgs.className = 'imgs';
+    // 一张卡片上可能挂好几张图：卡片上限要按**最宽的那张**算，最后统一设一次。
+    //   ⚠️ 不能在最宽那张之后又被下一张（更窄的、返回 '' 的）覆盖回 --card-maxw —— 那会让宽图当场出框。
+    let cardMaxwPx = '';
     allNodeImgs.forEach(p => {
       const img = document.createElement('img');
       img.className = 'img';
@@ -3666,9 +3669,11 @@ function buildCard(node, depth, done) {
       if (esz.w || esz.h) {
         img.style.maxWidth = 'none';
         img.style.maxHeight = 'none';
-        // 卡片上限只在**图片比它宽**时放开，放开也要给个具体值 = 图片宽 + padding（2026-10-21 用户定）。
+        // 卡片上限只在**图片（连内边距）装不下**时放开，放开也给个具体值 = 图片宽 + padding（2026-10-21 用户定）。
         //   设 'none' 会让标题文字也不换行、节点一路往后延伸 = 用户说的「忽然变成无限宽」。
-        if (imgOverCardMaxw(esz.w)) card.style.maxWidth = cardMaxwForImg(esz.w, card);
+        //   装得下时 cardMaxwForImg 返回 '' → 不动（交回 CSS 的 --card-maxw，旋钮改了能实时生效）。
+        const mw = cardMaxwForImg(esz.w, card);
+        if (mw && (!cardMaxwPx || parseFloat(mw) > parseFloat(cardMaxwPx))) cardMaxwPx = mw;
         // 宽高都写死时别拉伸/裁切（默认 object-fit: cover 会按框裁掉），完整显示；
         // 只写宽度时高度交回图片自身比例（否则会沿用缩略图缓存里的 32px 占位 → 先压成一条横条）
         if (esz.w && esz.h) img.style.objectFit = 'contain';
@@ -3713,6 +3718,7 @@ function buildCard(node, depth, done) {
       wrap.appendChild(grip);
       imgs.appendChild(wrap);
     });
+    if (cardMaxwPx) card.style.maxWidth = cardMaxwPx; // 最宽那张图算出来的上限（见上面声明处）
     card.appendChild(imgs);
   }
   // 链接：**没有单独的渲染路**（2026-09-29）—— 链接就是正文里的一段文字，由 cardTitleInner 的
@@ -10448,6 +10454,24 @@ window.addEventListener('message', e => {
     runCanvasAction(msg.action);
     return;
   }
+  // ---- AI 面板（2026-11-16，第一阶段临时工装）----
+  // 宿主侧 AI 面板要了解「选中了哪个节点」，再决定要不要插入。画布这边只做两件事：
+  //   ① 告诉面板当前选中的是什么；② 收到一批标题就插进去（复用 addTextNodes）。
+  // key、请求、预览、错误处理全在宿主，画布不知道 AI 的存在。
+  if (msg.type === 'aiGetSelection') {
+    const r = state.selectedId ? findNode(state.tree, state.selectedId) : null;
+    vscode.postMessage({
+      type: 'aiSelection',
+      title: r ? String(r.node.title || '') : '',
+      readonly: !!state.historyMode,
+    });
+    return;
+  }
+  if (msg.type === 'aiApplyNodes') {
+    const titles = Array.isArray(msg.titles) ? msg.titles.map(t => String(t || '').trim()).filter(Boolean) : [];
+    if (titles.length) addTextNodes(titles.join('\n'));
+    return;
+  }
   if (msg.type === 'switchView') { // 顶部视图切换按钮点击
     switchView();
     return;
@@ -11628,9 +11652,9 @@ function bindImgResize(grip, img, p, node) {
       img.style.width = w + 'px';
       img.style.height = '';                              // 高度交给图片自身比例
       img.style.maxWidth = 'none'; img.style.maxHeight = 'none';
-      // 卡片上限：图窄 → 守回 --card-maxw；图超宽 → 上限改成「图片宽 + padding」（不是 none，
-      //   否则标题文字不换行、节点无限宽）。2026-10-21 用户定。
-      if (card) card.style.maxWidth = cardMaxwForImg(w, card);
+      // 卡片上限：图（连内边距）装得下 → 守回 --card-maxw；装不下 → 上限改成「图宽 + padding」
+      //   （不是 none，否则标题文字不换行、节点无限宽）。按这张卡上最宽的图算，见 cardMaxwForImgs。
+      if (card) card.style.maxWidth = cardMaxwForImgs(card, s);
       scheduleEdges();                                    // 卡片一变宽，连线整列跟着动 → 下一帧重画（2026-10-21 用户实报"线不刷新"）
     };
     const onUp = () => {
@@ -11642,34 +11666,60 @@ function bindImgResize(grip, img, p, node) {
     document.addEventListener('pointerup', onUp);
   });
 }
-// 把宽度写回节点：附件图（node.images / node.embeds）改条目；标题里的行内图改标题原文。
-//   p = 渲染时的 dataset.path（可能已带 |旧尺寸）→ 先剥再拼新尺寸；写完 emitUpdate + render，
-//   下一帧就从文件名后缀读出尺寸（与手动写 ![[图|宽]] 完全同一条渲染路）。
-// 图片宽度超过卡片最宽限制时才放开卡片上限（2026-10-21 用户定）：
-//   图片比 --card-maxw 窄 → 卡片**继续守**上限（不然随手一拖，节点就无上限地变宽，很怪）；
-//   图片比上限宽 → 放开，按图片宽度走（否则图被压回去，写了尺寸也看不出来）。
-//   渲染期（`![[图|宽]]`）与拖动期（右下角把手）共用这一条判据，两处别各写一份。
-function imgOverCardMaxw(w) {
-  return (Number(w) || 0) > cfgNum('--card-maxw', 480);
-}
-// 图片比卡上限宽时，卡片的上限设成「图片宽 + 水平内边距」而**不是 `none`**（2026-10-21 用户定）：
-//   设 none 等于卡片无上限 → 卡片 width:max-content 会让标题文字也不换行、一路往后延伸，
-//   整个节点看着"无限宽"。设成图片宽 + padding，节点宽度就跟着图片走，文字在这个宽度里正常换行。
-//   el 已挂进 DOM → 用实测 padding（准）；渲染期卡片还没进 DOM → 用旋钮近似（差几 px，肉眼无感）。
-function cardMaxwForImg(w, el) {
-  if (!imgOverCardMaxw(w)) return '';
-  let padX;
+// 卡片自己的「左右非内容宽度」= 左 padding + 右 padding + 左右 border。
+//   🔴 必须算它，因为 `* { box-sizing: border-box }` → `.card` 的 max-width 是**含内边距的框宽**，
+//      内容区只有 `max-width - 这个值`。el 已挂进 DOM → 用实测（准）；渲染期卡片还没进 DOM → 用旋钮估算。
+//      lv0 / 主节点的 padding 是 CSS 里写死的 `10px 20px`（没有旋钮），估算得单给 20 —— 漏了它，
+//      根节点上挂大图会差出 16px（图照样出框）。
+function cardPadXOf(el) {
   if (el && el.isConnected) {
     const cs = getComputedStyle(el);
-    padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
+    return (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)
       + (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
-  } else {
-    const padVar = (el && el.classList && el.classList.contains('lv1')) ? '--card-pad-lv1-x' : '--card-pad-x';
-    padX = 2 * (cfgNum(padVar, cfgNum('--card-pad-x', 12)) + 1);
   }
+  let one; // 单侧 padding
+  const cl = (el && el.classList) || null;
+  if (cl && (cl.contains('lv0') || cl.contains('is-root'))) one = 20;
+  else if (cl && cl.contains('lv1')) one = cfgNum('--card-pad-lv1-x', cfgNum('--card-pad-x', 12));
+  else one = cfgNum('--card-pad-x', 12);
+  return 2 * (one + 1.5); // border: 1.5px solid（常驻透明边框，见 .card）
+}
+// 图片（连内边距一起）超过卡片最宽限制时才放开卡片上限（2026-10-21 用户定）：
+//   装得下 → 卡片**继续守**上限（不然随手一拖，节点就无上限地变宽，很怪）；
+//   装不下 → 放开，按图片宽度走（否则图被压回去，写了尺寸也看不出来）。
+//   渲染期（`![[图|宽]]`）与拖动期（右下角把手）共用这一条判据，两处别各写一份。
+// 🔴 2026-11-17 修「拖到某个宽度图片忽然出框」（用户实报）：判据原来只比 `w > --card-maxw`，
+//   漏掉了卡片的内边距 —— w 落在 (maxw - padX, maxw] 这一小段时，卡片还守着 480，
+//   图却已经把左右内边距顶穿，最多露出去 padX（默认 27px）；w 一超过 480 卡片才跳宽、把图重新罩住。
+//   拖动缩放时看到的就是「一直罩着 → 某个宽度忽然出框 → 再拖一下又罩住」。
+function imgOverCardMaxw(w, padX) {
+  return (Number(w) || 0) + (Number(padX) || 0) > cfgNum('--card-maxw', 480);
+}
+// 装不下时，卡片的上限设成「图片宽 + 水平非内容宽度」而**不是 `none`**（2026-10-21 用户定）：
+//   设 none 等于卡片无上限 → 卡片 width:max-content 会让标题文字也不换行、一路往后延伸，
+//   整个节点看着"无限宽"。设成图片宽 + padding，节点宽度就跟着图片走，文字在这个宽度里正常换行。
+//   装得下时返回 ''（= 交回 CSS 的 --card-maxw，用户调旋钮还能实时生效）。
+function cardMaxwForImg(w, el) {
+  const padX = cardPadXOf(el);
+  if (!imgOverCardMaxw(w, padX)) return '';
   // +2 = 安全余量（渲染期 padding 是估算的、以及亚像素取整）—— 宁可卡片宽 2px，也不要图片被压到内边距上
   return Math.ceil((Number(w) || 0) + padX + 2) + 'px';
 }
+// 拖动缩放期间按「这张卡片上**最宽的那张图**」算上限（多图节点：拖小图别把宽图的放宽冲掉，
+//   否则旁边那张宽图当场出框）。s = 画布 zoom —— DOM 宽度是缩放后的，得换回布局像素再比。
+function cardMaxwForImgs(card, s) {
+  if (!card) return '';
+  const z = s || 1;
+  let maxPx = 0;
+  card.querySelectorAll('.img').forEach((im) => {
+    const w2 = im.getBoundingClientRect().width / z;
+    if (w2 > maxPx) maxPx = w2;
+  });
+  return cardMaxwForImg(Math.round(maxPx), card);
+}
+// 把宽度写回节点：附件图（node.images / node.embeds）改条目；标题里的行内图改标题原文。
+//   p = 渲染时的 dataset.path（可能已带 |旧尺寸）→ 先剥再拼新尺寸；写完 emitUpdate + render，
+//   下一帧就从文件名后缀读出尺寸（与手动写 ![[图|宽]] 完全同一条渲染路）。
 function applyImgSize(nodeId, p, w, imgEl) {
   const r = findNode(state.tree, nodeId);
   if (!r || !w) return;
